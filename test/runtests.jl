@@ -2,5 +2,5 @@ using BondGraphs
 using Test
 
 @testset "BondGraphs.jl" begin
-    # Write your tests here.
+    @test f(2,2) == 12
 end
