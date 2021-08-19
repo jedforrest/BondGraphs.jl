@@ -23,3 +23,9 @@ struct BondGraph <: lg.AbstractGraph{Integer}
     bonds::Vector{Bond}
 end
 BondGraph() = BondGraph(:BG, "bg", AbstractNode[], Bond[])
+
+# I/O
+show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
+show(io::IO, node::Junction) = print(io, "$(node.metamodel)")
+show(io::IO, b::Bond) = print(io, "Bond $(b.src) ⇀ $(b.dst)")
+show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.metamodel):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")
