@@ -1,6 +1,8 @@
+using Revise
 using BondGraphs
+using LightGraphs
 using Test
 
 @testset "BondGraphs.jl" begin
-    # Write your tests here.
+    include("graphfunctions_tests.jl")
 end

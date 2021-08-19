@@ -3,11 +3,15 @@ uuid = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
 authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+
 [compat]
 julia = "1"
 
 [extras]
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "Revise"]
