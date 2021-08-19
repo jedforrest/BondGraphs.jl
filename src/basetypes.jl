@@ -19,7 +19,7 @@ end
 struct BondGraph <: lg.AbstractGraph{Integer}
     metamodel::Symbol
     name::String
-    nodes::Vector{AbstractNode}
+    nodes::Vector{T} where T <:AbstractNode
     bonds::Vector{Bond}
 end
 BondGraph() = BondGraph(:BG, "bg", AbstractNode[], Bond[])

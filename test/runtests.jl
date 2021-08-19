@@ -1,20 +1,20 @@
 using BondGraphs
+using LightGraphs
 using Test
 
-c1 = Component(:C, "C1")
-c2 = Component(:C, "C2")
-c1 == c2
-
-fieldnames(Bond)
-
-b1 = Bond(c1,c2)
-Bond
-
-import LightGraphs; const lg = LightGraphs
-lg.dst(b1)
-
-supertype(Component)
-
 @testset "BondGraphs.jl" begin
-    # Write your tests here.
+    c1 = Component(:C)
+    @test c1.name == "C"
+
+    c2 = Component(:C, "newC", 1)
+    @test c1 != c2
+
+    j = Junction(:J)
+    b = Bond(c1, j)
+    @test src(b) == c1
+    @test dst(b) == j
+
+    bg = BondGraph()
+    @test bg.metamodel == :BG
+    @test isempty(bg.nodes)
 end
