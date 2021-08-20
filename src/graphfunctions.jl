@@ -61,7 +61,7 @@ end
 
 function lg.rem_edge!(bg::BondGraph, b::Bond)
     lg.has_edge(bg, b) || return false
-    index = find_index(bg, bond)
+    index = find_index(bg, b)
     deleteat!(bg.bonds, index)
     return true
 end
