@@ -15,7 +15,7 @@ lg.has_edge(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) =
     any(b -> lg.src(b) == n1 && lg.dst(b) == n2, bg.bonds)
 
 # vertices
-lg.vertices(bg::BondGraph) = bg.nodes
+lg.vertices(bg::BondGraph) = [find_index(bg, n) for n in bg.nodes]
 lg.nv(bg::BondGraph) = length(bg.nodes)
 lg.has_vertex(bg::BondGraph, v::Int) = v <= length(bg.nodes)
 lg.has_vertex(bg::BondGraph, node::AbstractNode) = node in bg.nodes
