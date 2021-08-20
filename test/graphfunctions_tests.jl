@@ -20,6 +20,9 @@
         @test add_vertex!(bg, c1)
         @test add_edge!(bg, b)
 
+        # adding the same edge twice should fail
+        @test !add_edge!(bg, b)
+
         add_vertex!(bg, c2)
         add_vertex!(bg, j)
 
@@ -44,9 +47,3 @@
 
     end
 end
-
-
-
-
-
-
