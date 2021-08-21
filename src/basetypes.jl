@@ -16,13 +16,17 @@ struct Bond <: lg.AbstractSimpleEdge{Integer}
     dst::AbstractNode
 end
 
-struct BondGraph <: lg.AbstractGraph{Integer}
+struct BondGraph <: lg.AbstractGraph{Int64}
     metamodel::Symbol
     name::String
     nodes::Vector{T} where T <:AbstractNode
     bonds::Vector{Bond}
 end
 BondGraph() = BondGraph(:BG, "bg", AbstractNode[], Bond[])
+
+# Indexing
+find_index(bg::BondGraph, node::AbstractNode) = findfirst(x -> x == node, bg.nodes)
+find_index(bg::BondGraph, bond::Bond) = findfirst(x -> x == bond, bg.bonds)
 
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
