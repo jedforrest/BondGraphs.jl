@@ -1,4 +1,4 @@
-function add_nodes!(bg::BondGraph, nodes::AbstractArray)
+function add_nodes!(bg::BondGraph, nodes::AbstractArray{T}) where T <: AbstractNode
     for node in nodes
         add_nodes!(bg, node)
     end

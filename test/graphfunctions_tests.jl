@@ -9,12 +9,12 @@ end
 
 @testset "Adding and removing elements" begin
     c1 = Component(:C)
-    c2 = Component(:C, "newC", 1)
+    c2 = Component(:C, name="newC", maxports=1)
     j = Junction(:J)
 
     b = Bond(c1, j)
-    @test src(b) == c1
-    @test dst(b) == j
+    @test src(b) == vertex(c1)
+    @test dst(b) == vertex(j)
 
     bg = BondGraph()
 
@@ -29,14 +29,14 @@ end
 
     @test ne(bg) == 1
     @test has_edge(bg, b)
-    @test has_edge(bg, c1, j)
-    @test !has_edge(bg, c1, c2)
+    @test has_edge(bg, vertex(c1), vertex(j))
+    @test !has_edge(bg, vertex(c1), vertex(c2))
 
     @test nv(bg) == 3
     @test has_vertex(bg, j)
 
-    @test inneighbors(bg, c1) == []
-    @test outneighbors(bg, c1) == [3]
+    @test inneighbors(bg, vertex(c1)) == []
+    @test outneighbors(bg, vertex(c1)) == [3]
 
     @test rem_edge!(bg, b)
     @test ne(bg) == 0
@@ -65,7 +65,7 @@ end
     add_edge!(bg, b2)
     add_edge!(bg, b3)
 
-    # Testing on a selection of core LG functions
+    # Testing on a selection of common LG functions
     @test Δ(bg) == 3
     @test density(bg) == 0.25
     @test Array(adjacency_matrix(bg)) == [0 0 0 1; 0 0 0 0; 0 0 0 0; 0 1 1 0]
