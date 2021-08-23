@@ -31,10 +31,6 @@ struct BondGraph <: lg.AbstractGraph{Int64}
 end
 BondGraph(metamodel::Symbol=:BG; name::String="bg") = BondGraph(metamodel, name, AbstractNode[], Bond[])
 
-# Indexing
-#find_index(bg::BondGraph, node::AbstractNode) = findfirst(x -> x == node, bg.nodes)
-#find_index(bg::BondGraph, bond::Bond) = findfirst(x -> x == bond, bg.bonds)
-
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
@@ -47,5 +43,5 @@ checkfreeports(bg::BondGraph, n::AbstractNode) = length(lg.all_neighbors(bg, ver
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.metamodel)")
-show(io::IO, b::Bond) = print(io, "Bond $(b.src) ⇀ $(b.dst)")
+show(io::IO, b::Bond) = print(io, "Bond $(b.srcnode) ⇀ $(b.dstnode)")
 show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.metamodel):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")

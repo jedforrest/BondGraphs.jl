@@ -44,6 +44,29 @@ end
     @test nv(bg) == 2
 end
 
+@testset "Printing" begin
+    C = Component(:C)
+    SS = Component(:SS, name="Source")
+    J0 = Junction(:𝟎)
+    b1 = Bond(C,J0)
+    b2 = Bond(J0,SS)
+    bg = BondGraph(name="newbg")
+
+    # repr returns the output of the 'show' function
+    @test repr(C) == "C:C"
+    @test repr(SS) == "SS:Source"
+    @test repr(b1) == "Bond C:C ⇀ 𝟎"
+    @test repr(b2) == "Bond 𝟎 ⇀ SS:Source"
+    @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
+
+    add_vertex!(bg, C)
+    add_vertex!(bg, SS)
+    add_vertex!(bg, J0)
+    add_edge!(bg, b1)
+    add_edge!(bg, b2)
+    @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
+end
+
 @testset "LightGraph Extra Functions" begin
     c1 = Component(:C)
     c2 = Component(:R)
