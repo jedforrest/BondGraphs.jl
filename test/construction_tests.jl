@@ -3,7 +3,7 @@
     model = BondGraph(name="RC")
     C = Component(:C)
     R = Component(:R)
-    zero_law = Junction(:𝟎)
+    zero_law = Junction(:J0)
 
     add_node!(model, [R, C, zero_law])
     @test R in model.nodes
@@ -22,8 +22,8 @@ end
     R = Component(:R)
     I = Component(:I)
     SS = Component(:SS)
-    zero_law = Junction(:𝟎)
-    one_law = Junction(:𝟏)
+    zero_law = Junction(:J0)
+    one_law = Junction(:J1)
 
     add_node!(model, [C, R, I, SS, zero_law, one_law])
     remove_node!(model, [SS, one_law])
@@ -51,7 +51,7 @@ end
     model = BondGraph(name="RC")
     C = Component(:C)
     R = Component(:R)
-    zero_law = Junction(:𝟎)
+    zero_law = Junction(:J0)
 
     add_node!(model, [R, C, zero_law])
     @test_throws ErrorException add_node!(model, R)
@@ -61,7 +61,7 @@ end
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
-    one_law = Junction(:𝟏)
+    one_law = Junction(:J1)
     @test_throws ErrorException remove_node!(model, one_law)
     @test_throws ErrorException swap!(model, C, one_law)
 end
