@@ -20,10 +20,10 @@ lg.has_vertex(bg::BondGraph, v::Int) = v <= length(bg.nodes)
 lg.has_vertex(bg::BondGraph, node::AbstractNode) = node in bg.nodes
 
 # inneighbors, outneighbors
-lg.inneighbors(bg::BondGraph, v::Int) = 
-    [lg.src(b) for b in bg.bonds if lg.dst(b) == v]
-lg.outneighbors(bg::BondGraph, v::Int) = 
-    [lg.dst(b) for b in bg.bonds if lg.src(b) == v]
+lg.inneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[lg.inneighbors(bg, vertex(n))]
+lg.inneighbors(bg::BondGraph, v::Int) = [lg.src(b) for b in bg.bonds if lg.dst(b) == v]
+lg.outneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[lg.outneighbors(bg, vertex(n))]
+lg.outneighbors(bg::BondGraph, v::Int) = [lg.dst(b) for b in bg.bonds if lg.src(b) == v]
 
 # is_directed
 lg.is_directed(::Type{BondGraph}) = true

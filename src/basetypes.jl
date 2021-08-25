@@ -40,6 +40,9 @@ maxports(n::Component) = n.maxports
 maxports(n::Junction) = Inf
 checkfreeports(bg::BondGraph, n::AbstractNode) = length(lg.all_neighbors(bg, vertex(n))) < maxports(n)
 
+# Comparisons
+in(n::AbstractNode, b::Bond) = n == b.srcnode || n == b.dstnode
+
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.metamodel)")
