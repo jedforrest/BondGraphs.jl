@@ -10,10 +10,10 @@
     @test C in model.nodes
     @test zero_law in model.nodes
 
-    connect!(model, R, zero_law)
-    connect!(model, zero_law, C)
-    @test Bond(R, zero_law) in model.bonds
-    @test Bond(zero_law, C) in model.bonds
+    b1 = connect!(model, R, zero_law)
+    b2 = connect!(model, zero_law, C)
+    @test b1 in model.bonds
+    @test b2 in model.bonds
 end
 
 @testset "BondGraph Modification" begin
@@ -32,16 +32,21 @@ end
 
     connect!(model, R, zero_law)
     connect!(model, C, zero_law)
-    connect!(model, zero_law, I)
+
+    @test I.freeports == [true]
+    b1 = connect!(model, zero_law, I)
     @test ne(model) == 3
-    @test Bond(zero_law, I) in model.bonds
+    @test b1 in model.bonds
+    @test I.freeports == [false]
 
     disconnect!(model, zero_law, I)
     @test ne(model) == 2
-    @test !(Bond(zero_law, I) in model.bonds)
+    @test !(b1 in model.bonds)
+    @test I.freeports == [true]
 
     connect!(model, zero_law, I)
     swap!(model, zero_law, one_law)
+    @test I.freeports == [false]
     @test one_law in model.nodes
     @test inneighbors(model, one_law) == [R, C]
     @test outneighbors(model, one_law) == [I]

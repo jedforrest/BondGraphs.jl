@@ -58,15 +58,26 @@ function lg.rem_vertex!(bg::BondGraph, node::AbstractNode)
     return true
 end
 
-function lg.add_edge!(bg::BondGraph, bond::Bond)
-    lg.has_edge(bg, bond) && return false
-    push!(bg.bonds, bond)
-    return true
+function lg.add_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
+    v_src = vertex(srcnode)
+    v_dst = vertex(dstnode)
+    lg.has_edge(bg, v_src, v_dst) && error("Bond already exists between $srcnode and $dstnode")
+    lg.has_edge(bg, v_dst, v_src) && error("Bond already exists between $dstnode and $srcnode")
+    new_bond = Bond(srcnode, dstnode)
+    push!(bg.bonds, new_bond)
+    updateport!(srcnode, new_bond.src.index)
+    updateport!(dstnode, new_bond.dst.index)
+    return new_bond
 end
 
-function lg.rem_edge!(bg::BondGraph, bond::Bond)
-    lg.has_edge(bg, bond) || return false
-    index = findfirst(x -> x == bond, bg.bonds)
+function lg.rem_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
+    v_src = vertex(srcnode)
+    v_dst = vertex(dstnode)
+    lg.has_edge(bg, v_src, v_dst) || return
+    index = findfirst(b -> (srcnode in b && dstnode in b), bg.bonds)
+    deleted_bond = bg.bonds[index]
     deleteat!(bg.bonds, index)
-    return true
+    updateport!(srcnode, deleted_bond.src.index)
+    updateport!(dstnode, deleted_bond.dst.index)
+    return deleted_bond
 end

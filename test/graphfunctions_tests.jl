@@ -19,16 +19,12 @@ end
     bg = BondGraph()
 
     @test add_vertex!(bg, c1)
-    @test add_edge!(bg, b)
-
-    # adding the same edge twice should fail
-    @test !add_edge!(bg, b)
+    @test add_edge!(bg, c1, j) == b
 
     add_vertex!(bg, c2)
     add_vertex!(bg, j)
 
     @test ne(bg) == 1
-    @test has_edge(bg, b)
     @test has_edge(bg, vertex(c1), vertex(j))
     @test !has_edge(bg, vertex(c1), vertex(c2))
 
@@ -38,7 +34,7 @@ end
     @test inneighbors(bg, vertex(c1)) == []
     @test outneighbors(bg, vertex(c1)) == [3]
 
-    @test rem_edge!(bg, b)
+    @test rem_edge!(bg, c1, j) == b
     @test ne(bg) == 0
     @test rem_vertex!(bg, c2)
     @test nv(bg) == 2
@@ -62,8 +58,8 @@ end
     add_vertex!(bg, C)
     add_vertex!(bg, SS)
     add_vertex!(bg, J0)
-    add_edge!(bg, b1)
-    add_edge!(bg, b2)
+    add_edge!(bg, C, J0)
+    add_edge!(bg, J0, SS)
     @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
 end
 
@@ -73,10 +69,6 @@ end
     c3 = Component(:I)
     j = Junction(:J)
 
-    b1 = Bond(c1, j)
-    b2 = Bond(j, c2)
-    b3 = Bond(j, c3)
-
     bg = BondGraph()
 
     add_vertex!(bg, c1)
@@ -84,9 +76,9 @@ end
     add_vertex!(bg, c3)
     add_vertex!(bg, j)
 
-    add_edge!(bg, b1)
-    add_edge!(bg, b2)
-    add_edge!(bg, b3)
+    add_edge!(bg, c1, j)
+    add_edge!(bg, j, c2)
+    add_edge!(bg, j, c3)
 
     # Testing on a selection of common LG functions
     @test Δ(bg) == 3
