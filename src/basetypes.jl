@@ -1,16 +1,16 @@
 abstract type AbstractNode end
 
-struct Component <: AbstractNode
+struct Component{N} <: AbstractNode
     metamodel::Symbol
     name::AbstractString
-    maxports::Int
+    freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    function Component(m::Symbol, n::AbstractString, mp::Int, v::Int)
-        new(m, n, mp, Ref(v))
+    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int) where N
+        new(m, n, ones(MVector{np,Bool}), Ref(v))
     end
 end
-Component(metamodel::Symbol; name::String=string(metamodel), maxports::Int=1, vertex::Int=0) = 
-    Component(metamodel, name, maxports, vertex)
+Component(metamodel::Symbol; name::String=string(metamodel), numports::Int=1, vertex::Int=0) = 
+    Component{numports}(metamodel, name, numports, vertex)
 
 struct Junction <: AbstractNode
     metamodel::Symbol
@@ -18,9 +18,27 @@ struct Junction <: AbstractNode
     Junction(m::Symbol; v::Int=0) = new(m, Ref(v))
 end
 
+struct Port 
+    node::AbstractNode
+    index::Int
+    function Port(node::AbstractNode, index=nothing)
+        ports = freeports(node)
+        any(ports) || error("Node $node has no free ports")
+        if isnothing(index)
+            index = findfirst(ports)
+        else
+            ports[index] || error("Port $index in node $node is already connected")
+        end
+        new(node, index)
+    end
+end
+
 struct Bond <: lg.AbstractSimpleEdge{Int}
-    srcnode::AbstractNode
-    dstnode::AbstractNode
+    src::Port
+    dst::Port
+end
+function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
+    Bond(Port(srcnode), Port(dstnode))
 end
 
 struct BondGraph <: lg.AbstractGraph{Int64}
@@ -29,22 +47,26 @@ struct BondGraph <: lg.AbstractGraph{Int64}
     nodes::Vector{T} where T <: AbstractNode
     bonds::Vector{Bond}
 end
-BondGraph(metamodel::Symbol=:BG; name::String="bg") = BondGraph(metamodel, name, AbstractNode[], Bond[])
+BondGraph(metamodel::Symbol=:BG; name::String="BG") = BondGraph(metamodel, name, AbstractNode[], Bond[])
 
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Ports
-maxports(n::Component) = n.maxports
-maxports(n::Junction) = Inf
-checkfreeports(bg::BondGraph, n::AbstractNode) = length(lg.all_neighbors(bg, vertex(n))) < maxports(n)
+freeports(n::Component) = n.freeports
+freeports(n::Junction) = [true]
+numports(n::Component) = length(n.freeports)
+numports(n::Junction) = Inf
+updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
 
-# Comparisons
-in(n::AbstractNode, b::Bond) = n == b.srcnode || n == b.dstnode
+# Nodes in Bon`ds
+srcnode(b::Bond) = b.src.node
+dstnode(b::Bond) = b.dst.node
+in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
 
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.metamodel)")
-show(io::IO, b::Bond) = print(io, "Bond $(b.srcnode) ⇀ $(b.dstnode)")
+show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
 show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.metamodel):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")

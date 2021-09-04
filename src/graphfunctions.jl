@@ -34,8 +34,8 @@ lg.zero(::Type{BondGraph}) = BondGraph()
 lg.zero(bg::BondGraph) = BondGraph()
 
 # src, dst
-lg.src(b::Bond) = vertex(b.srcnode)
-lg.dst(b::Bond) = vertex(b.dstnode)
+lg.src(b::Bond) = vertex(srcnode(b))
+lg.dst(b::Bond) = vertex(dstnode(b))
 
 # weights
 # TODO

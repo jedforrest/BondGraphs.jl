@@ -9,7 +9,7 @@ end
 
 @testset "Adding and removing elements" begin
     c1 = Component(:C)
-    c2 = Component(:C, name="newC", maxports=1)
+    c2 = Component(:C, name="newC", numports=1)
     j = Junction(:J)
 
     b = Bond(c1, j)

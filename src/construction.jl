@@ -24,22 +24,25 @@ end
 
 
 function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
-    srcnode in bg.nodes || error("$srcnode not found in bong graph")
-    dstnode in bg.nodes || error("$dstnode not found in bong graph")
-    checkfreeports(bg, srcnode) || error("$srcnode has no free ports")
-    checkfreeports(bg, dstnode) || error("$dstnode has no free ports")
-    lg.add_edge!(bg, Bond(srcnode, dstnode)) || error("Bond already exists between $node1 and $node2")
+    srcnode in bg.nodes || error("$srcnode not found in bond graph")
+    dstnode in bg.nodes || error("$dstnode not found in bond graph")
+    bond = Bond(srcnode, dstnode)
+    lg.add_edge!(bg, bond) || error("Bond already exists between $srcnode and $dstnode")
+    updateport!(srcnode, bond.src.index)
+    updateport!(dstnode, bond.dst.index)
+    return true
 end
 
 function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     # Try removing an edge in both directions
+    # TODO: find bond where node1 and node2 exist
     lg.rem_edge!(bg, Bond(node1, node2)) && return
     lg.rem_edge!(bg, Bond(node2, node1)) && return
 end
 
 
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
-    maxports(oldnode) == maxports(newnode) || error("Nodes must have the same number of ports")
+    numports(oldnode) == numports(newnode) || error("Nodes must have the same number of ports")
     
     srcnodes = lg.inneighbors(bg, oldnode)
     dstnodes = lg.outneighbors(bg, oldnode)
