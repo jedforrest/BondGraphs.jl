@@ -58,16 +58,21 @@ function lg.rem_vertex!(bg::BondGraph, node::AbstractNode)
     return true
 end
 
-function lg.add_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
+function lg.add_edge!(bg::BondGraph, srcport::Port, dstport::Port)
+    srcnode = srcport.node
+    dstnode = dstport.node
     v_src = vertex(srcnode)
     v_dst = vertex(dstnode)
     lg.has_edge(bg, v_src, v_dst) && error("Bond already exists between $srcnode and $dstnode")
     lg.has_edge(bg, v_dst, v_src) && error("Bond already exists between $dstnode and $srcnode")
-    new_bond = Bond(srcnode, dstnode)
+    new_bond = Bond(srcport, dstport)
     push!(bg.bonds, new_bond)
-    updateport!(srcnode, new_bond.src.index)
-    updateport!(dstnode, new_bond.dst.index)
+    updateport!(srcnode, srcport.index)
+    updateport!(dstnode, dstport.index)
     return new_bond
+end
+function lg.add_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
+    lg.add_edge!(bg, Port(srcnode), Port(dstnode))
 end
 
 function lg.rem_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)

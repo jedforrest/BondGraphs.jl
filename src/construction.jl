@@ -23,10 +23,13 @@ function remove_node!(bg::BondGraph, node::AbstractNode)
 end
 
 
-function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
+function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode; 
+        srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
     srcnode in bg.nodes || error("$srcnode not found in bond graph")
     dstnode in bg.nodes || error("$dstnode not found in bond graph")
-    return lg.add_edge!(bg, srcnode, dstnode)
+    srcport = Port(srcnode, srcportindex)
+    dstport = Port(dstnode, dstportindex)
+    return lg.add_edge!(bg, srcport, dstport)
 end
 
 function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)

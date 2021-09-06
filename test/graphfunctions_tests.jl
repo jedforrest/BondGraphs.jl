@@ -9,7 +9,7 @@ end
 
 @testset "Adding and removing elements" begin
     c1 = Component(:C)
-    c2 = Component(:C, name="newC", numports=1)
+    c2 = Component(:C, "newC", numports=1)
     j = Junction(:J)
 
     b = Bond(c1, j)
@@ -42,11 +42,11 @@ end
 
 @testset "Printing" begin
     C = Component(:C)
-    SS = Component(:SS, name="Source")
+    SS = Component(:SS, "Source")
     J0 = Junction(:J0)
     b1 = Bond(C,J0)
     b2 = Bond(J0,SS)
-    bg = BondGraph(name="newbg")
+    bg = BondGraph("newbg")
 
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"

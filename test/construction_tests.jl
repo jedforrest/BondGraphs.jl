@@ -1,6 +1,6 @@
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
 @testset "BondGraph Construction" begin
-    model = BondGraph(name="RC")
+    model = BondGraph("RC")
     C = Component(:C)
     R = Component(:R)
     zero_law = Junction(:J0)
@@ -17,7 +17,7 @@
 end
 
 @testset "BondGraph Modification" begin
-    model = BondGraph(name="RCI")
+    model = BondGraph("RCI")
     C = Component(:C)
     R = Component(:R)
     I = Component(:I)
@@ -53,7 +53,7 @@ end
 end
 
 @testset "Construction Failure" begin
-    model = BondGraph(name="RC")
+    model = BondGraph("RC")
     C = Component(:C)
     R = Component(:R)
     zero_law = Junction(:J0)
@@ -69,4 +69,37 @@ end
     one_law = Junction(:J1)
     @test_throws ErrorException remove_node!(model, one_law)
     @test_throws ErrorException swap!(model, C, one_law)
+end
+
+@testset "Chemical reaction" begin
+    model = BondGraph("Chemical")
+    A = Component(:C, "A")
+    B = Component(:C, "B")
+    C = Component(:C, "C")
+    D = Component(:C, "D")
+    Re = Component(:Re, "Reaction", numports=2)
+    J_AB = Junction(:J1)
+    J_CD = Junction(:J1)
+
+    add_node!(model, [A, B, C, D, Re, J_AB, J_CD])
+    connect!(model, A, J_AB)
+    connect!(model, B, J_AB)
+    connect!(model, C, J_CD)
+    connect!(model, D, J_CD)
+
+    @test freeports(Re) == [true, true]
+    @test freeports(J_AB) == [true]
+
+    # Connecting junctions to specific ports in Re
+    connect!(model, Re, J_CD, srcportindex=2)
+    @test freeports(Re) == [true, false]
+
+    # connecting to a full port should fail
+    @test_throws ErrorException connect!(model, J_AB, Re, dstportindex=2)
+
+    connect!(model, J_AB, Re, dstportindex=1)
+    @test freeports(Re) == [false, false]
+
+    @test nv(model) == 7
+    @test ne(model) == 6
 end

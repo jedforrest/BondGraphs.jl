@@ -9,7 +9,7 @@ struct Component{N} <: AbstractNode
         new(m, n, ones(MVector{np,Bool}), Ref(v))
     end
 end
-Component(metamodel::Symbol; name::String=string(metamodel), numports::Int=1, vertex::Int=0) = 
+Component(metamodel::Symbol, name::String=string(metamodel); numports::Int=1, vertex::Int=0) = 
     Component{numports}(metamodel, name, numports, vertex)
 
 struct Junction <: AbstractNode
@@ -21,17 +21,14 @@ end
 struct Port 
     node::AbstractNode
     index::Int
-    function Port(node::AbstractNode, index=nothing)
+    function Port(node::AbstractNode, index)
         ports = freeports(node)
         any(ports) || error("Node $node has no free ports")
-        if isnothing(index)
-            index = findfirst(ports)
-        else
-            ports[index] || error("Port $index in node $node is already connected")
-        end
+        ports[index] || error("Port $index in node $node is already connected")
         new(node, index)
     end
 end
+Port(node::AbstractNode) = Port(node, nextfreeport(node))
 
 struct Bond <: lg.AbstractSimpleEdge{Int}
     src::Port
@@ -47,7 +44,8 @@ struct BondGraph <: lg.AbstractGraph{Int64}
     nodes::Vector{T} where T <: AbstractNode
     bonds::Vector{Bond}
 end
-BondGraph(metamodel::Symbol=:BG; name::String="BG") = BondGraph(metamodel, name, AbstractNode[], Bond[])
+BondGraph(metamodel::Symbol=:BG, name::AbstractString=string(metamodel)) = BondGraph(metamodel, name, AbstractNode[], Bond[])
+BondGraph(name::AbstractString) = BondGraph(:BG, name)
 
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
@@ -59,8 +57,9 @@ freeports(n::Junction) = [true]
 numports(n::Component) = length(n.freeports)
 numports(n::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
+nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 
-# Nodes in Bon`ds
+# Nodes in Bonds
 srcnode(b::Bond) = b.src.node
 dstnode(b::Bond) = b.dst.node
 in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
@@ -68,5 +67,6 @@ in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.metamodel)")
+show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
 show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.metamodel):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")
