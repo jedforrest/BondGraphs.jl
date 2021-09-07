@@ -18,28 +18,32 @@ end
 function remove_node!(bg::BondGraph, node::AbstractNode)
     lg.rem_vertex!(bg, node) || error("$(typeof(node)) not in model")
     for bond in filter(bond -> node in bond, bg.bonds)
-        lg.rem_edge!(bg, bond)
+        lg.rem_edge!(bg, srcnode(bond), dstnode(bond))
     end
 end
 
 
-function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
-    srcnode in bg.nodes || error("$srcnode not found in bong graph")
-    dstnode in bg.nodes || error("$dstnode not found in bong graph")
-    checkfreeports(bg, srcnode) || error("$srcnode has no free ports")
-    checkfreeports(bg, dstnode) || error("$dstnode has no free ports")
-    lg.add_edge!(bg, Bond(srcnode, dstnode)) || error("Bond already exists between $node1 and $node2")
+function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode; 
+        srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
+    srcnode in bg.nodes || error("$srcnode not found in bond graph")
+    dstnode in bg.nodes || error("$dstnode not found in bond graph")
+    srcport = Port(srcnode, srcportindex)
+    dstport = Port(dstnode, dstportindex)
+    return lg.add_edge!(bg, srcport, dstport)
 end
 
 function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
-    # Try removing an edge in both directions
-    lg.rem_edge!(bg, Bond(node1, node2)) && return
-    lg.rem_edge!(bg, Bond(node2, node1)) && return
+    # rem_edge! removes the bond regardless of the direction of the bond
+    deleted_bond = lg.rem_edge!(bg, node1, node2)
+    if isnothing(deleted_bond) # if returned nothing, try flipping node1 and node2
+        deleted_bond = lg.rem_edge!(bg, node2, node1)
+    end
+    return deleted_bond
 end
 
 
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
-    maxports(oldnode) == maxports(newnode) || error("Nodes must have the same number of ports")
+    numports(oldnode) == numports(newnode) || error("Nodes must have the same number of ports")
     
     srcnodes = lg.inneighbors(bg, oldnode)
     dstnodes = lg.outneighbors(bg, oldnode)
@@ -47,11 +51,11 @@ function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     add_node!(bg, newnode)
     remove_node!(bg, oldnode)
 
-    for dst in dstnodes
-        connect!(bg, newnode, dst)
-    end
     for src in srcnodes
         connect!(bg, src, newnode)
+    end
+    for dst in dstnodes
+        connect!(bg, newnode, dst)
     end
 end
 
