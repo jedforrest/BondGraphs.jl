@@ -1,6 +1,6 @@
 module BondGraphs
 
-import LightGraphs; const lg = LightGraphs
+import LightGraphs as lg
 import Base: RefValue, eltype, show, in
 
 using StaticArrays
