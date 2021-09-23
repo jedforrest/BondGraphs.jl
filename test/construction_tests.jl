@@ -103,3 +103,13 @@ end
     @test nv(model) == 7
     @test ne(model) == 6
 end
+
+@testset "Standard components" begin
+    tf = new(:TF,"n")
+    @test tf isa Component{2}
+    @test tf.type == :TF
+
+    r = new(:R)
+    @test r isa Component{1}
+    @test r.type == :R
+end
