@@ -1,4 +1,4 @@
-function add_node!(bg::BondGraph, nodes::AbstractArray{T}) where T <: AbstractNode
+function add_node!(bg::BondGraph, nodes)
     for node in nodes
         add_node!(bg, node)
     end
@@ -9,7 +9,7 @@ function add_node!(bg::BondGraph, node::AbstractNode)
 end
 
 
-function remove_node!(bg::BondGraph, nodes::AbstractArray{T}) where T <: AbstractNode
+function remove_node!(bg::BondGraph, nodes)
     for node in nodes
         remove_node!(bg, node)
     end

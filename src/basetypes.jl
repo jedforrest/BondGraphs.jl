@@ -9,13 +9,14 @@ struct Component{N} <: AbstractNode
         new(m, n, ones(MVector{np,Bool}), Ref(v))
     end
 end
-Component(metamodel::Symbol, name::String=string(metamodel); numports::Int=1, vertex::Int=0) = 
+Component(metamodel::Symbol, name::AbstractString=string(metamodel); numports::Int=1, vertex::Int=0) = 
     Component{numports}(metamodel, name, numports, vertex)
 
 struct Junction <: AbstractNode
     metamodel::Symbol
+    name::AbstractString
     vertex::RefValue{Int}
-    Junction(m::Symbol; v::Int=0) = new(m, Ref(v))
+    Junction(m::Symbol, n::AbstractString=string(m); v::Int=0) = new(m, n, Ref(v))
 end
 
 struct Port 
@@ -63,6 +64,10 @@ nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 srcnode(b::Bond) = b.src.node
 dstnode(b::Bond) = b.dst.node
 in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
+
+# Searching
+getnodes(bg::BondGraph, m::Symbol) = filter(x -> x.metamodel == m, bg.nodes)
+getnodes(bg::BondGraph, n::AbstractString) = filter(x -> x.name == n, bg.nodes)
 
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.metamodel):$(node.name)")
