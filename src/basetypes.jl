@@ -5,8 +5,8 @@ struct Component{N} <: AbstractNode
     name::AbstractString
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    parameters::Vector
-    equations::Vector
+    parameters::Vector{Num}
+    equations::Vector{Equation}
     function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int, p::Vector, eq::Vector) where N
         new(m, n, ones(MVector{np,Bool}), Ref(v), p, eq)
     end
