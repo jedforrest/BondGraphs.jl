@@ -130,13 +130,25 @@ end
 @testset "Parameters" begin
     tf = new(:TF)
     @parameters r
-    @test all(params(tf) .=== [r])
+    @test iszero(params(tf) - [r])
 
     Ce = new(:Ce)
     @parameters k R T
-    @test all(params(Ce) .=== [k, R, T])
+    @test iszero(params(Ce) - [k, R, T])
 
     Re = new(:Re)
     @parameters r R T
-    @test all(params(Re) .=== [r, R, T])
+    @test iszero(params(Re) - [r, R, T])
+end
+
+@testset "State variables" begin
+    r = new(:R)
+    @test isempty(state_vars(r))
+
+    @variables q_1(t)
+    c = new(:C)
+    @test iszero(state_vars(c) - [q_1])
+
+    ce = new(:ce)
+    @test iszero(state_vars(c) - [q_1])
 end

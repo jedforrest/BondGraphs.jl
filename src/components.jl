@@ -22,6 +22,9 @@ C_dict = Dict(
     :parameters => OrderedDict(
         C => "Capacitance"
     ),
+    :state_vars => OrderedDict(
+        q_1 => "Generalised Position"
+    ),
     :equations => [
         0 ~ q_1/C - E_1,
         D(q_1) ~ F_1
@@ -36,6 +39,9 @@ I_dict = Dict(
     :numports => 1,
     :parameters => OrderedDict(
         L => "Inductance"
+    ),
+    :state_vars => OrderedDict(
+        p_1 => "Generalised Momentum"
     ),
     :equations => [
         0 ~ p_1/L - F_1,
@@ -93,6 +99,9 @@ Ce_dict = Dict(
         R => "Universal Gas Constant",
         T => "Temperature"
     ),
+    :state_vars => OrderedDict(
+        q_1 => "Molar Quantity"
+    ),
     :equations => [
         0 ~ R*T*log(k*q_1) - E_1,
         D(q_1) ~ F_1
@@ -107,6 +116,9 @@ ce_dict = Dict(
     :numports => 1,
     :parameters => OrderedDict(
         k => "Biochemical Constant; exp(mu_0/RT)/V"
+    ),
+    :state_vars => OrderedDict(
+        q_1 => "Molar Quantity"
     ),
     :equations => [
         0 ~ log(k*q_1) - E_1,

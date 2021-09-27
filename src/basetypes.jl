@@ -6,13 +6,18 @@ struct Component{N} <: AbstractNode
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
     parameters::Vector{Num}
+    state_vars::Vector{Num}
     equations::Vector{Equation}
-    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int, p::Vector, eq::Vector) where N
-        new(m, n, ones(MVector{np,Bool}), Ref(v), p, eq)
+    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int,
+         p::Vector, x::Vector, eq::Vector) where N
+        new(m, n, ones(MVector{np,Bool}), Ref(v), p, x, eq)
     end
 end
-Component(type::Symbol, name::String=string(type); numports::Int=1, vertex::Int=0, parameters::Vector=[], equations::Vector=[]) = 
-    Component{numports}(type, name, numports, vertex, parameters, equations)
+function Component(type::Symbol, name::String=string(type);
+    numports::Int=1, vertex::Int=0, parameters::Vector=[], state_vars::Vector=[],
+    equations::Vector=[])
+    Component{numports}(type, name, numports, vertex, parameters, state_vars, equations)
+end
 
 struct Junction <: AbstractNode
     type::Symbol
@@ -54,7 +59,12 @@ BondGraph(name::AbstractString) = BondGraph(:BG, name)
 function new(type,name::String=string(type);library=standard_library)
     d = library[type]
     p = collect(keys(d[:parameters]))
-    Component(type, name; numports=d[:numports], parameters=p, equations=d[:equations])
+    if haskey(d,:state_vars)
+        x = collect(keys(d[:state_vars]))
+    else
+        x = Vector{Num}([])
+    end
+    Component(type, name; numports=d[:numports], parameters=p, state_vars=x, equations=d[:equations])
 end
 
 # Vertex
@@ -79,6 +89,9 @@ equations(n::Component) = n.equations
 
 # Parameters
 params(n::Component) = n.parameters
+
+# State variables
+state_vars(n::Component) = n.state_vars
 
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.type):$(node.name)")
