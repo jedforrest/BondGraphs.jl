@@ -113,3 +113,14 @@ end
     @test r isa Component{1}
     @test r.type == :R
 end
+
+@testset "Equations" begin
+    c = new(:C)
+    @parameters t C
+    @variables E_1(t) F_1(t) q_1(t)
+    D = Differential(t)
+    @test BondGraphs.equations(c) == [
+        0 ~ q_1/C - E_1,
+        D(q_1) ~ F_1
+    ]
+end
