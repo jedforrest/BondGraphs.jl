@@ -5,13 +5,14 @@ struct Component{N} <: AbstractNode
     name::AbstractString
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
+    parameters::Vector
     equations::Vector
-    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int, eq::Array) where N
-        new(m, n, ones(MVector{np,Bool}), Ref(v), eq)
+    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int, p::Vector, eq::Vector) where N
+        new(m, n, ones(MVector{np,Bool}), Ref(v), p, eq)
     end
 end
-Component(type::Symbol, name::String=string(type); numports::Int=1, vertex::Int=0, equations::Vector=[]) = 
-    Component{numports}(type, name, numports, vertex, equations)
+Component(type::Symbol, name::String=string(type); numports::Int=1, vertex::Int=0, parameters::Vector=[], equations::Vector=[]) = 
+    Component{numports}(type, name, numports, vertex, parameters, equations)
 
 struct Junction <: AbstractNode
     type::Symbol
@@ -52,7 +53,8 @@ BondGraph(name::AbstractString) = BondGraph(:BG, name)
 # New component
 function new(type,name::String=string(type);library=standard_library)
     d = library[type]
-    Component(type, name; numports=d[:numports], equations=d[:equations])
+    p = collect(keys(d[:parameters]))
+    Component(type, name; numports=d[:numports], parameters=p, equations=d[:equations])
 end
 
 # Vertex
@@ -74,6 +76,9 @@ in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
 
 # Equations
 equations(n::Component) = n.equations
+
+# Parameters
+params(n::Component) = n.parameters
 
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.type):$(node.name)")

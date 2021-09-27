@@ -114,13 +114,29 @@ end
     @test r.type == :R
 end
 
+@parameters t
+D = Differential(t)
+
 @testset "Equations" begin
     c = new(:C)
-    @parameters t C
+    @parameters C
     @variables E_1(t) F_1(t) q_1(t)
-    D = Differential(t)
     @test BondGraphs.equations(c) == [
         0 ~ q_1/C - E_1,
         D(q_1) ~ F_1
     ]
+end
+
+@testset "Parameters" begin
+    tf = new(:TF)
+    @parameters r
+    @test all(params(tf) .=== [r])
+
+    Ce = new(:Ce)
+    @parameters k R T
+    @test all(params(Ce) .=== [k, R, T])
+
+    Re = new(:Re)
+    @parameters r R T
+    @test all(params(Re) .=== [r, R, T])
 end
