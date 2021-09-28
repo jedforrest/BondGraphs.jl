@@ -8,42 +8,42 @@
 end
 
 @testset "Adding and removing elements" begin
-    c1 = Component(:C)
-    c2 = Component(:C, "newC", numports=1)
-    j = Junction(:J)
+    c = Component(:C, "C1")
+    r = Component(:R, "R1", numports=1)
+    j = EqualEffort()
 
-    b = Bond(c1, j)
-    @test src(b) == vertex(c1)
+    b = Bond(c, j)
+    @test src(b) == vertex(c)
     @test dst(b) == vertex(j)
 
     bg = BondGraph()
 
-    @test add_vertex!(bg, c1)
-    @test add_edge!(bg, c1, j) == b
+    @test add_vertex!(bg, c)
+    @test add_edge!(bg, c, j) == b
 
-    add_vertex!(bg, c2)
+    add_vertex!(bg, r)
     add_vertex!(bg, j)
 
     @test ne(bg) == 1
-    @test has_edge(bg, vertex(c1), vertex(j))
-    @test !has_edge(bg, vertex(c1), vertex(c2))
+    @test has_edge(bg, vertex(c), vertex(j))
+    @test !has_edge(bg, vertex(c), vertex(r))
 
     @test nv(bg) == 3
     @test has_vertex(bg, j)
 
-    @test inneighbors(bg, vertex(c1)) == []
-    @test outneighbors(bg, vertex(c1)) == [3]
+    @test inneighbors(bg, vertex(c)) == []
+    @test outneighbors(bg, vertex(c)) == [3]
 
-    @test rem_edge!(bg, c1, j) == b
+    @test rem_edge!(bg, c, j) == b
     @test ne(bg) == 0
-    @test rem_vertex!(bg, c2)
+    @test rem_vertex!(bg, r)
     @test nv(bg) == 2
 end
 
 @testset "Printing" begin
     C = Component(:C)
     SS = Component(:SS, "Source")
-    J0 = Junction(:J0)
+    J0 = EqualEffort(name="J")
     b1 = Bond(C,J0)
     b2 = Bond(J0,SS)
     bg = BondGraph("newbg")
@@ -51,8 +51,8 @@ end
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
-    @test repr(b1) == "Bond C:C ⇀ J0"
-    @test repr(b2) == "Bond J0 ⇀ SS:Source"
+    @test repr(b1) == "Bond C:C ⇀ 0:J"
+    @test repr(b2) == "Bond 0:J ⇀ SS:Source"
     @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
 
     add_vertex!(bg, C)
@@ -67,7 +67,7 @@ end
     c1 = Component(:C)
     c2 = Component(:R)
     c3 = Component(:I)
-    j = Junction(:J)
+    j = EqualFlow()
 
     bg = BondGraph()
 

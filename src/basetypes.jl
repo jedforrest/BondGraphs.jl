@@ -19,11 +19,21 @@ function Component(type::Symbol, name::String=string(type);
     Component{numports}(type, name, numports, vertex, parameters, state_vars, equations)
 end
 
-struct Junction <: AbstractNode
-    type::Symbol
+abstract type Junction <: AbstractNode end
+
+struct EqualEffort <: Junction
     name::AbstractString
+    numports::Int
     vertex::RefValue{Int}
-    Junction(m::Symbol; n::AbstractString=string(m), v::Int=0) = new(m, n, Ref(v))
+    EqualEffort(; name::AbstractString="0", v::Int=0) = new(name, 0, Ref(v))
+end
+
+struct EqualFlow <: Junction
+    name::AbstractString
+    numports::Int
+    weights::Vector{Int}
+    vertex::RefValue{Int}
+    EqualFlow(; name::AbstractString="1", v::Int=0) = new(name, 0, Vector{Int}[], Ref(v))
 end
 
 struct Port 
@@ -67,6 +77,11 @@ function new(type,name::String=string(type);library=standard_library)
     Component(type, name; numports=d[:numports], parameters=p, state_vars=x, equations=d[:equations])
 end
 
+# Component type
+type(n) = n.type
+type(n::EqualEffort) = Symbol("0")
+type(n::EqualFlow) = Symbol("1")
+
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
@@ -94,8 +109,8 @@ params(n::Component) = n.parameters
 state_vars(n::Component) = n.state_vars
 
 # I/O
-show(io::IO, node::Component) = print(io, "$(node.type):$(node.name)")
-show(io::IO, node::Junction) = print(io, "$(node.type)")
+show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")
+#show(io::IO, node::Junction) = print(io, "$(type(node))")
 show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
-show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")
+show(io::IO, bg::BondGraph) = print(io, "BondGraph $(type(bg)):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")
