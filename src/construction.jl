@@ -24,7 +24,7 @@ end
 
 
 function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode; 
-        srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
+        srcportindex=nextsrcport(srcnode), dstportindex=nextdstport(dstnode))
     srcnode in bg.nodes || error("$srcnode not found in bond graph")
     dstnode in bg.nodes || error("$dstnode not found in bond graph")
     srcport = Port(srcnode, srcportindex)

@@ -22,3 +22,17 @@ function equations(m::EqualEffort)
     effort_constraints = [0 ~ e_vars[1] - e for e in e_vars[2:end]]
     return vcat(flow_constraint,effort_constraints)
 end
+function equations(m::EqualFlow)
+    if m.degree == 0
+        return Vector{Equation}([])
+    end
+    e_vars = external_effort.(1:m.degree)
+    f_vars = external_flow.(1:m.degree)
+
+    weighted_e = m.weights.*e_vars
+    weighted_f = m.weights.*f_vars
+
+    effort_constraint = [0 ~ sum(weighted_e)]
+    flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
+    return vcat(effort_constraint,flow_constraints)
+end

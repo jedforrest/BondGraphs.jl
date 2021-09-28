@@ -94,10 +94,30 @@ numports(n::Component) = length(n.freeports)
 numports(n::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
 updateport!(n::Junction, idx::Int) = freeports(n)
+
 nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 function nextfreeport(j::Junction)
     j.degree += 1
     j.degree
+end
+function nextfreeport(j::EqualFlow)
+    append!(j.weights,0)
+    j.degree += 1
+    j.degree
+end
+
+nextsrcport(n::AbstractNode) = nextfreeport(n)
+function nextsrcport(n::EqualFlow)
+    i = nextfreeport(n)
+    n.weights[i] = -1
+    i
+end
+
+nextdstport(n::AbstractNode) = nextfreeport(n)
+function nextdstport(n::EqualFlow)
+    i = nextfreeport(n)
+    n.weights[i] = 1
+    i
 end
 
 
