@@ -1,4 +1,5 @@
 @parameters t
+const TIME = t
 D = Differential(t)
 
 # Linear resistance (:R)

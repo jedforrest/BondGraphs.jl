@@ -21,16 +21,16 @@ end
 
 abstract type Junction <: AbstractNode end
 
-struct EqualEffort <: Junction
+mutable struct EqualEffort <: Junction
     name::AbstractString
-    numports::Int
+    degree::Int
     vertex::RefValue{Int}
     EqualEffort(; name::AbstractString="0", v::Int=0) = new(name, 0, Ref(v))
 end
 
-struct EqualFlow <: Junction
+mutable struct EqualFlow <: Junction
     name::AbstractString
-    numports::Int
+    degree::Int
     weights::Vector{Int}
     vertex::RefValue{Int}
     EqualFlow(; name::AbstractString="1", v::Int=0) = new(name, 0, Vector{Int}[], Ref(v))
@@ -45,6 +45,7 @@ struct Port
         ports[index] || error("Port $index in node $node is already connected")
         new(node, index)
     end
+    Port(node::Junction, index) = new(node, index)
 end
 Port(node::AbstractNode) = Port(node, nextfreeport(node))
 
@@ -92,15 +93,18 @@ freeports(n::Junction) = [true]
 numports(n::Component) = length(n.freeports)
 numports(n::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
+updateport!(n::Junction, idx::Int) = freeports(n)
 nextfreeport(n::AbstractNode) = findfirst(freeports(n))
+function nextfreeport(j::Junction)
+    j.degree += 1
+    j.degree
+end
+
 
 # Nodes in Bonds
 srcnode(b::Bond) = b.src.node
 dstnode(b::Bond) = b.dst.node
 in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
-
-# Equations
-equations(n::Component) = n.equations
 
 # Parameters
 params(n::Component) = n.parameters

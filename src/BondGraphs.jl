@@ -18,5 +18,6 @@ include("basetypes.jl")
 include("graphfunctions.jl")
 include("construction.jl")
 include("components.jl")
+include("equations.jl")
 
 end
