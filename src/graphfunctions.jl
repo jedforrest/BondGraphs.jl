@@ -10,6 +10,7 @@ lg.edgetype(bg::BondGraph) = lg.AbstractSimpleEdge{Integer}
 lg.edges(bg::BondGraph) = bg.bonds
 lg.ne(bg::BondGraph) = length(bg.bonds)
 lg.has_edge(bg::BondGraph, b::Bond) = b in bg.bonds
+lg.has_edge(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = lg.has_edge(bg, vertex(n1), vertex(n2))
 lg.has_edge(bg::BondGraph, s::Int, d::Int) = 
     any(b -> lg.src(b) == s && lg.dst(b) == d, bg.bonds)
 
@@ -61,10 +62,8 @@ end
 function lg.add_edge!(bg::BondGraph, srcport::Port, dstport::Port)
     srcnode = srcport.node
     dstnode = dstport.node
-    v_src = vertex(srcnode)
-    v_dst = vertex(dstnode)
-    lg.has_edge(bg, v_src, v_dst) && error("Bond already exists between $srcnode and $dstnode")
-    lg.has_edge(bg, v_dst, v_src) && error("Bond already exists between $dstnode and $srcnode")
+    lg.has_edge(bg, srcnode, dstnode) && error("Bond already exists between $srcnode and $dstnode")
+    lg.has_edge(bg, dstnode, srcnode) && error("Bond already exists between $dstnode and $srcnode")
     new_bond = Bond(srcport, dstport)
     push!(bg.bonds, new_bond)
     updateport!(srcnode, srcport.index)
@@ -76,9 +75,7 @@ function lg.add_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNod
 end
 
 function lg.rem_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
-    v_src = vertex(srcnode)
-    v_dst = vertex(dstnode)
-    lg.has_edge(bg, v_src, v_dst) || return
+    lg.has_edge(bg, srcnode, dstnode) || lg.has_edge(bg, dstnode, srcnode) || return
     index = findfirst(b -> (srcnode in b && dstnode in b), bg.bonds)
     deleted_bond = bg.bonds[index]
     deleteat!(bg.bonds, index)

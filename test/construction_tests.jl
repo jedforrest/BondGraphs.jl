@@ -1,3 +1,20 @@
+function RCI()
+    model = BondGraph("RCI")
+    C = Component(:C)
+    R = Component(:R)
+    I = Component(:I)
+    SS = Component(:SS)
+    zero_law = Junction(:𝟎)
+
+    add_node!(model, [C, R, I, SS, zero_law])
+    connect!(model, R, zero_law)
+    connect!(model, C, zero_law)
+    connect!(model, zero_law, I)
+    connect!(model, zero_law, SS)
+
+    model
+end
+
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
 @testset "BondGraph Construction" begin
     model = BondGraph("RC")
@@ -103,3 +120,60 @@ end
     @test nv(model) == 7
     @test ne(model) == 6
 end
+
+@testset "Inserting Nodes" begin
+    bg = RCI()
+
+    c, r, 𝟎 = bg.nodes[[1,2,5]]
+
+    bondc0 = getbonds(bg, c, 𝟎)[1]
+    bondr0 = getbonds(bg, r, 𝟎)[1]
+
+    tf = Component(:TF, numports=2)
+    insert_node!(bg, bondc0, tf)
+    insert_node!(bg, bondr0, Junction(:𝟏))
+
+    @test tf in bg.nodes
+    @test nv(bg) == 7
+    @test ne(bg) == 6
+end
+
+@testset "Merging components" begin
+    bg = RCI()
+
+    newC = Component(:C, "newC")
+    newR1 = Component(:R, "newR1")
+    newR2 = Component(:R, "newR2")
+    add_node!(bg, [newC, newR1, newR2])
+    connect!(bg, newC, newR1)
+
+    merge!(bg, ["C", "newC"])
+    merge!(bg, ["R", "newR1", "newR2"]; junction=Junction(:𝟏))
+
+    @test isempty(getnodes(bg, "newC"))
+    @test length(getnodes(bg, :𝟏)) == 1
+    @test nv(bg) == 7
+    @test ne(bg) == 6
+end
+
+bg = RCI()
+
+newC = Component(:C, "newC")
+newR = Component(:R, "newR")
+add_node!(bg, [newC, newR])
+connect!(bg, newC, newR)
+
+merge!(bg, ["C", "newC"])
+
+#merge!(bg, ["R", "newR1", "newR2"]; junction=Junction(:𝟏))
+
+using TikzGraphs
+adj = adjacency_matrix(bg)
+g = SimpleDiGraph(adj)
+
+TikzGraphs.plot(g,
+    repr.(bg.nodes),
+    node_style="white",
+    edge_style="white",
+    options="scale=2, font=\\large"
+)

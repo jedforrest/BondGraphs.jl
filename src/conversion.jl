@@ -5,8 +5,6 @@ function BondGraph(rs::ReactionSystem)
     all_reactions = reactions(rs)
     for (i, reaction) in enumerate(all_reactions)
         if i > 1 && is_reverse_off_previous(reaction, all_reactions[i-1])
-            # If this reaction is an exact reverse of the previous reaction,
-            # then together they form a bi-directional reaction pair.
             # Skip the second reaction
             continue
         end
@@ -20,6 +18,8 @@ function BondGraph(rs::ReactionSystem)
     bg
 end
 
+# If this reaction is an exact reverse of the previous reaction,
+# then together they form a bi-directional reaction pair.
 is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
 
 function half_equation!(bg, species, Re)
