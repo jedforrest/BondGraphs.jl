@@ -2,17 +2,30 @@
 function BondGraph(rs::ReactionSystem)
     bg = BondGraph(string(rs.name))
 
+    # Create disjoint reaction bondgraphs for each reaction in network
     all_reactions = reactions(rs)
+    reaction_num = 1
     for (i, reaction) in enumerate(all_reactions)
         if i > 1 && is_reverse_off_previous(reaction, all_reactions[i-1])
             # Skip the second reaction
             continue
         end
 
-        Re = Component(:Re, "R$i", numports=2)
+        Re = Component(:Re, "R$reaction_num", numports=2)
         add_node!(bg, Re)
         half_equation!(bg, reaction.substrates, Re)
         half_equation!(bg, reaction.products, Re)
+
+        reaction_num += 1
+    end
+
+    # Combine common species across reactions
+    species_names = stringify_species.(species(rs))
+    for spcs_name in species_names
+        spcs_nodes = getnodes(bg, spcs_name)
+        for node in spcs_nodes[2:end]
+            merge_nodes!(bg, spcs_nodes[1], node)
+        end
     end
 
     bg

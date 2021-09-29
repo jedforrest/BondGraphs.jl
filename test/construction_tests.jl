@@ -76,16 +76,15 @@ end
     zero_law = Junction(:J0)
 
     add_node!(model, [R, C, zero_law])
-    @test_throws ErrorException add_node!(model, R)
-    @test_throws ErrorException add_node!(model, zero_law)
+    @test_logs (:warn, "R:R already in model") add_node!(model, R)
+    @test_logs (:warn, "J0 already in model") add_node!(model, zero_law)
 
     connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
     one_law = Junction(:J1)
-    @test_throws ErrorException remove_node!(model, one_law)
-    @test_throws ErrorException swap!(model, C, one_law)
+    @test_logs (:warn, "J1 not in model") remove_node!(model, one_law)
 end
 
 @testset "Chemical reaction" begin
