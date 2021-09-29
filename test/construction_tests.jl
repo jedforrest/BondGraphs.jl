@@ -142,45 +142,48 @@ end
     bg = RCI()
 
     newC = Component(:C, "newC")
-    newR1 = Component(:R, "newR1")
-    newR2 = Component(:R, "newR2")
-    add_node!(bg, [newC, newR1, newR2])
-    connect!(bg, newC, newR1)
+    newR = Component(:R, "newR")
+    add_node!(bg, [newC, newR])
+    connect!(bg, newC, newR)
 
-    merge!(bg, ["C", "newC"])
-    merge!(bg, ["R", "newR1", "newR2"]; junction=Junction(:𝟏))
+    C = getnodes(bg, "C")[1]
+    merge_nodes!(bg, C, newC)
+
+    R = getnodes(bg, "R")[1]
+    merge_nodes!(bg, R, newR; junction=Junction(:𝟏))
 
     @test isempty(getnodes(bg, "newC"))
     @test length(getnodes(bg, :𝟏)) == 1
+    @test length(getnodes(bg, :𝟎)) == 2
     @test nv(bg) == 7
-    @test ne(bg) == 6
+    @test ne(bg) == 7
 end
 
-bg = RCI()
+@testset "Simplifying Junctions" begin
+    bg = RCI()
+    C, R, I, SS, 𝟎 = bg.nodes
 
-newC = Component(:C, "newC")
-newR = Component(:R, "newR")
-add_node!(bg, [newC, newR])
-connect!(bg, newC, newR)
+    J0_new_1 = Junction(:𝟎, "new0_1")
+    J0_new_2 = Junction(:𝟎, "new0_2")
+    insert_node!(bg, (C, 𝟎), J0_new_1)
+    insert_node!(bg, (R, 𝟎), J0_new_2)
+    connect!(bg, J0_new_1, J0_new_2)
 
-C = getnodes(bg, "C")[1]
-merge_nodes!(bg, C, newC)
+    J1_new_1 = Junction(:𝟏)
+    J1_new_2 = Junction(:𝟏)
+    add_node!(bg, J1_new_1)
+    connect!(bg, 𝟎, J1_new_1)
+    insert_node!(bg, (SS, 𝟎), J1_new_2)
 
-#merge!(bg, ["R", "newR1", "newR2"]; junction=Junction(:𝟏))
+    # Removing junction redundancies
+    simplify_junctions!(bg, squash_identical=false)
+    @test length(getnodes(bg, :𝟏)) == 0
+    @test nv(bg) == 7
+    @test ne(bg) == 7
 
-bg.nodes
-bg.bonds
-
-using GraphPlot
-gplot(bg, nodelabel=bg.nodes)
-
-using TikzGraphs
-adj = adjacency_matrix(bg)
-g = SimpleDiGraph(adj)
-
-TikzGraphs.plot(g,
-    repr.(bg.nodes),
-    node_style="white",
-    edge_style="white",
-    options="scale=2, font=\\large"
-)
+    # Squashing junction duplicates into a single junction
+    simplify_junctions!(bg)
+    @test length(getnodes(bg, :𝟎)) == 1
+    @test nv(bg) == 5
+    @test ne(bg) == 4
+end

@@ -13,11 +13,13 @@ nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 # Nodes in Bonds
 srcnode(b::Bond) = b.src.node
 dstnode(b::Bond) = b.dst.node
-in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
+in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 
 # Searching
 getnodes(bg::BondGraph, m::Symbol) = filter(x -> x.metamodel == m, bg.nodes)
 getnodes(bg::BondGraph, n::AbstractString) = filter(x -> x.name == n, bg.nodes)
+
+getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
 getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
 
 # I/O
