@@ -163,9 +163,16 @@ newR = Component(:R, "newR")
 add_node!(bg, [newC, newR])
 connect!(bg, newC, newR)
 
-merge!(bg, ["C", "newC"])
+C = getnodes(bg, "C")[1]
+merge_nodes!(bg, C, newC)
 
 #merge!(bg, ["R", "newR1", "newR2"]; junction=Junction(:𝟏))
+
+bg.nodes
+bg.bonds
+
+using GraphPlot
+gplot(bg, nodelabel=bg.nodes)
 
 using TikzGraphs
 adj = adjacency_matrix(bg)

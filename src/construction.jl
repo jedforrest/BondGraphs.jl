@@ -5,7 +5,7 @@ function add_node!(bg::BondGraph, nodes)
 end
 
 function add_node!(bg::BondGraph, node::AbstractNode)
-    lg.add_vertex!(bg, node) || @warn "$node already in model"
+    lg.add_vertex!(bg, node) || @warn "$node already in model "
 end
 
 
@@ -16,7 +16,7 @@ function remove_node!(bg::BondGraph, nodes)
 end
 
 function remove_node!(bg::BondGraph, node::AbstractNode)
-    lg.rem_vertex!(bg, node) || @warn "$node not in model"
+    lg.rem_vertex!(bg, node) || @warn "$node not in model "
     for bond in filter(bond -> node in bond, bg.bonds)
         lg.rem_edge!(bg, srcnode(bond), dstnode(bond))
     end
@@ -43,14 +43,17 @@ end
 
 
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
-    numports(oldnode) == numports(newnode) || error("Nodes must have the same number of ports")
-    
+    numports(newnode) >= numports(oldnode) || error("New node must have a greater or equal number of ports to the old node")
+
+    # may be a redundant check
+    if !lg.has_vertex(bg, newnode)
+        add_node!(bg, newnode)
+    end
+
     srcnodes = lg.inneighbors(bg, oldnode)
     dstnodes = lg.outneighbors(bg, oldnode)
-
-    add_node!(bg, newnode)
     remove_node!(bg, oldnode)
-
+    
     for src in srcnodes
         connect!(bg, src, newnode)
     end
@@ -58,7 +61,6 @@ function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
         connect!(bg, newnode, dst)
     end
 end
-
 
 # TODO implement according to https://bondgraphtools.readthedocs.io/en/latest/api.html#BondGraphTools.expose
 # function expose!()
@@ -86,16 +88,20 @@ function insert_node!(bg::BondGraph, bond::Bond, newnode::AbstractNode)
 end
 
 
-function merge!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; junction=Junction(:𝟎))
+function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; junction=Junction(:𝟎))
     node1.metamodel == node2.metamodel || error("$(node1.name) must be the same type as $(node2.name)")
 
-    add_node!(bg, junction)
-
     # node1 taken as the node to keep
-    node1_in = lg.inneighbors(bg, node1)
-    node1_out = lg.outneighbors(bg, node1)
-
-
-    
-
+    for src in lg.inneighbors(bg, node1)
+        junc = deepcopy(junction)
+        bond = getbonds(bg, src, node1)[1]
+        insert_node!(bg, bond, junc)
+        swap!(bg, node2, junc)
+    end
+    for dst in lg.outneighbors(bg, node1)
+        junc = deepcopy(junction)
+        bond = getbonds(bg, node1, dst)[1]
+        insert_node!(bg, bond, junc)
+        swap!(bg, node2, junc)
+    end
 end

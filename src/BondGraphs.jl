@@ -8,7 +8,7 @@ using Catalyst
 
 export AbstractNode, Component, Junction, Port, Bond, BondGraph,
 vertex, set_vertex!, freeports, numports, srcnode, dstnode, getnodes, getbonds,
-add_node!, remove_node!, connect!, disconnect!, swap!, insert_node!, merge!
+add_node!, remove_node!, connect!, disconnect!, swap!, insert_node!, merge_nodes!
 
 include("basetypes.jl")
 include("basetypefunctions.jl")

@@ -30,3 +30,9 @@ show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.metamodel):$(bg.name) ($
 # Comparisons
 # These definitions will need to expand when equations etc. are added
 ==(n1::AbstractNode, n2::AbstractNode) = n1.metamodel == n2.metamodel && n1.name == n2.name
+
+# Mapping
+# TODO - function which creates map of components and bonds to indices
+
+# Easier referencing systems
+# TODO

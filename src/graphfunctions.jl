@@ -9,7 +9,7 @@ lg.edgetype(bg::BondGraph) = lg.AbstractSimpleEdge{Integer}
 # edges
 lg.edges(bg::BondGraph) = bg.bonds
 lg.ne(bg::BondGraph) = length(bg.bonds)
-lg.has_edge(bg::BondGraph, b::Bond) = b in bg.bonds
+lg.has_edge(bg::BondGraph, bond::Bond) =  any(b -> b === bond, bg.bonds) # strong equality
 lg.has_edge(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = lg.has_edge(bg, vertex(n1), vertex(n2))
 lg.has_edge(bg::BondGraph, s::Int, d::Int) = 
     any(b -> lg.src(b) == s && lg.dst(b) == d, bg.bonds)
@@ -17,8 +17,8 @@ lg.has_edge(bg::BondGraph, s::Int, d::Int) =
 # vertices
 lg.vertices(bg::BondGraph) = vertex.(bg.nodes)
 lg.nv(bg::BondGraph) = length(bg.nodes)
+lg.has_vertex(bg::BondGraph, node::AbstractNode) = any(n -> n === node, bg.nodes) # strong equality
 lg.has_vertex(bg::BondGraph, v::Int) = v <= length(bg.nodes)
-lg.has_vertex(bg::BondGraph, node::AbstractNode) = node in bg.nodes
 
 # inneighbors, outneighbors
 lg.inneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[lg.inneighbors(bg, vertex(n))]
