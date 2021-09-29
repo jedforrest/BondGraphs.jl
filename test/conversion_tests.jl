@@ -10,7 +10,7 @@
     @test ne(bg_rn) == 4
     
     @test any(n -> n.name == "R1", bg_rn.nodes)
-    @test any(n -> typeof(n) == Junction && n.metamodel == :𝟏, bg_rn.nodes)
+    @test any(n -> typeof(n) == Junction && n.type == :𝟏, bg_rn.nodes)
 
     @test length(getnodes(bg_rn, :Ce)) == 3
     @test length(getnodes(bg_rn, :𝟏)) == 1

@@ -94,7 +94,7 @@ end
 
 
 function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; junction=Junction(:𝟎))
-    node1.metamodel == node2.metamodel || error("$(node1.name) must be the same type as $(node2.name)")
+    node1.type == node2.type || error("$(node1.name) must be the same type as $(node2.name)")
 
     # node1 taken as the node to keep
     for src in lg.inneighbors(bg, node1)
@@ -145,7 +145,7 @@ function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identi
     if squash_identical
         for j in junctions, nbr in lg.all_neighbors(bg, j)
             lg.has_vertex(bg, j) || continue # in case j was removed
-            if j.metamodel == nbr.metamodel
+            if j.type == nbr.type
                 merge_nodes!(bg, j, nbr)
             end
         end

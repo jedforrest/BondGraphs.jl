@@ -1,7 +1,7 @@
 abstract type AbstractNode end
 
 struct Component{N} <: AbstractNode
-    metamodel::Symbol
+    type::Symbol
     name::AbstractString
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
@@ -9,11 +9,11 @@ struct Component{N} <: AbstractNode
         new(m, n, ones(MVector{np,Bool}), Ref(v))
     end
 end
-Component(metamodel::Symbol, name::AbstractString=string(metamodel); numports::Int=1, vertex::Int=0) = 
-    Component{numports}(metamodel, name, numports, vertex)
+Component(type::Symbol, name::AbstractString=string(type); numports::Int=1, vertex::Int=0) = 
+    Component{numports}(type, name, numports, vertex)
 
 struct Junction <: AbstractNode
-    metamodel::Symbol
+    type::Symbol
     name::AbstractString
     vertex::RefValue{Int}
     Junction(m::Symbol, n::AbstractString=string(m); v::Int=0) = new(m, n, Ref(v))
@@ -40,10 +40,10 @@ function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
 end
 
 struct BondGraph <: lg.AbstractGraph{Int64}
-    metamodel::Symbol
+    type::Symbol
     name::AbstractString
     nodes::Vector{T} where T <: AbstractNode
     bonds::Vector{Bond}
 end
-BondGraph(metamodel::Symbol=:BG, name::AbstractString=string(metamodel)) = BondGraph(metamodel, name, AbstractNode[], Bond[])
+BondGraph(type::Symbol=:BG, name::AbstractString=string(type)) = BondGraph(type, name, AbstractNode[], Bond[])
 BondGraph(name::AbstractString) = BondGraph(:BG, name)

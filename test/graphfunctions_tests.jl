@@ -1,6 +1,6 @@
 @testset "BondGraph Properties" begin
     bg = BondGraph()
-    @test bg.metamodel == :BG
+    @test bg.type == :BG
     @test isempty(bg.nodes)
     @test eltype(bg) == AbstractNode
     @test edgetype(bg) == LightGraphs.AbstractSimpleEdge{Integer}
