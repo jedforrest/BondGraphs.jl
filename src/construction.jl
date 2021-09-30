@@ -154,4 +154,5 @@ function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identi
             end
         end
     end
+    bg
 end

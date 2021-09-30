@@ -28,7 +28,7 @@ function BondGraph(rs::ReactionSystem; chemostats=[])
         end
     end
 
-    bg
+    simplify_junctions!(bg)
 end
 
 # If this reaction is an exact reverse of the previous reaction,
