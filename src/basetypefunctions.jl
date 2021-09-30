@@ -32,6 +32,10 @@ show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(lg.n
 # Comparisons
 # These definitions will need to expand when equations etc. are added
 ==(n1::AbstractNode, n2::AbstractNode) = n1.type == n2.type && n1.name == n2.name
+# bondgraph comparison
+
+# Getter functions (name, etc.)
+#TODO
 
 # Mapping
 # TODO - function which creates map of components and bonds to indices

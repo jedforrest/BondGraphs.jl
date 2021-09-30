@@ -1,5 +1,5 @@
 # Convert a ReactionSystem type into a BondGraph type
-function BondGraph(rs::ReactionSystem)
+function BondGraph(rs::ReactionSystem; chemostats=[])
     bg = BondGraph(string(rs.name))
 
     # Create disjoint reaction bondgraphs for each reaction in network
@@ -13,8 +13,8 @@ function BondGraph(rs::ReactionSystem)
 
         Re = Component(:Re, "R$reaction_num", numports=2)
         add_node!(bg, Re)
-        half_equation!(bg, reaction.substrates, Re)
-        half_equation!(bg, reaction.products, Re)
+        half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats)
+        half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats)
 
         reaction_num += 1
     end
@@ -35,22 +35,35 @@ end
 # then together they form a bi-directional reaction pair.
 is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
 
-function half_equation!(bg, species, Re)
+function half_equation!(bg, species, stoich, Re, chemostats)
+    species_names = stringify_species.(species)
+
     if length(species) > 1
         one_junction = Junction(:𝟏)
         add_node!(bg, one_junction)
 
-        for spcs in species
-            comp = Component(:Ce, stringify_species(spcs))
+        for (i, spcs) in enumerate(species_names)
+            comp = spcs in chemostats ? Component(:Se, spcs) : Component(:Ce, spcs)
             add_node!(bg, comp)
             connect!(bg, comp, one_junction)
+
+            if stoich[i] != 1
+                tf = Component(:TF, "$(stoich[i])", numports=2)
+                insert_node!(bg, (comp, one_junction), tf)
+            end
         end
 
         connect!(bg, one_junction, Re)
     else
-        comp = Component(:Ce, stringify_species(species[1]))
+        spcs = species_names[1]
+        comp = spcs in chemostats ? Component(:Se, spcs) : Component(:Ce, spcs)
         add_node!(bg, comp)
         connect!(bg, comp, Re)
+
+        if stoich[1] != 1
+            tf = Component(:TF, "$(stoich[1])", numports=2)
+            insert_node!(bg, (comp, Re), tf)
+        end
     end
 end
 

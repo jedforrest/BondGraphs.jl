@@ -25,7 +25,7 @@ end
         (1, 1), C <--> E + P
     end
 
-    bg_rn = BondGraph(rn)
+    bg_rn = BondGraph(rn; chemostats=["S", "P"])
 
     @test bg_rn.name == "MM_reversible"
     @test nv(bg_rn) == 10
@@ -37,5 +37,20 @@ end
     @test length(getnodes(bg_rn, :𝟏)) == 2
     @test length(getnodes(bg_rn, :Re)) == 2
 
-    @test LightGraphs.degree(bg_rn) == [] #TODO
+    @test LightGraphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
+end
+
+@testset "Stoichiometry Test" begin
+    rn = @reaction_network Stoichiometry begin
+        1, 3A + 2B --> 5C
+    end
+
+    bg_rn = BondGraph(rn)
+
+    @test nv(bg_rn) == 8
+    @test ne(bg_rn) == 7
+    
+    tfs = getnodes(bg_rn, :TF)
+    @test length(tfs) == 3
+    @test repr.(tfs) == ["TF:3", "TF:2", "TF:5"]
 end

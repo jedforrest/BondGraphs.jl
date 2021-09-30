@@ -41,6 +41,8 @@ function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     return deleted_bond
 end
 
+# TODO 
+# Flip bond function
 
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     numports(newnode) >= numports(oldnode) || error("New node must have a greater or equal number of ports to the old node")
@@ -82,6 +84,8 @@ function insert_node!(bg::BondGraph, bond::Bond, newnode::AbstractNode)
         connect!(bg, newnode, dst)
     catch e
         # if connection fails, reconnect original bond
+        disconnect!(bg, src, newnode)
+        disconnect!(bg, newnode, dst)
         connect!(bg, src, dst)
         error(e)
     end
