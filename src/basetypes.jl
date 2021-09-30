@@ -5,8 +5,8 @@ struct Component{N} <: AbstractNode
     name::AbstractString
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int) where N
-        new(m, n, ones(MVector{np,Bool}), Ref(v))
+    function Component{N}(t::Symbol, n::AbstractString, np::Int, v::Int) where N
+        new(t, n, ones(MVector{np,Bool}), Ref(v))
     end
 end
 Component(type::Symbol, name::AbstractString=string(type); numports::Int=1, vertex::Int=0) = 
@@ -16,7 +16,7 @@ struct Junction <: AbstractNode
     type::Symbol
     name::AbstractString
     vertex::RefValue{Int}
-    Junction(m::Symbol, n::AbstractString=string(m); v::Int=0) = new(m, n, Ref(v))
+    Junction(t::Symbol, n::AbstractString=string(t); v::Int=0) = new(t, n, Ref(v))
 end
 
 struct Port 
@@ -40,10 +40,19 @@ function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
 end
 
 struct BondGraph <: lg.AbstractGraph{Int64}
-    type::Symbol
     name::AbstractString
     nodes::Vector{T} where T <: AbstractNode
     bonds::Vector{Bond}
 end
-BondGraph(type::Symbol=:BG, name::AbstractString=string(type)) = BondGraph(type, name, AbstractNode[], Bond[])
-BondGraph(name::AbstractString) = BondGraph(:BG, name)
+BondGraph(name::AbstractString="BG") = BondGraph(name, AbstractNode[], Bond[])
+
+struct BondGraphNode <: AbstractNode
+    bondgraph::BondGraph
+    type::Symbol
+    name::AbstractString
+    freeports::Vector{Bool}
+    vertex::RefValue{Int}
+    function BondGraphNode(bg::BondGraph, type::Symbol=:BG, name::AbstractString=bg.name; vertex::Int=0)
+        new(bg, type, name, Bool[], Ref(vertex))
+    end
+end

@@ -6,7 +6,7 @@ import Base: RefValue, eltype, show, in, ==
 using StaticArrays
 using Catalyst
 
-export AbstractNode, Component, Junction, Port, Bond, BondGraph,
+export AbstractNode, Component, Junction, Port, Bond, BondGraph, BondGraphNode,
 vertex, set_vertex!, freeports, numports, srcnode, dstnode, getnodes, getbonds,
 add_node!, remove_node!, connect!, disconnect!, 
 swap!, insert_node!, merge_nodes!, simplify_junctions!

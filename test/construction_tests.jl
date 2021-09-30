@@ -186,3 +186,12 @@ end
     @test nv(bg) == 5
     @test ne(bg) == 4
 end
+
+@testset "BondGraphNode" begin
+    bg = RCI()
+    bgn = BondGraphNode(bg)
+
+    @test bgn.type == :BG
+    @test bgn.name == "RCI"
+    @test bgn.freeports == Bool[]
+end

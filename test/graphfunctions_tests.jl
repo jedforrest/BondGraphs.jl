@@ -1,6 +1,6 @@
 @testset "BondGraph Properties" begin
     bg = BondGraph()
-    @test bg.type == :BG
+    @test bg.name == "BG"
     @test isempty(bg.nodes)
     @test eltype(bg) == AbstractNode
     @test edgetype(bg) == LightGraphs.AbstractSimpleEdge{Integer}
