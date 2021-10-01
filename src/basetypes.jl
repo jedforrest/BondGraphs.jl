@@ -92,11 +92,8 @@ set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Ports
 freeports(n::AbstractNode) = n.freeports
-#freeports(n::Junction) = [true]
 numports(n::AbstractNode) = length(n.freeports)
-#numports(n::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
-#updateport!(n::Junction, idx::Int) = freeports(n)
 
 nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 function nextfreeport(j::Junction)

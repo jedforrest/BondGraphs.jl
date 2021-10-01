@@ -56,12 +56,14 @@ function de_system(m::BondGraph)
     eqs = Vector{Equation}([])
     for c in components(m)
         new_eqs = equations(c)
-        x_subs = Dict(k2 => v for ((k1,k2),v) in inv_x if k1 == c)
-        u_subs = Dict(k2 => v for ((k1,k2),v) in inv_u if k1 == c)
+
+        x_subs = Dict(x => inv_x[(c,x)] for x in state_vars(c))
+        u_subs = Dict(p => inv_u[(c,p)] for p in params(c))
         e_subs = Dict(external_effort(p.index) => e
             for (p,(e,_)) in inv_bs if p.node == c)
         f_subs = Dict(external_flow(p.index) => f
             for (p,(_,f)) in inv_bs if p.node == c)
+        
         sub_rules = merge(x_subs,u_subs,e_subs,f_subs)
         sub_eqs = [substitute(eq,sub_rules) for eq in new_eqs]
         append!(eqs,sub_eqs)
