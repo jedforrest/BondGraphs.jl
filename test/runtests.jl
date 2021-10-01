@@ -5,7 +5,13 @@ using Catalyst
 using Test
 
 @testset "BondGraphs.jl" begin
-    include("graphfunctions_tests.jl")
-    include("construction_tests.jl")
-    include("conversion_tests.jl")
+    @testset "Basic Graph Functionality" begin
+        include("graphfunctions_tests.jl")
+    end
+    @testset "Bond Graph Construction" begin
+        include("construction_tests.jl")
+    end
+    @testset "Reaction Network Conversion" begin
+        include("conversion_tests.jl")
+    end
 end

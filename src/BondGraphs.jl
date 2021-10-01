@@ -1,7 +1,7 @@
 module BondGraphs
 
 import LightGraphs as lg
-import Base: RefValue, eltype, show, in, getproperty, ==
+import Base: RefValue, eltype, show, in, ==, getproperty
 
 using StaticArrays
 using Catalyst

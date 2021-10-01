@@ -1,13 +1,3 @@
-# AbstractNode getter functions
-type(node::AbstractNode) = node.type
-name(node::AbstractNode) = node.name
-bondgraph(node::BondGraphNode) = node.bondgraph
-
-# BondGraph getter functions
-name(bg::BondGraph) = bg.name
-nodes(bg::BondGraph) = bg.nodes
-bonds(bg::BondGraph) = bg.bonds
-
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
@@ -47,5 +37,28 @@ show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.name) ($(lg.nv(bg)) Node
 # Mapping
 # TODO - function which creates map of components and bonds to indices
 
-# Easier referencing systems
-# TODO
+# Easier referencing systems using a.b notation
+# TODO create tests
+function getproperty(bg::BondGraph, sym::Symbol)
+    # Calling getfield explicitly avoids using "a.b" 
+    # and causing a StackOverflowError
+    allnodes = getfield(bg, :nodes)
+    names = [getfield(n, :name) for n in allnodes]
+    symnodes = allnodes[names .== string(sym)]
+    if isempty(symnodes)
+        return getfield(bg, sym)
+    elseif length(symnodes) == 1
+        return symnodes[1]
+    else
+        return symnodes
+    end
+end
+
+function getproperty(bgn::BondGraphNode, sym::Symbol)
+    bg = getfield(bgn, :bondgraph)
+    try 
+        return getproperty(bg, sym)
+    catch
+        return getfield(bgn, sym)
+    end
+end
