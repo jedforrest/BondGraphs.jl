@@ -22,22 +22,22 @@ rewriter = Postwalk(rw_chain)
 # Equations
 equations(n::Component) = n.equations
 function equations(m::EqualEffort)
-    if m.degree == 0
+    if isempty(freeports(m))
         return Vector{Equation}([])
     end
-    e_vars = external_effort.(1:m.degree)
-    f_vars = external_flow.(1:m.degree)
+    e_vars = external_effort.(1:numports(m))
+    f_vars = external_flow.(1:numports(m))
 
     flow_constraint = [0 ~ sum(f_vars)]
     effort_constraints = [0 ~ e_vars[1] - e for e in e_vars[2:end]]
     return vcat(flow_constraint,effort_constraints)
 end
 function equations(m::EqualFlow)
-    if m.degree == 0
+    if isempty(freeports(m))
         return Vector{Equation}([])
     end
-    e_vars = external_effort.(1:m.degree)
-    f_vars = external_flow.(1:m.degree)
+    e_vars = external_effort.(1:numports(m))
+    f_vars = external_flow.(1:numports(m))
 
     weighted_e = m.weights.*e_vars
     weighted_f = m.weights.*f_vars

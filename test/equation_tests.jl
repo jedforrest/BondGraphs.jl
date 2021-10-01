@@ -11,7 +11,7 @@ D = Differential(t)
     connect!(model, R, zero_law)
     connect!(model, zero_law, C)
 
-    @test zero_law.degree == 2
+    @test numports(zero_law) == 2
 
     @variables E_1(t) E_2(t) F_1(t) F_2(t)
     @test BondGraphs.equations(zero_law) == [
@@ -32,7 +32,7 @@ end
     connect!(bg, j, c2)
     connect!(bg, j, c3)
 
-    @test j.degree == 3
+    @test numports(j) == 3
     @test length(j.weights) == 3
     @test j.weights == [1,-1,-1]
 
@@ -99,9 +99,6 @@ end
         D(x_2) ~ x_1/u_1
     ]
 end
-
-icv = BondGraphs.invert(control_space(bg))
-iss = BondGraphs.invert(state_vars(bg))
 
 @testset "Chemical reaction A ⇌ B" begin
     A = new(:ce,"A")

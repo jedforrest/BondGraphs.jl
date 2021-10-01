@@ -43,7 +43,7 @@ end
 
 
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
-    numports(oldnode) == numports(newnode) || error("Nodes must have the same number of ports")
+    _check_port_number(oldnode,newnode)
     
     srcnodes = lg.inneighbors(bg, oldnode)
     dstnodes = lg.outneighbors(bg, oldnode)
@@ -58,6 +58,10 @@ function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
         connect!(bg, newnode, dst)
     end
 end
+
+_check_port_number(oldnode::AbstractNode, newnode::AbstractNode) = 
+    numports(oldnode) == numports(newnode) || error("Nodes must have the same number of ports")
+_check_port_number(oldnode::AbstractNode, newnode::Junction) = true
 
 
 # TODO implement according to https://bondgraphtools.readthedocs.io/en/latest/api.html#BondGraphTools.expose

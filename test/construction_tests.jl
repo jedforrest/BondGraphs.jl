@@ -54,8 +54,8 @@ end
 
 @testset "Construction Failure" begin
     model = BondGraph("RC")
-    C = Component(:C)
-    R = Component(:R)
+    C = new(:C)
+    R = new(:R)
     zero_law = EqualEffort()
 
     add_node!(model, [R, C, zero_law])
@@ -66,9 +66,9 @@ end
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
-    one_law = EqualFlow()
-    @test_throws ErrorException remove_node!(model, one_law)
-    @test_throws ErrorException swap!(model, C, one_law)
+    tf = new(:TF)
+    @test_throws ErrorException remove_node!(model, tf)
+    @test_throws ErrorException swap!(model, C, tf)
 end
 
 @testset "Chemical reaction" begin
@@ -88,7 +88,7 @@ end
     connect!(model, D, J_CD)
 
     @test freeports(Re) == [true, true]
-    @test freeports(J_AB) == [true]
+    @test freeports(J_AB) == [false, false]
 
     # Connecting junctions to specific ports in Re
     connect!(model, Re, J_CD, srcportindex=2)
@@ -108,6 +108,7 @@ end
     tf = new(:TF,"n")
     @test tf isa Component{2}
     @test tf.type == :TF
+    @test numports(tf) == 2
 
     r = new(:R)
     @test r isa Component{1}

@@ -21,19 +21,19 @@ end
 
 abstract type Junction <: AbstractNode end
 
-mutable struct EqualEffort <: Junction
+struct EqualEffort <: Junction
     name::AbstractString
-    degree::Int
+    freeports::Vector{Bool}
     vertex::RefValue{Int}
-    EqualEffort(; name::AbstractString="0", v::Int=0) = new(name, 0, Ref(v))
+    EqualEffort(; name::AbstractString="0", v::Int=0) = new(name, [], Ref(v))
 end
 
-mutable struct EqualFlow <: Junction
+struct EqualFlow <: Junction
     name::AbstractString
-    degree::Int
+    freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualFlow(; name::AbstractString="1", v::Int=0) = new(name, 0, Vector{Int}[], Ref(v))
+    EqualFlow(; name::AbstractString="1", v::Int=0) = new(name, [], [], Ref(v))
 end
 
 struct Port 
@@ -91,22 +91,22 @@ vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Ports
-freeports(n::Component) = n.freeports
-freeports(n::Junction) = [true]
-numports(n::Component) = length(n.freeports)
-numports(n::Junction) = Inf
+freeports(n::AbstractNode) = n.freeports
+#freeports(n::Junction) = [true]
+numports(n::AbstractNode) = length(n.freeports)
+#numports(n::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
-updateport!(n::Junction, idx::Int) = freeports(n)
+#updateport!(n::Junction, idx::Int) = freeports(n)
 
 nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 function nextfreeport(j::Junction)
-    j.degree += 1
-    j.degree
+    push!(j.freeports,true)
+    numports(j)
 end
 function nextfreeport(j::EqualFlow)
-    append!(j.weights,0)
-    j.degree += 1
-    j.degree
+    push!(j.weights,0)
+    push!(j.freeports,true)
+    numports(j)
 end
 
 nextsrcport(n::AbstractNode) = nextfreeport(n)

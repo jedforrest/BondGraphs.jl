@@ -12,14 +12,13 @@ end
     r = Component(:R, "R1", numports=1)
     j = EqualEffort()
 
-    b = Bond(c, j)
-    @test src(b) == vertex(c)
-    @test dst(b) == vertex(j)
-
     bg = BondGraph()
 
     @test add_vertex!(bg, c)
-    @test add_edge!(bg, c, j) == b
+    b = add_edge!(bg, c, j)
+
+    @test src(b) == vertex(c)
+    @test dst(b) == vertex(j)
 
     add_vertex!(bg, r)
     add_vertex!(bg, j)
@@ -44,23 +43,21 @@ end
     C = Component(:C)
     SS = Component(:SS, "Source")
     J0 = EqualEffort(name="J")
-    b1 = Bond(C,J0)
-    b2 = Bond(J0,SS)
     bg = BondGraph("newbg")
+    @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
+
+    add_vertex!(bg, C)
+    add_vertex!(bg, SS)
+    add_vertex!(bg, J0)
+    b1 = add_edge!(bg, C, J0)
+    b2 = add_edge!(bg, J0, SS)
+    @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
 
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
     @test repr(b1) == "Bond C:C ⇀ 0:J"
     @test repr(b2) == "Bond 0:J ⇀ SS:Source"
-    @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
-
-    add_vertex!(bg, C)
-    add_vertex!(bg, SS)
-    add_vertex!(bg, J0)
-    add_edge!(bg, C, J0)
-    add_edge!(bg, J0, SS)
-    @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
 end
 
 @testset "LightGraph Extra Functions" begin
