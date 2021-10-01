@@ -78,6 +78,9 @@ function new(type,name::String=string(type);library=standard_library)
     Component(type, name; numports=d[:numports], parameters=p, state_vars=x, equations=d[:equations])
 end
 
+# All models
+Model = Union{AbstractNode,BondGraph}
+
 # Component type
 type(n) = n.type
 type(n::EqualEffort) = Symbol("0")
@@ -120,17 +123,43 @@ function nextdstport(n::EqualFlow)
     i
 end
 
-
 # Nodes in Bonds
 srcnode(b::Bond) = b.src.node
 dstnode(b::Bond) = b.dst.node
 in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
+Base.iterate(b::Bond) = (b.src,true)
+function Base.iterate(b::Bond,state)
+    if state
+        return (b.dst,false)
+    else
+        return nothing
+    end
+end
 
 # Parameters
 params(n::Component) = n.parameters
+params(j::Junction) = Vector{Num}([])
+
+# Components
+components(bg::BondGraph) = bg.nodes
 
 # State variables
 state_vars(n::Component) = n.state_vars
+state_vars(j::Junction) = Vector{Num}([])
+function state_vars(m::BondGraph)
+    i = 0
+    dict_states = OrderedDict{Num,Tuple{Model,Num}}()
+    for c in components(m)
+        for x in state_vars(c)
+            i += 1
+            dict_states[internal_state(i)] = (c,x)
+        end
+    end
+    return dict_states
+end
+
+# Bonds
+bonds(m::BondGraph) = m.bonds
 
 # I/O
 show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")

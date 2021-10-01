@@ -11,7 +11,7 @@ R_dict = Dict(
     :parameters => OrderedDict(
         r => "Resistance"
     ),
-    :equations => [0 ~ E_1/r - F_1]
+    :equations => [0 ~ E_1 - r*F_1]
 )
 
 # Linear capacitor (:C)

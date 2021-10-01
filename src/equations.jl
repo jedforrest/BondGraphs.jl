@@ -9,6 +9,16 @@ external_flow(idx) = time_dependent_var(Symbol("F_$idx"))
 internal_state(idx) = time_dependent_var(Symbol("x_$idx"))
 control_variable(idx) = real_var(Symbol("u_$idx"))
 
+# New simplification rules
+exponent_rules = [
+    @rule(exp(log(~x)) => ~x),
+    @acrule(exp(~x + ~y) => exp(~x) * exp(~y)),
+    @acrule(exp(~x * ~y) => exp(~y)^~x),
+]
+rw_exp = RestartedChain(exponent_rules)
+rw_chain = RestartedChain([SymbolicUtils.default_simplifier(),rw_exp])
+rewriter = Postwalk(rw_chain)
+
 # Equations
 equations(n::Component) = n.equations
 function equations(m::EqualEffort)
@@ -35,4 +45,35 @@ function equations(m::EqualFlow)
     effort_constraint = [0 ~ sum(weighted_e)]
     flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
     return vcat(effort_constraint,flow_constraints)
+end
+function equations(m::BondGraph)
+    return simplify.(ModelingToolkit.equations(de_system(m)),rewriter=rewriter)
+end
+
+function de_system(m::BondGraph)
+    # Import equations from components, then substitute
+    inv_x, inv_bs, inv_u = inverse_mappings(m)
+    eqs = Vector{Equation}([])
+    for c in components(m)
+        new_eqs = equations(c)
+        x_subs = Dict(k2 => v for ((k1,k2),v) in inv_x if k1 == c)
+        u_subs = Dict(k2 => v for ((k1,k2),v) in inv_u if k1 == c)
+        e_subs = Dict(external_effort(p.index) => e
+            for (p,(e,_)) in inv_bs if p.node == c)
+        f_subs = Dict(external_flow(p.index) => f
+            for (p,(_,f)) in inv_bs if p.node == c)
+        sub_rules = merge(x_subs,u_subs,e_subs,f_subs)
+        sub_eqs = [substitute(eq,sub_rules) for eq in new_eqs]
+        append!(eqs,sub_eqs)
+    end
+
+    # Add constraints from bonds
+    for (t,h) in bonds(m)
+        (e_t,f_t) = inv_bs[t]
+        (e_h,f_h) = inv_bs[h]
+        push!(eqs, 0 ~ e_t - e_h)
+        push!(eqs, 0 ~ f_t + f_h)
+    end
+    sys = ODESystem(eqs, TIME)
+    return structural_simplify(sys)
 end
