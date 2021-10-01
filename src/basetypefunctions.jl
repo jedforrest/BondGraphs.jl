@@ -1,3 +1,13 @@
+# AbstractNode getter functions
+type(node::AbstractNode) = node.type
+name(node::AbstractNode) = node.name
+bondgraph(node::BondGraphNode) = node.bondgraph
+
+# BondGraph getter functions
+name(bg::BondGraph) = bg.name
+nodes(bg::BondGraph) = bg.nodes
+bonds(bg::BondGraph) = bg.bonds
+
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
@@ -16,11 +26,11 @@ dstnode(b::Bond) = b.dst.node
 in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 
 # Searching
-getnodes(bg::BondGraph, m::Symbol) = filter(x -> x.type == m, bg.nodes)
+getnodes(bg::BondGraph, t::Symbol) = filter(x -> x.type == t, bg.nodes)
 getnodes(bg::BondGraph, n::AbstractString) = filter(x -> x.name == n, bg.nodes)
 
 getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
-getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
+getbonds(bg::BondGraph, node1::AbstractNode, node2::AbstractNode) = filter(b -> node1 in b && node2 in b, bg.bonds)
 
 # I/O
 show(io::IO, node::AbstractNode) = print(io, "$(node.type):$(node.name)")
@@ -33,9 +43,6 @@ show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.name) ($(lg.nv(bg)) Node
 # These definitions will need to expand when equations etc. are added
 ==(n1::AbstractNode, n2::AbstractNode) = n1.type == n2.type && n1.name == n2.name
 # bondgraph comparison
-
-# Getter functions (name, etc.)
-#TODO
 
 # Mapping
 # TODO - function which creates map of components and bonds to indices
