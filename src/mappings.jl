@@ -8,12 +8,14 @@ end
 
 function bond_space(m::BondGraph)
     d = OrderedDict{Tuple{Num,Num},Port}()
+    N = 2*length(bonds(m))
+    @variables e[1:N](t) f[1:N](t)
     i = 0
     for b in bonds(m)
         i += 1
-        d[(internal_effort(i),internal_flow(i))] = b.src
+        d[(e[i], f[i])] = b.src
         i += 1
-        d[(internal_effort(i),internal_flow(i))] = b.dst
+        d[(e[i], f[i])] = b.dst
     end
     return d
 end
@@ -21,18 +23,17 @@ bond_space(m::AbstractNode) = OrderedDict{Tuple{Num,Num},Port}()
 
 
 function control_space(m::AbstractNode)
-    return OrderedDict(control_variable(i) => (m,p) for (i,p) in enumerate(params(m)))
+    @parameters u[1:length(params(m))]
+    return OrderedDict(u[i] => (m,p) for (i,p) in enumerate(params(m)))
 end
 function control_space(m::BondGraph)
     i = 0
-    dict_states = OrderedDict{Num,Tuple{Model,Num}}()
-    for c in components(m)
-        for p in params(c)
-            i += 1
-            dict_states[control_variable(i)] = (c,p)
-        end
+    vars = Vector{Tuple{Model,Num}}([])
+    for c in components(m), p in params(c)
+        push!(vars,(c,p))
     end
-    return dict_states
+    @parameters u[1:length(vars)]
+    return OrderedDict(u[i] => v for (i,v) in enumerate(vars))
 end
 
 function invert(d::OrderedDict)

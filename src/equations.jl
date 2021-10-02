@@ -1,14 +1,3 @@
-time_dependent_var(x) = 
-    Num(Variable{ModelingToolkit.FnType{Tuple{Any}, Real}}(x))(TIME)
-real_var(x) = ModelingToolkit.toparam(Num(Variable{Real}(x)))
-
-internal_effort(idx) = time_dependent_var(Symbol("e_$idx"))
-internal_flow(idx) = time_dependent_var(Symbol("f_$idx"))
-external_effort(idx) = time_dependent_var(Symbol("E_$idx"))
-external_flow(idx) = time_dependent_var(Symbol("F_$idx"))
-internal_state(idx) = time_dependent_var(Symbol("x_$idx"))
-control_variable(idx) = real_var(Symbol("u_$idx"))
-
 # New simplification rules
 exponent_rules = [
     @rule(exp(log(~x)) => ~x),
@@ -25,22 +14,23 @@ function equations(m::EqualEffort)
     if isempty(freeports(m))
         return Vector{Equation}([])
     end
-    e_vars = external_effort.(1:numports(m))
-    f_vars = external_flow.(1:numports(m))
 
-    flow_constraint = [0 ~ sum(f_vars)]
-    effort_constraints = [0 ~ e_vars[1] - e for e in e_vars[2:end]]
+    N = numports(m)
+    @variables E[1:N](t) F[1:N](t)
+
+    flow_constraint = [0 ~ sum(collect(F))]
+    effort_constraints = [0 ~ E[1] - e for e in E[2:end]]
     return vcat(flow_constraint,effort_constraints)
 end
 function equations(m::EqualFlow)
     if isempty(freeports(m))
         return Vector{Equation}([])
     end
-    e_vars = external_effort.(1:numports(m))
-    f_vars = external_flow.(1:numports(m))
+    N = numports(m)
+    @variables E[1:N](t) F[1:N](t)
 
-    weighted_e = m.weights.*e_vars
-    weighted_f = m.weights.*f_vars
+    weighted_e = m.weights.*collect(E)
+    weighted_f = m.weights.*collect(F)
 
     effort_constraint = [0 ~ sum(weighted_e)]
     flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
@@ -59,10 +49,11 @@ function de_system(m::BondGraph)
 
         x_subs = Dict(x => inv_x[(c,x)] for x in state_vars(c))
         u_subs = Dict(p => inv_u[(c,p)] for p in params(c))
-        e_subs = Dict(external_effort(p.index) => e
-            for (p,(e,_)) in inv_bs if p.node == c)
-        f_subs = Dict(external_flow(p.index) => f
-            for (p,(_,f)) in inv_bs if p.node == c)
+
+        N = numports(c)
+        @variables E[1:N](t) F[1:N](t)
+        e_subs = Dict(E[p.index] => e for (p,(e,_)) in inv_bs if p.node == c)
+        f_subs = Dict(F[p.index] => f for (p,(_,f)) in inv_bs if p.node == c)
         
         sub_rules = merge(x_subs,u_subs,e_subs,f_subs)
         sub_eqs = [substitute(eq,sub_rules) for eq in new_eqs]
@@ -76,6 +67,6 @@ function de_system(m::BondGraph)
         push!(eqs, 0 ~ e_t - e_h)
         push!(eqs, 0 ~ f_t + f_h)
     end
-    sys = ODESystem(eqs, TIME)
+    sys = ODESystem(eqs, t)
     return structural_simplify(sys)
 end

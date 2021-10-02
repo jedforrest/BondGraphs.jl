@@ -2,21 +2,22 @@
 const TIME = t
 D = Differential(t)
 
+@variables E[1:2](t) F[1:2](t)
+
 # Linear resistance (:R)
 @parameters r
-@variables E_1(t) F_1(t)
 R_dict = Dict(
     :description => "Generalised Linear Resistor",
     :numports => 1,
     :parameters => OrderedDict(
         r => "Resistance"
     ),
-    :equations => [0 ~ E_1/r - F_1]
+    :equations => [0 ~ E[1]/r - F[1]]
 )
 
 # Linear capacitor (:C)
 @parameters C
-@variables E_1(t) F_1(t) q_1(t)
+@variables q_1(t)
 C_dict = Dict(
     :description => "Generalised Linear Resistor",
     :numports => 1,
@@ -27,14 +28,14 @@ C_dict = Dict(
         q_1 => "Generalised Position"
     ),
     :equations => [
-        0 ~ q_1/C - E_1,
-        D(q_1) ~ F_1
+        0 ~ q_1/C - E[1],
+        D(q_1) ~ F[1]
     ]
 )
 
 # Linear inductance (:I)
 @parameters L
-@variables E_1(t) F_1(t) p_1(t)
+@variables p_1(t)
 I_dict = Dict(
     :description => "Generalised Linear Inductor",
     :numports => 1,
@@ -45,38 +46,35 @@ I_dict = Dict(
         p_1 => "Generalised Momentum"
     ),
     :equations => [
-        0 ~ p_1/L - F_1,
-        D(p_1) ~ E_1
+        0 ~ p_1/L - F[1],
+        D(p_1) ~ E[1]
     ]
 )
 
 # Source of effort (:Se)
 @parameters e
-@variables E_1(t)
 Se_dict = Dict(
     :description => "Effort source",
     :numports => 1,
     :parameters => OrderedDict(
         e => "Effort"
     ),
-    :equations => [0 ~ e - E_1]
+    :equations => [0 ~ e - E[1]]
 )
 
 # Source of flow (:Sf)
 @parameters f
-@variables F_1(t)
 Sf_dict = Dict(
     :description => "Flow source",
     :numports => 1,
     :parameters => OrderedDict(
         e => "Flow"
     ),
-    :equations => [0 ~ f - F_1]
+    :equations => [0 ~ f - F[1]]
 )
 
 # Transformer (:TF)
 @parameters r
-@variables E_1(t) F_1(t) E_2(t) F_2(t)
 TF_dict = Dict(
     :description => "Linear Transformer",
     :numports => 2,
@@ -84,14 +82,14 @@ TF_dict = Dict(
         r => "Winding ratio"
     ),
     :equations => [
-        0 ~ E_2 - r*E_1,
-        0 ~ F_1 - r*F_2
+        0 ~ E[2] - r*E[1],
+        0 ~ F[1] - r*F[2]
     ]
 )
 
 # Chemical species (:Ce)
 @parameters k R T
-@variables E_1(t) F_1(t) q_1(t)
+@variables q_1(t)
 Ce_dict = Dict(
     :description => "Chemical species",
     :numports => 1,
@@ -104,14 +102,14 @@ Ce_dict = Dict(
         q_1 => "Molar Quantity"
     ),
     :equations => [
-        0 ~ R*T*log(k*q_1) - E_1,
-        D(q_1) ~ F_1
+        0 ~ R*T*log(k*q_1) - E[1],
+        D(q_1) ~ F[1]
     ]
 )
 
 # Normalised chemical species (:ce)
 @parameters k
-@variables E_1(t) F_1(t) q_1(t)
+@variables q_1(t)
 ce_dict = Dict(
     :description => "Chemical species (normalised)",
     :numports => 1,
@@ -122,14 +120,13 @@ ce_dict = Dict(
         q_1 => "Molar Quantity"
     ),
     :equations => [
-        0 ~ log(k*q_1) - E_1,
-        D(q_1) ~ F_1
+        0 ~ log(k*q_1) - E[1],
+        D(q_1) ~ F[1]
     ]
 )
 
 # Chemical reaction (:Re)
 @parameters r R T
-@variables E_1(t) F_1(t) E_2(t) F_2(t)
 Re_dict = Dict(
     :description => "Biochemical reaction",
     :numports => 2,
@@ -139,14 +136,13 @@ Re_dict = Dict(
         T => "Temperature"
     ),
     :equations => [
-        0 ~ F_1 + F_2,
-        0 ~ F_1 - r*(exp(E_1/R/T) - exp(E_2/R/T))
+        0 ~ F[1] + F[2],
+        0 ~ F[1] - r*(exp(E[1]/R/T) - exp(E[2]/R/T))
     ]
 )
 
 # Normalised chemical reaction (:re)
 @parameters r R T
-@variables E_1(t) F_1(t) E_2(t) F_2(t)
 re_dict = Dict(
     :description => "Biochemical reaction (normalised)",
     :numports => 2,
@@ -154,8 +150,8 @@ re_dict = Dict(
         r => "Reaction Rate"
     ),
     :equations => [
-        0 ~ F_1 + F_2,
-        0 ~ F_1 - r*(exp(E_1) - exp(E_2))
+        0 ~ F[1] + F[2],
+        0 ~ F[1] - r*(exp(E[1]) - exp(E[2]))
     ]
 )
 

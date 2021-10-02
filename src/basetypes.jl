@@ -145,14 +145,12 @@ state_vars(n::Component) = n.state_vars
 state_vars(j::Junction) = Vector{Num}([])
 function state_vars(m::BondGraph)
     i = 0
-    dict_states = OrderedDict{Num,Tuple{Model,Num}}()
-    for c in components(m)
-        for x in state_vars(c)
-            i += 1
-            dict_states[internal_state(i)] = (c,x)
-        end
+    states = Vector{Tuple{Model,Num}}([])
+    for c in components(m), x in state_vars(c)
+        push!(states,(c,x))
     end
-    return dict_states
+    @variables x[1:length(states)](t)
+    return OrderedDict(x[i] => y for (i,y) in enumerate(states))
 end
 
 # Bonds

@@ -121,10 +121,10 @@ D = Differential(t)
 @testset "Equations" begin
     c = new(:C)
     @parameters C
-    @variables E_1(t) F_1(t) q_1(t)
+    @variables E[1](t) F[1](t) q_1(t)
     @test BondGraphs.equations(c) == [
-        0 ~ q_1/C - E_1,
-        D(q_1) ~ F_1
+        0 ~ q_1/C - E[1],
+        D(q_1) ~ F[1]
     ]
 end
 

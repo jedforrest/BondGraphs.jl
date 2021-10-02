@@ -13,10 +13,10 @@ D = Differential(t)
 
     @test numports(zero_law) == 2
 
-    @variables E_1(t) E_2(t) F_1(t) F_2(t)
+    @variables E[1:2](t) F[1:2](t)
     @test BondGraphs.equations(zero_law) == [
-        0 ~ F_1 + F_2,
-        0 ~ E_1 - E_2
+        0 ~ F[1] + F[2],
+        0 ~ E[1] - E[2]
     ]
 end
 
@@ -36,11 +36,11 @@ end
     @test length(j.weights) == 3
     @test j.weights == [1,-1,-1]
 
-    @variables E_1(t) E_2(t) E_3(t) F_1(t) F_2(t) F_3(t)
+    @variables E[1:3](t) F[1:3](t)
     @test BondGraphs.equations(j) == [
-        0 ~ E_1 - E_2 - E_3,
-        0 ~ F_1 + F_2,
-        0 ~ F_1 + F_3,
+        0 ~ E[1] - E[2] - E[3],
+        0 ~ F[1] + F[2],
+        0 ~ F[1] + F[3],
     ]
 end
 
@@ -82,9 +82,9 @@ end
     eqs = BondGraphs.equations(bg)
     @test length(eqs) == 1
 
-    @parameters t u_1 u_2
-    @variables x_1(t)
-    @test eqs == [D(x_1) ~ -x_1/u_1/u_2]
+    @parameters t u[1:2]
+    @variables x[1](t)
+    @test eqs == [D(x[1]) ~ -x[1]/u[1]/u[2]]
 end
 
 @testset "RLC circuit" begin
@@ -92,11 +92,11 @@ end
     eqs = BondGraphs.equations(bg)
     @test length(eqs) == 2
 
-    @parameters t u_1 u_2 u_3
-    @variables x_1(t) x_2(t)
+    @parameters t u[1:3]
+    @variables x[1:2](t)
     @test eqs == [
-        D(x_1) ~ -x_2/u_2 - x_1/u_1/u_3,
-        D(x_2) ~ x_1/u_1
+        D(x[1]) ~ -x[2]/u[2] - x[1]/u[1]/u[3],
+        D(x[2]) ~ x[1]/u[1]
     ]
 end
 
