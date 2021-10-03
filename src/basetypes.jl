@@ -168,6 +168,7 @@ end
 # Get default values
 default_value(n::Component) = n.default
 default_value(n::Component,v::Num) = default_value(n::Component)[v]
+default_value(j::Junction) = Dict{Num,Any}()
 
 # Bonds
 bonds(m::BondGraph) = m.bonds

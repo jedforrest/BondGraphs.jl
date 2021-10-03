@@ -122,7 +122,7 @@ D = Differential(t)
     c = new(:C)
     @parameters C
     @variables E[1](t) F[1](t) q(t)
-    @test BondGraphs.equations(c) == [
+    @test cr(c) == [
         0 ~ q/C - E[1],
         D(q) ~ F[1]
     ]

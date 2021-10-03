@@ -8,9 +8,9 @@ rw_exp = RestartedChain(exponent_rules)
 rw_chain = RestartedChain([SymbolicUtils.default_simplifier(),rw_exp])
 rewriter = Postwalk(rw_chain)
 
-# Equations
-equations(n::Component) = n.equations
-function equations(m::EqualEffort)
+# Constitutive relations
+cr(n::Component) = n.equations
+function cr(m::EqualEffort)
     if isempty(freeports(m))
         return Vector{Equation}([])
     end
@@ -22,7 +22,7 @@ function equations(m::EqualEffort)
     effort_constraints = [0 ~ E[1] - e for e in E[2:end]]
     return vcat(flow_constraint,effort_constraints)
 end
-function equations(m::EqualFlow)
+function cr(m::EqualFlow)
     if isempty(freeports(m))
         return Vector{Equation}([])
     end
@@ -36,37 +36,56 @@ function equations(m::EqualFlow)
     flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
     return vcat(effort_constraint,flow_constraints)
 end
-function equations(m::BondGraph)
+function cr(m::BondGraph)
     return simplify.(ModelingToolkit.equations(de_system(m)),rewriter=rewriter)
 end
 
-function de_system(m::BondGraph)
-    # Import equations from components, then substitute
-    inv_x, inv_bs, inv_u = inverse_mappings(m)
-    eqs = Vector{Equation}([])
-    for c in components(m)
-        new_eqs = equations(c)
+@connector function MTKPort(;name)
+    vars = @variables E(t) F(t)
+    ODESystem(Equation[], t, vars, []; name=name)
+end
 
-        x_subs = Dict(x => inv_x[(c,x)] for x in state_vars(c))
-        u_subs = Dict(p => inv_u[(c,p)] for p in params(c))
+ModelingToolkit.connect(::Type{MTKPort}, p1, p2) = 
+    [0 ~ p1.F + p2.F, 0 ~ p1.E - p2.E]
 
-        N = numports(c)
-        @variables E[1:N](t) F[1:N](t)
-        e_subs = Dict(E[p.index] => e for (p,(e,_)) in inv_bs if p.node == c)
-        f_subs = Dict(F[p.index] => f for (p,(_,f)) in inv_bs if p.node == c)
-        
-        sub_rules = merge(x_subs,u_subs,e_subs,f_subs)
-        sub_eqs = [substitute(eq,sub_rules) for eq in new_eqs]
-        append!(eqs,sub_eqs)
-    end
+function ModelingToolkit.ODESystem(n::AbstractNode)
+    N = numports(n)
+    ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
+
+    @variables E[1:N](t) F[1:N](t)
+    e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
+    f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
+    sub_rules = merge(e_sub_rules,f_sub_rules)
+    eqs = [substitute(eq,sub_rules) for eq in cr(n)]
+
+    sys = ODESystem(eqs, t, state_vars(n), params(n); 
+                    name=n.name, defaults=default_value(n))
+    return compose(sys, ps...)
+end
+function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
+    subsystems = OrderedDict(c => ODESystem(c) for c in components(m))
 
     # Add constraints from bonds
-    for (t,h) in bonds(m)
-        (e_t,f_t) = inv_bs[t]
-        (e_h,f_h) = inv_bs[h]
-        push!(eqs, 0 ~ e_t - e_h)
-        push!(eqs, 0 ~ f_t + f_h)
+    connections = Equation[]
+    for (s,d) in bonds(m)
+        src_port = getproperty(subsystems[s.node],Symbol("p$(s.index)"))
+        dst_port = getproperty(subsystems[d.node],Symbol("p$(d.index)"))
+        append!(connections,connect(src_port, dst_port))
     end
-    sys = ODESystem(eqs, t)
-    return structural_simplify(sys)
+    
+    @named _model = ODESystem(connections,t; name=m.name)
+    model = compose(_model,collect(values(subsystems)))
+
+    if simplify_eqs
+        simplified_model = structural_simplify(model)
+        for (i,eq) in enumerate(simplified_model.eqs)
+            simplified_model.eqs[i] = simplify(eq; rewriter=rewriter)
+        end
+        return simplified_model
+    else
+        return initialize_system_structure(model)
+    end
 end
+
+equations(m::Model;simplify_eqs=true) = 
+    ModelingToolkit.equations(ODESystem(m;simplify_eqs))

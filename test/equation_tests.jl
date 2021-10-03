@@ -14,7 +14,7 @@ D = Differential(t)
     @test numports(zero_law) == 2
 
     @variables E[1:2](t) F[1:2](t)
-    @test BondGraphs.equations(zero_law) == [
+    @test cr(zero_law) == [
         0 ~ F[1] + F[2],
         0 ~ E[1] - E[2]
     ]
@@ -37,7 +37,7 @@ end
     @test j.weights == [1,-1,-1]
 
     @variables E[1:3](t) F[1:3](t)
-    @test BondGraphs.equations(j) == [
+    @test cr(j) == [
         0 ~ E[1] - E[2] - E[3],
         0 ~ F[1] + F[2],
         0 ~ F[1] + F[3],
@@ -48,7 +48,7 @@ function rlc()
     r = new(:R)
     l = new(:I)
     c = new(:C)
-    kvl = EqualEffort()
+    kvl = EqualEffort(name=:kvl)
 
     bg = BondGraph()
     add_node!(bg, [c, l, kvl, r])
@@ -59,19 +59,6 @@ function rlc()
     return bg
 end
 
-@testset "Basis vectors" begin
-    bg = rlc()
-    tangent, pv, cv = BondGraphs.basis_vectors(bg)
-
-    @test length(tangent) == 2
-    @test length(cv) == 0
-    @test length(pv) == 0
-
-    @test length(BondGraphs.state_vars(bg)) == 2
-    @test length(BondGraphs.bond_space(bg)) == 6
-    @test length(BondGraphs.control_space(bg)) == 3
-end
-
 @testset "RC circuit" begin
     r = new(:R)
     c = new(:C)
@@ -79,12 +66,13 @@ end
     add_node!(bg, [c, r])
     connect!(bg, r, c)
 
-    eqs = BondGraphs.equations(bg)
+    sys = ODESystem(bg)
+    eqs = ModelingToolkit.equations(sys)
     @test length(eqs) == 1
 
-    @parameters t u[1:2]
-    @variables x[1](t)
-    @test eqs == [D(x[1]) ~ -x[1]/u[1]/u[2]]
+    (C,R) = sys.ps
+    x = sys.states[1]
+    @test eqs == [D(x) ~ -x/C/R]
 end
 
 @testset "RLC circuit" begin
@@ -92,11 +80,13 @@ end
     eqs = BondGraphs.equations(bg)
     @test length(eqs) == 2
 
-    @parameters t u[1:3]
-    @variables x[1:2](t)
+    sys = ODESystem(bg)
+    eqs = ModelingToolkit.equations(sys)
+    (C,L,R) = sys.ps
+    (qC,pL) = sys.states
     @test eqs == [
-        D(x[1]) ~ -x[2]/u[2] - x[1]/u[1]/u[3],
-        D(x[2]) ~ x[1]/u[1]
+        D(qC) ~ -pL/L - qC/C/R,
+        D(pL) ~ qC/C
     ]
 end
 
@@ -109,18 +99,15 @@ end
     add_node!(bg,[A,B,re])
     connect!(bg, A, re; dstportindex=1)
     connect!(bg, re, B; srcportindex=2)
-    eqs = BondGraphs.equations(bg)
+    sys = ODESystem(bg)
+    eqs = ModelingToolkit.equations(sys)
 
-    icv = BondGraphs.invert(control_space(bg))
-    iss = BondGraphs.invert(state_vars(bg))
-    @parameters t
-    @variables q(t)
-    KA,KB,r = [icv[(x,params(x)[1])] for x in [A,B,re]]
-    xA,xB = [iss[(x,q)] for x in [A,B]]
-    @test Set(eqs) == Set([
+    (xA,xB) = sys.states
+    (KA,KB,r) = sys.ps
+    @test eqs == [
         D(xA) ~ -r*(KA*xA - KB*xB),
         D(xB) ~ r*(KA*xA - KB*xB)
-    ])
+    ]
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
@@ -143,19 +130,15 @@ end
     connect!(bg,common_C,re2; dstportindex=1)
     connect!(bg,re2,C_D; srcportindex=2)
 
-    eqs = BondGraphs.equations(bg)
+    sys = ODESystem(bg)
+    eqs = ModelingToolkit.equations(sys)
 
-    icv = BondGraphs.invert(control_space(bg))
-    iss = BondGraphs.invert(state_vars(bg))
-
-    @parameters t
-    @variables q(t)
-    KA,KB,KC,KD,r1,r2 = [icv[(x,params(x)[1])] for x in [C_A,C_B,C_C,C_D,re1,re2]]
-    xA,xB,xC,xD = [iss[(x,q)] for x in [C_A,C_B,C_C,C_D]]
-    @test Set(eqs) == Set([
+    (xA,xB,xC,xD) = sys.states
+    (KA,KB,KC,KD,r1,r2) = sys.ps
+    @test eqs == [
         D(xA) ~ -r1*(KA*xA - KB*xB*KC*xC),
         D(xB) ~ r1*(KA*xA - KB*xB*KC*xC),
         D(xC) ~ r1*(KA*xA - KB*xB*KC*xC) - r2*(KC*xC - KD*xD),
         D(xD) ~ r2*(KC*xC - KD*xD)
-    ])
+    ]
 end
