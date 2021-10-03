@@ -1,6 +1,6 @@
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
 @testset "BondGraph Construction" begin
-    model = BondGraph("RC")
+    model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
     zero_law = EqualEffort()
@@ -17,7 +17,7 @@
 end
 
 @testset "BondGraph Modification" begin
-    model = BondGraph("RCI")
+    model = BondGraph(:RCI)
     C = Component(:C)
     R = Component(:R)
     I = Component(:I)
@@ -53,7 +53,7 @@ end
 end
 
 @testset "Construction Failure" begin
-    model = BondGraph("RC")
+    model = BondGraph(:RC)
     C = new(:C)
     R = new(:R)
     zero_law = EqualEffort()
@@ -72,12 +72,12 @@ end
 end
 
 @testset "Chemical reaction" begin
-    model = BondGraph("Chemical")
-    A = Component(:C, "A")
-    B = Component(:C, "B")
-    C = Component(:C, "C")
-    D = Component(:C, "D")
-    Re = Component(:Re, "Reaction", numports=2)
+    model = BondGraph(:Chemical)
+    A = Component(:C, :A)
+    B = Component(:C, :B)
+    C = Component(:C, :C)
+    D = Component(:C, :D)
+    Re = Component(:Re, :Reaction, numports=2)
     J_AB = EqualFlow()
     J_CD = EqualFlow()
 
@@ -105,7 +105,7 @@ end
 end
 
 @testset "Standard components" begin
-    tf = new(:TF,"n")
+    tf = new(:TF,:n)
     @test tf isa Component{2}
     @test tf.type == :TF
     @test numports(tf) == 2

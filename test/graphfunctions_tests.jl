@@ -8,8 +8,8 @@
 end
 
 @testset "Adding and removing elements" begin
-    c = Component(:C, "C1")
-    r = Component(:R, "R1", numports=1)
+    c = Component(:C, :C1)
+    r = Component(:R, :C1, numports=1)
     j = EqualEffort()
 
     bg = BondGraph()
@@ -41,9 +41,9 @@ end
 
 @testset "Printing" begin
     C = Component(:C)
-    SS = Component(:SS, "Source")
-    J0 = EqualEffort(name="J")
-    bg = BondGraph("newbg")
+    SS = Component(:SS, :Source)
+    J0 = EqualEffort(name=:J)
+    bg = BondGraph(:newbg)
     @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
 
     add_vertex!(bg, C)

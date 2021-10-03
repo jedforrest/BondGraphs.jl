@@ -2,7 +2,7 @@
 D = Differential(t)
 
 @testset "0-junction equations" begin
-    model = BondGraph("RC")
+    model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
     zero_law = EqualEffort()
@@ -21,9 +21,9 @@ D = Differential(t)
 end
 
 @testset "1-junction equations" begin
-    c1 = new(:C,"C1")
-    c2 = new(:R,"R1")
-    c3 = new(:I,"I1")
+    c1 = new(:C,:C1)
+    c2 = new(:R,:R1)
+    c3 = new(:I,:I1)
     j = EqualFlow()
 
     bg = BondGraph()
@@ -75,7 +75,7 @@ end
 @testset "RC circuit" begin
     r = new(:R)
     c = new(:C)
-    bg = BondGraph("RC")
+    bg = BondGraph(:RC)
     add_node!(bg, [c, r])
     connect!(bg, r, c)
 
@@ -101,9 +101,9 @@ end
 end
 
 @testset "Chemical reaction A ⇌ B" begin
-    A = new(:ce,"A")
-    B = new(:ce,"B")
-    re = new(:re,"r")
+    A = new(:ce,:A)
+    B = new(:ce,:B)
+    re = new(:re,:r)
     bg = BondGraph()
 
     add_node!(bg,[A,B,re])
@@ -124,12 +124,12 @@ end
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
-    C_A = new(:ce,"A")
-    C_B = new(:ce,"B")
-    C_C = new(:ce,"C")
-    C_D = new(:ce,"D")
-    re1 = new(:re,"r1")
-    re2 = new(:re,"r2")
+    C_A = new(:ce,:A)
+    C_B = new(:ce,:B)
+    C_C = new(:ce,:C)
+    C_D = new(:ce,:D)
+    re1 = new(:re,:r1)
+    re2 = new(:re,:r2)
     common_C = EqualEffort()
     BC = EqualFlow()
 

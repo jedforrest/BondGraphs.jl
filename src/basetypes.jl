@@ -2,19 +2,19 @@ abstract type AbstractNode end
 
 struct Component{N} <: AbstractNode
     type::Symbol
-    name::AbstractString
+    name::Symbol
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
     parameters::Vector{Num}
     state_vars::Vector{Num}
     default::Dict{Num,Any}
     equations::Vector{Equation}
-    function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int,
+    function Component{N}(m::Symbol, n::Symbol, np::Int, v::Int,
          p::Vector, x::Vector, d::Dict, eq::Vector) where N
         new(m, n, ones(MVector{np,Bool}), Ref(v), p, x, d, eq)
     end
 end
-function Component(type::Symbol, name::String=string(type);
+function Component(type::Symbol, name::Symbol=type;
     numports::Int=1, vertex::Int=0, parameters::Vector=[], state_vars::Vector=[],
     default::Dict=Dict(), equations::Vector=[])
     Component{numports}(type, name, numports, vertex, parameters, state_vars, default, equations)
@@ -23,18 +23,18 @@ end
 abstract type Junction <: AbstractNode end
 
 struct EqualEffort <: Junction
-    name::AbstractString
+    name::Symbol
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    EqualEffort(; name::AbstractString="0", v::Int=0) = new(name, [], Ref(v))
+    EqualEffort(; name::Symbol=Symbol("0"), v::Int=0) = new(name, [], Ref(v))
 end
 
 struct EqualFlow <: Junction
-    name::AbstractString
+    name::Symbol
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualFlow(; name::AbstractString="1", v::Int=0) = new(name, [], [], Ref(v))
+    EqualFlow(; name::Symbol=Symbol("1"), v::Int=0) = new(name, [], [], Ref(v))
 end
 
 struct Port 
@@ -60,15 +60,14 @@ end
 
 struct BondGraph <: lg.AbstractGraph{Int64}
     type::Symbol
-    name::AbstractString
+    name::Symbol
     nodes::Vector{T} where T <: AbstractNode
     bonds::Vector{Bond}
 end
-BondGraph(type::Symbol=:BG, name::AbstractString=string(type)) = BondGraph(type, name, AbstractNode[], Bond[])
-BondGraph(name::AbstractString) = BondGraph(:BG, name)
+BondGraph(name::Symbol=:BG) = BondGraph(:BG, name, AbstractNode[], Bond[])
 
 # New component
-function new(type,name::String=string(type);library=standard_library)
+function new(type,name::Symbol=type;library=standard_library)
     d = library[type]
     p = collect(keys(d[:parameters]))
     if haskey(d,:state_vars)
