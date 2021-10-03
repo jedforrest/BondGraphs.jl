@@ -90,14 +90,14 @@ end
 equations(m::Model;simplify_eqs=true) = 
     ModelingToolkit.equations(ODESystem(m;simplify_eqs))
 
-function simulate(m::BondGraph, tspan; u0=[], pmap=[], alg=Tsit5(), kwargs...)
+function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:ODE, kwargs...)
 
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs,0) for eq in ModelingToolkit.equations(sys)])
-    if flag_ODE
+    if probtype==:ODE || flag_ODE
         prob = ODEProblem(sys, u0, tspan, pmap)
     else
         prob = ODAEProblem(sys, u0, tspan, pmap)
     end
-    return solve(prob, alg; kwargs...)
+    return solve(prob; kwargs...)
 end
