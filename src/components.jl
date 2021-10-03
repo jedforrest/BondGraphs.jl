@@ -5,19 +5,19 @@ D = Differential(t)
 @variables E[1:2](t) F[1:2](t)
 
 # Linear resistance (:R)
-@parameters r
+@parameters R
 R_dict = Dict(
     :description => "Generalised Linear Resistor",
     :numports => 1,
     :parameters => OrderedDict(
-        r => "Resistance"
+        R => "Resistance"
     ),
-    :equations => [0 ~ E[1]/r - F[1]]
+    :equations => [0 ~ E[1]/R - F[1]]
 )
 
 # Linear capacitor (:C)
 @parameters C
-@variables q_1(t)
+@variables q(t)
 C_dict = Dict(
     :description => "Generalised Linear Resistor",
     :numports => 1,
@@ -25,17 +25,17 @@ C_dict = Dict(
         C => "Capacitance"
     ),
     :state_vars => OrderedDict(
-        q_1 => "Generalised Position"
+        q => "Generalised Position"
     ),
     :equations => [
-        0 ~ q_1/C - E[1],
-        D(q_1) ~ F[1]
+        0 ~ q/C - E[1],
+        D(q) ~ F[1]
     ]
 )
 
 # Linear inductance (:I)
 @parameters L
-@variables p_1(t)
+@variables p(t)
 I_dict = Dict(
     :description => "Generalised Linear Inductor",
     :numports => 1,
@@ -43,11 +43,11 @@ I_dict = Dict(
         L => "Inductance"
     ),
     :state_vars => OrderedDict(
-        p_1 => "Generalised Momentum"
+        p => "Generalised Momentum"
     ),
     :equations => [
-        0 ~ p_1/L - F[1],
-        D(p_1) ~ E[1]
+        0 ~ p/L - F[1],
+        D(p) ~ E[1]
     ]
 )
 
@@ -99,17 +99,17 @@ Ce_dict = Dict(
         T => "Temperature"
     ),
     :state_vars => OrderedDict(
-        q_1 => "Molar Quantity"
+        q => "Molar Quantity"
     ),
     :equations => [
-        0 ~ R*T*log(k*q_1) - E[1],
-        D(q_1) ~ F[1]
+        0 ~ R*T*log(k*q) - E[1],
+        D(q) ~ F[1]
     ]
 )
 
 # Normalised chemical species (:ce)
 @parameters k
-@variables q_1(t)
+@variables q(t)
 ce_dict = Dict(
     :description => "Chemical species (normalised)",
     :numports => 1,
@@ -117,11 +117,11 @@ ce_dict = Dict(
         k => "Biochemical Constant; exp(mu_0/RT)/V"
     ),
     :state_vars => OrderedDict(
-        q_1 => "Molar Quantity"
+        q => "Molar Quantity"
     ),
     :equations => [
-        0 ~ log(k*q_1) - E[1],
-        D(q_1) ~ F[1]
+        0 ~ log(k*q) - E[1],
+        D(q) ~ F[1]
     ]
 )
 

@@ -12,7 +12,8 @@ using DataStructures
 export AbstractNode, Component, Junction, Port, Bond, BondGraph,
 EqualEffort, EqualFlow,
 vertex, set_vertex!, freeports, numports, srcnode, dstnode, 
-equations, params, state_vars, control_space, bond_space,
+equations, params, state_vars, set_param!, set_initial_value!, 
+default_value, control_space, bond_space,
 new, add_node!, remove_node!, connect!, disconnect!, swap!
 
 include("basetypes.jl")

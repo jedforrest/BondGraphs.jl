@@ -114,9 +114,9 @@ end
     icv = BondGraphs.invert(control_space(bg))
     iss = BondGraphs.invert(state_vars(bg))
     @parameters t
-    @variables q_1(t)
+    @variables q(t)
     KA,KB,r = [icv[(x,params(x)[1])] for x in [A,B,re]]
-    xA,xB = [iss[(x,q_1)] for x in [A,B]]
+    xA,xB = [iss[(x,q)] for x in [A,B]]
     @test Set(eqs) == Set([
         D(xA) ~ -r*(KA*xA - KB*xB),
         D(xB) ~ r*(KA*xA - KB*xB)
@@ -149,9 +149,9 @@ end
     iss = BondGraphs.invert(state_vars(bg))
 
     @parameters t
-    @variables q_1(t)
+    @variables q(t)
     KA,KB,KC,KD,r1,r2 = [icv[(x,params(x)[1])] for x in [C_A,C_B,C_C,C_D,re1,re2]]
-    xA,xB,xC,xD = [iss[(x,q_1)] for x in [C_A,C_B,C_C,C_D]]
+    xA,xB,xC,xD = [iss[(x,q)] for x in [C_A,C_B,C_C,C_D]]
     @test Set(eqs) == Set([
         D(xA) ~ -r1*(KA*xA - KB*xB*KC*xC),
         D(xB) ~ r1*(KA*xA - KB*xB*KC*xC),

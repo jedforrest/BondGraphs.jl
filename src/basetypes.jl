@@ -7,16 +7,17 @@ struct Component{N} <: AbstractNode
     vertex::RefValue{Int}
     parameters::Vector{Num}
     state_vars::Vector{Num}
+    default::Dict{Num,Any}
     equations::Vector{Equation}
     function Component{N}(m::Symbol, n::AbstractString, np::Int, v::Int,
-         p::Vector, x::Vector, eq::Vector) where N
-        new(m, n, ones(MVector{np,Bool}), Ref(v), p, x, eq)
+         p::Vector, x::Vector, d::Dict, eq::Vector) where N
+        new(m, n, ones(MVector{np,Bool}), Ref(v), p, x, d, eq)
     end
 end
 function Component(type::Symbol, name::String=string(type);
     numports::Int=1, vertex::Int=0, parameters::Vector=[], state_vars::Vector=[],
-    equations::Vector=[])
-    Component{numports}(type, name, numports, vertex, parameters, state_vars, equations)
+    default::Dict=Dict(), equations::Vector=[])
+    Component{numports}(type, name, numports, vertex, parameters, state_vars, default, equations)
 end
 
 abstract type Junction <: AbstractNode end
@@ -152,6 +153,22 @@ function state_vars(m::BondGraph)
     @variables x[1:length(states)](t)
     return OrderedDict(x[i] => y for (i,y) in enumerate(states))
 end
+
+# Set parameter values
+function set_param!(n::Component,var,val)
+    any(isequal.(params(n),var)) || error("Component does not have parameter.")
+    default_value(n)[var] = val
+end
+
+# Set initial conditions
+function set_initial_value!(n::Component,var,val)
+    any(isequal.(state_vars(n),var)) || error("Component does not have state variable.")
+    default_value(n)[var] = val
+end
+
+# Get default values
+default_value(n::Component) = n.default
+default_value(n::Component,v::Num) = default_value(n::Component)[v]
 
 # Bonds
 bonds(m::BondGraph) = m.bonds
