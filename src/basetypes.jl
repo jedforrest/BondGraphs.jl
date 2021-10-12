@@ -190,3 +190,14 @@ show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(lg.n
 # Comparisons
 # These definitions will need to expand when equations etc. are added
 ==(n1::AbstractNode, n2::AbstractNode) = type(n1) == type(n2) && n1.name == n2.name
+
+struct BondGraphNode <: AbstractNode
+    bondgraph::BondGraph
+    type::Symbol
+    name::AbstractString
+    freeports::Vector{Bool}
+    vertex::RefValue{Int}
+    function BondGraphNode(bg::BondGraph, type::Symbol=:BG, name::AbstractString=bg.name; vertex::Int=0)
+        new(bg, type, name, Bool[], Ref(vertex))
+    end
+end

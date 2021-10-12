@@ -1,7 +1,7 @@
 module BondGraphs
 
 import LightGraphs as lg
-import Base: RefValue, eltype, show, in, ==
+import Base: RefValue, eltype, show, in, ==, getproperty
 
 using StaticArrays
 using ModelingToolkit
@@ -12,9 +12,11 @@ using DataStructures
 using Setfield
 using Catalyst
 
-export AbstractNode, Component, Junction, Port, Bond, BondGraph,
+export AbstractNode, Component, Junction, Port, Bond, BondGraph, BondGraphNode,
 EqualEffort, EqualFlow,
-vertex, set_vertex!, freeports, numports, srcnode, dstnode, getnodes, getbonds,
+
+type, name, vertex, set_vertex!, freeports, numports, bondgraph, nodes, bonds,
+srcnode, dstnode, getnodes, getbonds,
 
 new, add_node!, remove_node!, connect!, disconnect!, 
 swap!, insert_node!, merge_nodes!, simplify_junctions!,

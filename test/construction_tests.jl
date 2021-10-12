@@ -1,5 +1,5 @@
-function RCI()
-    model = BondGraph(:RCI)
+function RCI(name=:RCI)
+    model = BondGraph(name)
     C = Component(:C)
     R = Component(:R)
     I = Component(:I)
@@ -241,3 +241,43 @@ end
     @test_broken ne(bg) == 4
 end
 
+@testset "BondGraphNodes" begin
+    C = Component(:C)
+    bg1 = BondGraph(:BG1)
+    bg2 = BondGraph(:BG2)
+    bg3 = BondGraph(:BG3)
+    main = BondGraph(:Main)
+
+    bgn1 = BondGraphNode(bg1)
+    bgn2 = BondGraphNode(bg2)
+    bgn3 = BondGraphNode(bg3)
+
+    @test bgn1.bondgraph === bg1
+    @test bgn1.type === :BG
+    @test bgn1.name === bg1.name
+    @test freeports(bgn1) == Bool[]
+
+    add_node!(bg1, C)
+    add_node!(bg2, bgn1)
+    add_node!(bg3, bgn2)
+    add_node!(main, bgn3)
+
+    @test main.BG3.BG2.BG1.C === C
+end
+
+# @testset "Expose component" begin
+    
+# end
+
+# @testset "Nested BondGraphs" begin
+#     bg_1 = RCI("RCI_1")
+#     bg_2 = RCI("RCI_2")
+#     bgn_1 = BondGraphNode(bg_1)
+#     bgn_2 = BondGraphNode(bg_2)
+
+#     bg_main = BondGraph("BG_Main")
+
+#     #add_node!(bg_main, [bgn_1, bgn_2])
+#     #connect!(bg_main, bgn_1, bgn_2)
+
+# end
