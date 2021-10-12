@@ -1,3 +1,20 @@
+function RCI()
+    model = BondGraph("RCI")
+    C = Component(:C)
+    R = Component(:R)
+    I = Component(:I)
+    SS = Component(:SS)
+    zero_law = Junction(:𝟎)
+
+    add_node!(model, [C, R, I, SS, zero_law])
+    connect!(model, R, zero_law)
+    connect!(model, C, zero_law)
+    connect!(model, zero_law, I)
+    connect!(model, zero_law, SS)
+
+    model
+end
+
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
 @testset "BondGraph Construction" begin
     model = BondGraph(:RC)
@@ -59,8 +76,8 @@ end
     zero_law = EqualEffort()
 
     add_node!(model, [R, C, zero_law])
-    @test_throws ErrorException add_node!(model, R)
-    @test_throws ErrorException add_node!(model, zero_law)
+    @test_logs (:warn, "R:R already in model") add_node!(model, R)
+    @test_logs (:warn, "J0 already in model") add_node!(model, zero_law)
 
     connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
@@ -69,6 +86,9 @@ end
     tf = new(:TF)
     @test_throws ErrorException remove_node!(model, tf)
     @test_throws ErrorException swap!(model, C, tf)
+    
+    one_law = Junction(:J1)
+    @test_logs (:warn, "J1 not in model") remove_node!(model, one_law)
 end
 
 @testset "Chemical reaction" begin
@@ -152,4 +172,70 @@ end
 
     ce = new(:ce)
     @test isequal(state_vars(c), [q])
+end
+@testset "Inserting Nodes" begin
+    bg = RCI()
+
+    c, r, 𝟎 = bg.nodes[[1,2,5]]
+
+    bondc0 = getbonds(bg, c, 𝟎)[1]
+    bondr0 = getbonds(bg, r, 𝟎)[1]
+
+    tf = Component(:TF, numports=2)
+    insert_node!(bg, bondc0, tf)
+    insert_node!(bg, bondr0, Junction(:𝟏))
+
+    @test tf in bg.nodes
+    @test nv(bg) == 7
+    @test ne(bg) == 6
+end
+
+@testset "Merging components" begin
+    bg = RCI()
+
+    newC = Component(:C, "newC")
+    newR = Component(:R, "newR")
+    add_node!(bg, [newC, newR])
+    connect!(bg, newC, newR)
+
+    C = getnodes(bg, "C")[1]
+    merge_nodes!(bg, C, newC)
+
+    R = getnodes(bg, "R")[1]
+    merge_nodes!(bg, R, newR; junction=Junction(:𝟏))
+
+    @test isempty(getnodes(bg, "newC"))
+    @test length(getnodes(bg, :𝟏)) == 1
+    @test length(getnodes(bg, :𝟎)) == 2
+    @test nv(bg) == 7
+    @test ne(bg) == 7
+end
+
+@testset "Simplifying Junctions" begin
+    bg = RCI()
+    C, R, I, SS, 𝟎 = bg.nodes
+
+    J0_new_1 = Junction(:𝟎, "new0_1")
+    J0_new_2 = Junction(:𝟎, "new0_2")
+    insert_node!(bg, (C, 𝟎), J0_new_1)
+    insert_node!(bg, (R, 𝟎), J0_new_2)
+    connect!(bg, J0_new_1, J0_new_2)
+
+    J1_new_1 = Junction(:𝟏)
+    J1_new_2 = Junction(:𝟏)
+    add_node!(bg, J1_new_1)
+    connect!(bg, 𝟎, J1_new_1)
+    insert_node!(bg, (SS, 𝟎), J1_new_2)
+
+    # Removing junction redundancies
+    simplify_junctions!(bg, squash_identical=false)
+    @test length(getnodes(bg, :𝟏)) == 0
+    @test nv(bg) == 7
+    @test ne(bg) == 7
+
+    # Squashing junction duplicates into a single junction
+    simplify_junctions!(bg)
+    @test length(getnodes(bg, :𝟎)) == 1
+    @test nv(bg) == 5
+    @test ne(bg) == 4
 end
