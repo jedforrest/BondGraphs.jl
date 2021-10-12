@@ -1,7 +1,7 @@
 module BondGraphs
 
 import LightGraphs as lg
-import Base: RefValue, eltype, show, in
+import Base: RefValue, eltype, show, in, ==
 
 using StaticArrays
 using ModelingToolkit
@@ -9,6 +9,7 @@ using DifferentialEquations
 using SymbolicUtils
 using SymbolicUtils.Rewriters
 using DataStructures
+using Setfield
 
 export AbstractNode, Component, Junction, Port, Bond, BondGraph,
 EqualEffort, EqualFlow,

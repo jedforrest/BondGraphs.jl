@@ -72,7 +72,10 @@ end
 
     (C,R) = sys.ps
     x = sys.states[1]
-    @test eqs == [D(x) ~ -x/C/R]
+    e1 = eqs[1]
+    e2 = D(x) ~ -x/C/R
+    @test e1.lhs == e2.lhs
+    @test expand(e1.rhs) == e2.rhs
 end
 
 @testset "RLC circuit" begin
@@ -84,10 +87,11 @@ end
     eqs = ModelingToolkit.equations(sys)
     (C,L,R) = sys.ps
     (qC,pL) = sys.states
-    @test eqs == [
-        D(qC) ~ -pL/L - qC/C/R,
-        D(pL) ~ qC/C
-    ]
+    e1 = D(qC) ~ -pL/L - qC/C/R
+    e2 = D(pL) ~ qC/C
+
+    @test expand(eqs[1].rhs) == e1.rhs
+    @test eqs[2].rhs == e2.rhs
 end
 
 @testset "Chemical reaction A ⇌ B" begin
@@ -104,10 +108,11 @@ end
 
     (xA,xB) = sys.states
     (KA,KB,r) = sys.ps
-    @test eqs == [
-        D(xA) ~ -r*(KA*xA - KB*xB),
-        D(xB) ~ r*(KA*xA - KB*xB)
-    ]
+    e1 = D(xA) ~ -r*(KA*xA - KB*xB)
+    e2 = D(xB) ~ r*(KA*xA - KB*xB)
+
+    @test eqs[1].rhs == e1.rhs
+    @test eqs[2].rhs == e2.rhs
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
@@ -135,10 +140,13 @@ end
 
     (xA,xB,xC,xD) = sys.states
     (KA,KB,KC,KD,r1,r2) = sys.ps
-    @test eqs == [
-        D(xA) ~ -r1*(KA*xA - KB*xB*KC*xC),
-        D(xB) ~ r1*(KA*xA - KB*xB*KC*xC),
-        D(xC) ~ r1*(KA*xA - KB*xB*KC*xC) - r2*(KC*xC - KD*xD),
-        D(xD) ~ r2*(KC*xC - KD*xD)
-    ]
+    e1 = D(xA) ~ -r1*(KA*xA - KB*xB*KC*xC)
+    e2 = D(xB) ~ r1*(KA*xA - KB*xB*KC*xC)
+    e3 = D(xC) ~ r1*(KA*xA - KB*xB*KC*xC) - r2*(KC*xC - KD*xD)
+    e4 = D(xD) ~ r2*(KC*xC - KD*xD)
+
+    @test eqs[1].rhs == e1.rhs
+    @test eqs[2].rhs == e2.rhs
+    @test eqs[3].rhs == e3.rhs
+    @test eqs[4].rhs == e4.rhs
 end

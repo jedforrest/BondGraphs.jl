@@ -78,9 +78,9 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
 
     if simplify_eqs
         simplified_model = structural_simplify(model)
-        for (i,eq) in enumerate(simplified_model.eqs)
-            simplified_model.eqs[i] = simplify(eq; rewriter=rewriter)
-        end
+        simplified_eqs = simplify.(ModelingToolkit.equations(simplified_model); expand=true, rewriter=rewriter)
+        # '@set!' allows mutation of an immutable field 
+        @set! simplified_model.eqs = simplified_eqs
         return simplified_model
     else
         return initialize_system_structure(model)
@@ -101,3 +101,5 @@ function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:ODE, kw
     end
     return solve(prob; kwargs...)
 end
+
+==(sym1::T, sym2::T) where T <: SymbolicUtils.Symbolic{Real} = (simplify(sym1) - simplify(sym2)) == 0
