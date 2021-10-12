@@ -102,7 +102,7 @@ function insert_node!(bg::BondGraph, tuple::Tuple, newnode::AbstractNode)
 end
 
 
-function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; junction=Junction(:𝟎))
+function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; junction=EqualEffort())
     node1.type == node2.type || error("$(node1.name) must be the same type as $(node2.name)")
 
     # node1 taken as the node to keep
@@ -132,18 +132,19 @@ end
 
 
 function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
-    junctions = filter(n -> typeof(n) == Junction, bg.nodes)
+    junctions = filter(n -> n isa Junction, bg.nodes)
 
     # Removes junctions with 2 or less connected ports
     if remove_redundant
         for j in junctions
             n_nbrs = length(lg.all_neighbors(bg, j))
             if n_nbrs == 2
-                srcnode = lg.inneighbors(bg, j)[1]
-                dstnode = lg.outneighbors(bg, j)[1]
+                #srcnode = lg.inneighbors(bg, j)[1]
+                #dstnode = lg.outneighbors(bg, j)[1]
+                node1, node2 = lg.all_neighbors(bg, j)
                 remove_node!(bg, j)
                 # bond direction may not be preserved here
-                connect!(bg, srcnode, dstnode)
+                connect!(bg, node1, node2)
             elseif n_nbrs < 2
                 remove_node!(bg, j)
             end
@@ -154,7 +155,7 @@ function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identi
     if squash_identical
         for j in junctions, nbr in lg.all_neighbors(bg, j)
             lg.has_vertex(bg, j) || continue # in case j was removed
-            if j.type == nbr.type
+            if type(j) == type(nbr)
                 merge_nodes!(bg, j, nbr)
             end
         end

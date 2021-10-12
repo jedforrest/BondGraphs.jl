@@ -24,7 +24,7 @@ getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in 
 
 # I/O
 show(io::IO, node::Component) = print(io, "$(node.type):$(node.name)")
-show(io::IO, node::Junction) = print(io, "$(node.type)")
+show(io::IO, node::Junction) = print(io, "$(node.name)")
 show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
 show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")

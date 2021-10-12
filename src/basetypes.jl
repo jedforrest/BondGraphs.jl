@@ -134,7 +134,7 @@ function Base.iterate(b::Bond,state)
 end
 
 # Parameters
-params(n::Component) = n.parameters
+params(n::AbstractNode) = n.parameters
 params(j::Junction) = Vector{Num}([])
 
 # Components
@@ -173,9 +173,20 @@ default_value(j::Junction) = Dict{Num,Any}()
 # Bonds
 bonds(m::BondGraph) = m.bonds
 
+# Searching
+getnodes(bg::BondGraph, m::Symbol) = filter(x -> type(x) == m, bg.nodes)
+getnodes(bg::BondGraph, n::AbstractString) = filter(x -> x.name == Symbol(n), bg.nodes)
+
+getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
+getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
+
 # I/O
-show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")
-#show(io::IO, node::Junction) = print(io, "$(type(node))")
+show(io::IO, node::Component) = print(io, "$(node.type):$(node.name)")
+show(io::IO, node::Junction) = print(io, "$(node.name)")
 show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
-show(io::IO, bg::BondGraph) = print(io, "BondGraph $(type(bg)):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")
+show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(lg.nv(bg)) Nodes, $(lg.ne(bg)) Bonds)")
+
+# Comparisons
+# These definitions will need to expand when equations etc. are added
+==(n1::AbstractNode, n2::AbstractNode) = type(n1) == type(n2) && n1.name == n2.name

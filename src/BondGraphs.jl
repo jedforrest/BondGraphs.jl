@@ -20,10 +20,10 @@ new, add_node!, remove_node!, connect!, disconnect!,
 swap!, insert_node!, merge_nodes!, simplify_junctions!,
 
 cr, params, state_vars, set_param!, set_initial_value!, 
-default_value, equations, simulate,
+default_value, equations, simulate
 
 include("basetypes.jl")
-include("basetypefunctions.jl")
+#include("basetypefunctions.jl")
 include("graphfunctions.jl")
 include("construction.jl")
 include("components.jl")

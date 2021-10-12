@@ -56,8 +56,8 @@ end
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
-    @test repr(b1) == "Bond C:C ⇀ 0:J"
-    @test repr(b2) == "Bond 0:J ⇀ SS:Source"
+    @test repr(b1) == "Bond C:C ⇀ J"
+    @test repr(b2) == "Bond J ⇀ SS:Source"
 end
 
 @testset "LightGraph Extra Functions" begin
