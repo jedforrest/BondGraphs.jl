@@ -16,6 +16,7 @@ SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 [compat]
 LightGraphs = "1"
 StaticArrays = "1"
+SymbolicUtils = "0.17"
 julia = "1"
 
 [extras]
