@@ -181,7 +181,7 @@ getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
 getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
 
 # I/O
-show(io::IO, node::Component) = print(io, "$(node.type):$(node.name)")
+show(io::IO, node::AbstractNode) = print(io, "$(node.type):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.name)")
 show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
@@ -194,10 +194,36 @@ show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(lg.n
 struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::Symbol
-    name::AbstractString
+    name::Symbol
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    function BondGraphNode(bg::BondGraph, type::Symbol=:BG, name::AbstractString=bg.name; vertex::Int=0)
+    function BondGraphNode(bg::BondGraph, type::Symbol=:BG, name::Symbol=bg.name; vertex::Int=0)
         new(bg, type, name, Bool[], Ref(vertex))
+    end
+end
+
+# Easier referencing systems using a.b notation
+# TODO create tests
+function getproperty(bg::BondGraph, sym::Symbol)
+    # Calling getfield explicitly avoids using "a.b" 
+    # and causing a StackOverflowError
+    allnodes = getfield(bg, :nodes)
+    names = [getfield(n, :name) for n in allnodes]
+    symnodes = allnodes[names .== sym]
+    if isempty(symnodes)
+        return getfield(bg, sym)
+    elseif length(symnodes) == 1
+        return symnodes[1]
+    else
+        return symnodes
+    end
+end
+
+function getproperty(bgn::BondGraphNode, sym::Symbol)
+    bg = getfield(bgn, :bondgraph)
+    try 
+        return getproperty(bg, sym)
+    catch
+        return getfield(bgn, sym)
     end
 end
