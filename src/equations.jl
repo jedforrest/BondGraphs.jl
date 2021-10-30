@@ -90,11 +90,15 @@ end
 equations(m::Model;simplify_eqs=true) = 
     ModelingToolkit.equations(ODESystem(m;simplify_eqs))
 
-function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:DAE, kwargs...)
+function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:any, simplify_eqs=true,  kwargs...)
 
-    sys = ODESystem(m)
-    flag_ODE = !any([isequal(eq.lhs,0) for eq in ModelingToolkit.equations(sys)])
-    if probtype==:ODE || flag_ODE
+    sys = ODESystem(m;simplify_eqs=simplify_eqs)
+    if probtype == :any
+        flag_ODE = !any([isequal(eq.lhs,0) for eq in ModelingToolkit.equations(sys)])
+        probtype = flag_ODE ? :ODE : :DAE
+    end
+    
+    if probtype == :ODE
         prob = ODEProblem(sys, u0, tspan, pmap)
     else
         prob = ODAEProblem(sys, u0, tspan, pmap)
