@@ -6,6 +6,7 @@ import Base: RefValue, eltype, show, in
 using StaticArrays
 using ModelingToolkit
 using DifferentialEquations
+using Symbolics
 using SymbolicUtils
 using SymbolicUtils.Rewriters
 using DataStructures

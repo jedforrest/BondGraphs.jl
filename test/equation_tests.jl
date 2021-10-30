@@ -72,7 +72,11 @@ end
 
     (C,R) = sys.ps
     x = sys.states[1]
-    @test eqs == [D(x) ~ -x/C/R]
+    eqs_test = [D(x) ~ -x/(C*R)]
+
+    @test_broken eqs == eqs_test
+    @test isequal(eqs[1].lhs, eqs_test[1].lhs)
+    @test isequal(simplify_fractions(eqs[1].rhs - eqs_test[1].rhs), 0)
 end
 
 @testset "RLC circuit" begin
@@ -84,10 +88,15 @@ end
     eqs = ModelingToolkit.equations(sys)
     (C,L,R) = sys.ps
     (qC,pL) = sys.states
-    @test eqs == [
-        D(qC) ~ -pL/L - qC/C/R,
+    eqs_test = [
+        D(qC) ~ -pL/L - qC/(C*R),
         D(pL) ~ qC/C
     ]
+
+    @test_broken eqs == eqs_test
+    @test all(isequal(eq1.lhs, eq2.lhs) for (eq1,eq2) in zip(eqs,eqs_test))
+    @test all(isequal(simplify_fractions(eq1.rhs), simplify_fractions(eq2.rhs))
+        for (eq1,eq2) in zip(eqs,eqs_test))
 end
 
 @testset "Chemical reaction A ⇌ B" begin

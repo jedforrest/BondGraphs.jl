@@ -2,6 +2,8 @@ using Revise
 using BondGraphs
 using LightGraphs
 using ModelingToolkit
+using SymbolicUtils
+using SymbolicUtils.Rewriters
 using Test
 
 @testset "BondGraphs.jl" begin

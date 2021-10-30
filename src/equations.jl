@@ -4,9 +4,10 @@ exponent_rules = [
     @acrule(exp(~x + ~y) => exp(~x) * exp(~y)),
     @acrule(exp(~x * ~y) => exp(~y)^~x),
 ]
-rw_exp = RestartedChain(exponent_rules)
-rw_chain = RestartedChain([SymbolicUtils.default_simplifier(),rw_exp])
-rewriter = Postwalk(rw_chain)
+
+rw_exp = Chain(exponent_rules)
+rw_chain = RestartedChain([SymbolicUtils.serial_simplifier,rw_exp])
+rewriter = Prewalk(rw_chain)
 
 # Constitutive relations
 cr(n::Component) = n.equations
@@ -78,9 +79,8 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
 
     if simplify_eqs
         simplified_model = structural_simplify(model)
-        for (i,eq) in enumerate(simplified_model.eqs)
-            simplified_model.eqs[i] = simplify(eq; rewriter=rewriter)
-        end
+        eqs = ModelingToolkit.equations(simplified_model)
+        ModelingToolkit.@set! simplified_model.eqs = Symbolics.Arr(simplify.(eqs; rewriter=rewriter))
         return simplified_model
     else
         return initialize_system_structure(model)
