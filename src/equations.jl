@@ -90,7 +90,7 @@ end
 equations(m::Model;simplify_eqs=true) = 
     ModelingToolkit.equations(ODESystem(m;simplify_eqs))
 
-function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:ODE, kwargs...)
+function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:DAE, kwargs...)
 
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs,0) for eq in ModelingToolkit.equations(sys)])
