@@ -1,13 +1,13 @@
 module BondGraphs
 
-import LightGraphs as lg
-import Base: RefValue, eltype, show, in, ==, getproperty
+import Graphs as g
+# import ModelingToolkit as mtk
+import Base: RefValue, eltype, show, in, iterate, ==, getproperty
 
 using StaticArrays
 using ModelingToolkit
 using DifferentialEquations
-using SymbolicUtils
-using SymbolicUtils.Rewriters
+using SymbolicUtils, SymbolicUtils.Rewriters
 using DataStructures
 using Setfield
 using Catalyst
@@ -24,7 +24,9 @@ swap!, insert_node!, merge_nodes!, simplify_junctions!,
 cr, params, state_vars, set_param!, set_initial_value!, 
 default_value, equations, simulate
 
-include("basetypes.jl")
+include("basetypes/AbstractNode.jl")
+include("basetypes/Bond.jl")
+include("basetypes/BondGraph.jl")
 #include("basetypefunctions.jl")
 include("graphfunctions.jl")
 include("construction.jl")
