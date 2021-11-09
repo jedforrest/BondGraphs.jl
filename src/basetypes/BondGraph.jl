@@ -7,20 +7,6 @@ struct BondGraph <: g.AbstractGraph{Int64}
 end
 BondGraph(name=:BG) = BondGraph(:BG, Symbol(name), AbstractNode[], Bond[])
 
-# BONDGRAPH NODE
-# struct BondGraphNode <: AbstractNode
-#     bondgraph::BondGraph
-#     type::Symbol
-#     name::Symbol
-#     freeports::Vector{Bool}
-#     vertex::RefValue{Int}
-#     function BondGraphNode(bg::BondGraph, type::Symbol=:BG, name::Symbol=bg.name; vertex::Int=0)
-#         new(bg, type, name, Bool[], Ref(vertex))
-#     end
-# end
-
-
-
 # PROPERTIES
 type(bg::BondGraph) = bg.type
 
@@ -30,18 +16,29 @@ nodes(bg::BondGraph) = bg.nodes
 
 bonds(bg::BondGraph) = bg.bonds
 
+# AbstractNode properties 
+function params(bg::BondGraph)
+    parameters = Tuple{AbstractNode,Num}[]
+    for c in components(bg), p in params(c)
+        push!(parameters, (c, p))
+    end
+    @parameters p[1:length(parameters)]
+    return OrderedDict(p[i] => y for (i, y) in enumerate(parameters))
+end
 
-# State variables
-# function state_vars(m::BondGraph)
-#     i = 0
-#     states = Vector{Tuple{Union{AbstractNode,BondGraph},Num}}([])
-#     for c in components(m), x in state_vars(c)
-#         push!(states,(c,x))
-#     end
-#     @variables x[1:length(states)](t)
-#     return OrderedDict(x[i] => y for (i,y) in enumerate(states))
-# end
+function state_vars(bg::BondGraph)
+    states = Tuple{AbstractNode,Num}[]
+    for c in components(bg), x in state_vars(c)
+        push!(states, (c, x))
+    end
+    @variables x[1:length(states)](t)
+    return OrderedDict(x[i] => y for (i, y) in enumerate(states))
+end
 
+function equations(bg::BondGraph)
+    # TODO
+    Equation[]
+end
 
 # Filtering
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
@@ -58,7 +55,6 @@ getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in 
 show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(g.nv(bg)) Nodes, $(g.ne(bg)) Bonds)")
 
 # Easier referencing systems using a.b notation
-# TODO create tests
 function getproperty(bg::BondGraph, sym::Symbol)
     # Calling getfield explicitly avoids using "a.b" and causing a StackOverflowError
     allnodes = getfield(bg, :nodes)
@@ -73,11 +69,29 @@ function getproperty(bg::BondGraph, sym::Symbol)
     end
 end
 
-# function getproperty(bgn::BondGraphNode, sym::Symbol)
-#     bg = getfield(bgn, :bondgraph)
-#     try 
-#         return getproperty(bg, sym)
-#     catch
-#         return getfield(bgn, sym)
-#     end
-# end
+
+# BONDGRAPH NODE
+struct BondGraphNode <: AbstractNode
+    bondgraph::BondGraph
+    type::Symbol
+    name::Symbol
+    freeports::Vector{Bool}
+    vertex::RefValue{Int}
+    parameters::Vector{Num}
+    state_vars::Vector{Num}
+    equations::Vector{Equation}
+    function BondGraphNode(bg::BondGraph, type=:BG, name=bg.name; vertex::Int=0)
+        new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex),
+            params(bg), state_vars(bg), equations(bg))
+    end
+end
+
+# Easier referencing systems using a.b notation
+function getproperty(bgn::BondGraphNode, sym::Symbol)
+    bg = getfield(bgn, :bondgraph)
+    try 
+        return getproperty(bg, sym)
+    catch
+        return getfield(bgn, sym)
+    end
+end

@@ -105,8 +105,12 @@ params(n::AbstractNode) = n.parameters
 params(::Junction) = Num[]
 
 # State variables
-state_vars(n::Component) = n.state_vars
+state_vars(n::AbstractNode) = n.state_vars
 state_vars(::Junction) = Num[]
+
+# Equations
+equations(n::AbstractNode) = n.equations
+equations(::Junction) = Equation[]
 
 # Set parameter values
 # function set_param!(n::Component,var,val)
