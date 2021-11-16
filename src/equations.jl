@@ -49,6 +49,10 @@ end
 ModelingToolkit.connect(::Type{MTKPort}, p1, p2) = 
     [0 ~ p1.F + p2.F, 0 ~ p1.E - p2.E]
 
+
+_separator() = "ː"
+mtk_name(m) = Symbol(string(type(m))*_separator()*string(m.name))
+
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
@@ -60,7 +64,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     eqs = [substitute(eq,sub_rules) for eq in cr(n)]
 
     sys = ODESystem(eqs, t, state_vars(n), params(n); 
-                    name=n.name, defaults=default_value(n))
+                    name=mtk_name(n), defaults=default_value(n)) #TODO: update
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
@@ -74,7 +78,7 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
         append!(connections,connect(src_port, dst_port))
     end
     
-    @named _model = ODESystem(connections,t; name=m.name)
+    @named _model = ODESystem(connections,t; name=mtk_name(m))
     model = compose(_model,collect(values(subsystems)))
 
     if simplify_eqs
