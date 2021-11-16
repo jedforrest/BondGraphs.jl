@@ -51,7 +51,11 @@ ModelingToolkit.connect(::Type{MTKPort}, p1, p2) =
 
 
 _separator() = "ː"
-mtk_name(m) = Symbol(string(type(m))*_separator()*string(m.name))
+mtk_name(m) = Symbol(string(vartype(m))*_separator()*string(m.name))
+
+vartype(n) = type(n)
+vartype(n::EqualEffort) = :𝟎
+vartype(n::EqualFlow) = :𝟏
 
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
