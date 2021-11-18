@@ -63,3 +63,47 @@ end
         @test isapprox(sol(t)[1], f(t,10,3), atol=1e-5)
     end
 end
+
+# Notes: The SciMLBase package contains a getindex function for syms.
+# Within this function, sym_to_index(sym,A) will return the index of the variable.
+@testset "Extract specific variables" begin
+    # Make a model of the reaction A + B ⇌ C + D
+    C_A = new(:ce,:A)
+    C_B = new(:ce,:B)
+    C_C = new(:ce,:C)
+    C_D = new(:ce,:D)
+    re = new(:re,:r)
+    AB = EqualFlow(name=:AB)
+    CD = EqualFlow(name=:CD)
+    
+    bg = BondGraph()
+    add_node!(bg,[C_A,C_B,C_C,C_D,re,AB,CD])
+    connect!(bg,C_A,AB)
+    connect!(bg,C_B,AB)
+    connect!(bg,AB,re; dstportindex=1)
+    connect!(bg,re,CD; srcportindex=2)
+    connect!(bg,CD,C_C)
+    connect!(bg,CD,C_D)
+    
+    @parameters t, r, k
+    @variables q(t)
+    set_param!(C_A,k,1.0)
+    set_param!(C_B,k,2.0)
+    set_param!(C_C,k,1.0)
+    set_param!(C_D,k,2.0)
+    set_param!(re,r,1.0)
+    set_initial_value!(C_A,q,1.0)
+    set_initial_value!(C_B,q,4.0)
+    set_initial_value!(C_C,q,2.0)
+    set_initial_value!(C_D,q,1.0)
+    
+    tspan = (t0,t1) = (0.0,10.0)
+    sol = simulate(bg,tspan)
+
+    xA = sol["C:A"]
+    @test xA[1] = 1.0
+    @test xA[end] ≈ 0.75
+    
+    # Test that system is near equilibrium
+    @test sol("C:A";t=t1)*sol("C:B";t=t1)/sol("C:C";t=t1)/sol("C:D";t=t1) ≈ 1
+end
