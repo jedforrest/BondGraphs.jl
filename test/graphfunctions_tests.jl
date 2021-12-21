@@ -3,7 +3,7 @@
     @test bg.name == :BG
     @test isempty(bg.nodes)
     @test eltype(bg) == AbstractNode
-    @test edgetype(bg) == LightGraphs.AbstractSimpleEdge{Integer}
+    @test edgetype(bg) == Graphs.AbstractSimpleEdge{Integer}
     @test is_directed(bg)
 end
 
@@ -45,7 +45,7 @@ end
 
     @test bgn.type == :BG
     @test bgn.name == :RCI
-    @test bgn.freeports == Bool[]
+    @test bgn.ports == PortConnection[]
 end
 
 @testset "Printing" begin

@@ -11,7 +11,7 @@ rewriter = Postwalk(rw_chain)
 # Constitutive relations
 constitutive_relations(n::AbstractNode) = n.equations
 function constitutive_relations(n::EqualEffort)
-    if isempty(freeports(n))
+    if isempty(portconnections(n))
         return Equation[]
     end
 
@@ -23,9 +23,10 @@ function constitutive_relations(n::EqualEffort)
     return vcat(effort_constraints, flow_constraint)
 end
 function constitutive_relations(n::EqualFlow)
-    if isempty(freeports(n))
+    if isempty(portconnections(n))
         return Equation[]
     end
+
     N = numports(n)
     @variables E[1:N](t) F[1:N](t)
 
@@ -40,7 +41,9 @@ end
 function constitutive_relations(bg::BondGraph)
     return simplify.(ModelingToolkit.equations(de_system(bg)), rewriter = rewriter)
 end
-# bondgraphnode
+function constitutive_relations(bgn::BondGraphNode)
+    return constitutive_relations(bgn.bondgraph)
+end
 
 @connector function MTKPort(; name)
     vars = @variables E(t) F(t)
@@ -89,11 +92,10 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
     end
 end
 
-equations(m::Model; simplify_eqs = true) =
-    ModelingToolkit.equations(ODESystem(m; simplify_eqs))
+# equations(bg::BondGraph; simplify_eqs = true) =
+#     ModelingToolkit.equations(ODESystem(bg; simplify_eqs))
 
 function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :ODE, kwargs...)
-
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
     if probtype == :ODE || flag_ODE

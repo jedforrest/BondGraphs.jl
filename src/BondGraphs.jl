@@ -35,7 +35,7 @@ include("basetypes/BondGraph.jl")
 
 include("graphfunctions.jl")
 include("construction.jl")
-# include("equations.jl")
+include("equations.jl")
 include("conversion.jl")
 
 end
