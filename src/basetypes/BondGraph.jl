@@ -75,7 +75,7 @@ struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::Symbol
     name::Symbol
-    freeports::Vector{Bool}
+    ports::Vector{PortConnection}
     vertex::RefValue{Int}
     parameters::Vector{Num}
     state_vars::Vector{Num}

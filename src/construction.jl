@@ -5,7 +5,7 @@ function add_node!(bg::BondGraph, nodes)
 end
 
 function add_node!(bg::BondGraph, node::AbstractNode)
-    lg.add_vertex!(bg, node) || @warn "$node already in model"
+    g.add_vertex!(bg, node) || @warn "$node already in model"
 end
 
 
@@ -16,27 +16,27 @@ function remove_node!(bg::BondGraph, nodes)
 end
 
 function remove_node!(bg::BondGraph, node::AbstractNode)
-    lg.rem_vertex!(bg, node) || @warn "$node not in model"
+    g.rem_vertex!(bg, node) || @warn "$node not in model"
     for bond in filter(bond -> node in bond, bg.bonds)
-        lg.rem_edge!(bg, srcnode(bond), dstnode(bond))
+        g.rem_edge!(bg, srcnode(bond), dstnode(bond))
     end
 end
 
 
-function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode; 
-        srcportindex=nextsrcport(srcnode), dstportindex=nextdstport(dstnode))
+function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode;
+    srcportindex = nextfreeport(srcnode), dstportindex = nextfreeport(dstnode))
     srcnode in bg.nodes || error("$srcnode not found in bond graph")
     dstnode in bg.nodes || error("$dstnode not found in bond graph")
     srcport = Port(srcnode, srcportindex)
     dstport = Port(dstnode, dstportindex)
-    return lg.add_edge!(bg, srcport, dstport)
+    return g.add_edge!(bg, srcport, dstport)
 end
 
 function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     # rem_edge! removes the bond regardless of the direction of the bond
-    deleted_bond = lg.rem_edge!(bg, node1, node2)
+    deleted_bond = g.rem_edge!(bg, node1, node2)
     if isnothing(deleted_bond) # if returned nothing, try flipping node1 and node2
-        deleted_bond = lg.rem_edge!(bg, node2, node1)
+        deleted_bond = g.rem_edge!(bg, node2, node1)
     end
     return deleted_bond
 end
@@ -48,12 +48,12 @@ function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     _check_port_number(oldnode,newnode)
     
     # may be a redundant check
-    if !lg.has_vertex(bg, newnode)
+    if !g.has_vertex(bg, newnode)
         add_node!(bg, newnode)
     end
 
-    srcnodes = lg.inneighbors(bg, oldnode)
-    dstnodes = lg.outneighbors(bg, oldnode)
+    srcnodes = g.inneighbors(bg, oldnode)
+    dstnodes = g.outneighbors(bg, oldnode)
     remove_node!(bg, oldnode)
     
     for src in srcnodes
@@ -106,13 +106,13 @@ function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; j
     node1.type == node2.type || error("$(node1.name) must be the same type as $(node2.name)")
 
     # node1 taken as the node to keep
-    for src in lg.inneighbors(bg, node1)
+    for src in g.inneighbors(bg, node1)
         junc_src = deepcopy(junction)
         bond = getbonds(bg, src, node1)[1]
         insert_node!(bg, bond, junc_src)
         swap!(bg, node2, junc_src)
     end
-    for dst in lg.outneighbors(bg, node1)
+    for dst in g.outneighbors(bg, node1)
         junc_dst = deepcopy(junction)
         bond = getbonds(bg, node1, dst)[1]
         insert_node!(bg, bond, junc_dst)
@@ -123,7 +123,7 @@ function merge_nodes!(bg::BondGraph, node1::Junction, node2::Junction)
     # node1 taken as the node to keep
     # remove conflicting connections between junctions if they exist
     disconnect!(bg, node1, node2)
-    shared_neighbors = intersect(lg.all_neighbors(bg, node1), lg.all_neighbors(bg, node2))
+    shared_neighbors = intersect(g.all_neighbors(bg, node1), g.all_neighbors(bg, node2))
     for shared_neighbor in shared_neighbors
         disconnect!(bg, node2, shared_neighbor)
     end
@@ -137,11 +137,11 @@ function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identi
     # Removes junctions with 2 or less connected ports
     if remove_redundant
         for j in junctions
-            n_nbrs = length(lg.all_neighbors(bg, j))
+            n_nbrs = length(g.all_neighbors(bg, j))
             if n_nbrs == 2
-                #srcnode = lg.inneighbors(bg, j)[1]
-                #dstnode = lg.outneighbors(bg, j)[1]
-                node1, node2 = lg.all_neighbors(bg, j)
+                #srcnode = g.inneighbors(bg, j)[1]
+                #dstnode = g.outneighbors(bg, j)[1]
+                node1, node2 = g.all_neighbors(bg, j)
                 remove_node!(bg, j)
                 # bond direction may not be preserved here
                 connect!(bg, node1, node2)
@@ -153,8 +153,8 @@ function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identi
 
     # Squashes identical copies of the same junction type into one junction
     if squash_identical
-        for j in junctions, nbr in lg.all_neighbors(bg, j)
-            lg.has_vertex(bg, j) || continue # in case j was removed
+        for j in junctions, nbr in g.all_neighbors(bg, j)
+            g.has_vertex(bg, j) || continue # in case j was removed
             if type(j) == type(nbr)
                 merge_nodes!(bg, j, nbr)
             end

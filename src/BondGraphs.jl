@@ -14,7 +14,7 @@ using Catalyst
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 Port, Bond, BondGraph, BondGraphNode,
 
-type, name, freeports, numports, vertex, set_vertex!,
+type, name, portconnections, portweights, numports, vertex, set_vertex!,
 params, state_vars, equations,
 
 srcnode, dstnode, nodes, bonds, getnodes, getbonds,
@@ -35,7 +35,7 @@ include("basetypes/BondGraph.jl")
 
 include("graphfunctions.jl")
 include("construction.jl")
-include("equations.jl")
+# include("equations.jl")
 include("conversion.jl")
 
 end

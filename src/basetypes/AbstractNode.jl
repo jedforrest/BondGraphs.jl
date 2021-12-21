@@ -1,17 +1,19 @@
 abstract type AbstractNode end
 
+@enum PortConnection In = -1 Free = 0 Out = 1
+
 # COMPONENT
 struct Component{N} <: AbstractNode
     type::Symbol
     name::Symbol
-    freeports::MVector{N,Bool}
+    ports::MVector{N,PortConnection}
     vertex::RefValue{Int}
     parameters::Vector{Num}
     state_vars::Vector{Num}
     equations::Vector{Equation}
-    function Component{N}(t, n, np::Int, v::Int,
-         p::Vector, x::Vector, eq::Vector) where N
-        new(Symbol(t), Symbol(n), ones(MVector{np,Bool}), Ref(v), p, x, d, eq)
+    function Component{N}(t, n, v::Int, p::Vector, x::Vector, eq::Vector) where {N}
+        portconnections = MVector{N,PortConnection}(repeat([Free], N))
+        new(Symbol(t), Symbol(n), portconnections, Ref(v), p, x, eq)
     end
 end
 # function Component(type, name=type;
@@ -20,21 +22,22 @@ end
 #     Component{numports}(type, name, numports, vertex, parameters, state_vars, default, equations)
 # end
 
-function Component(type, name=type; library=standard_library, 
-        numports::Int=1, vertex::Int=0, parameters::Vector=Num[], state_vars::Vector=Num[],
-        equations::Vector=Equation[])
-    
-    if isnothing(library)
-        Component{numports}(type, name, numports, vertex, parameters, state_vars, equations)
-    else
+function Component(type, name = type; library = standard_library,
+    numports::Int = 1, vertex::Int = 0, parameters::Vector = Num[], state_vars::Vector = Num[],
+    equations::Vector = Equation[])
+
+    if !isnothing(library) && type in keys(library)
         d = library[type]
-        p = collect(keys(d[:parameters]))
-        if haskey(d, :state_vars)
-            x = collect(keys(d[:state_vars]))
+        parameters = collect(keys(d[:parameters]))
+        state_vars = if haskey(d, :state_vars)
+            collect(keys(d[:state_vars]))
         else
-            x = Num[]
+            Num[]
         end
-        Component(type, name; numports=d[:numports], parameters=p, state_vars=x, equations=d[:equations])
+        N = d[:numports]
+        Component{N}(type, name, vertex, parameters, state_vars, d[:equations])
+    else
+        Component{numports}(type, name, vertex, parameters, state_vars, equations)
     end
 end
 
@@ -44,17 +47,17 @@ abstract type Junction <: AbstractNode end
 
 struct EqualEffort <: Junction
     name::Symbol
-    freeports::Vector{Bool}
+    ports::Vector{PortConnection}
     vertex::RefValue{Int}
-    EqualEffort(; name=:𝟎, v::Int=0) = new(Symbol(name), Bool[], Ref(v))
+    EqualEffort(; name = :𝟎, v::Int = 0) = new(Symbol(name), PortConnection[], Ref(v))
 end
 
 struct EqualFlow <: Junction
     name::Symbol
-    freeports::Vector{Bool}
+    ports::Vector{PortConnection}
     # weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualFlow(; name=:𝟏, v::Int=0) = new(Symbol(name), Bool[], Ref(v))
+    EqualFlow(; name = :𝟏, v::Int = 0) = new(Symbol(name), PortConnection[], Ref(v))
 end
 
 
@@ -67,13 +70,15 @@ type(j::Junction) = j.name
 name(n::AbstractNode) = n.name
 
 # Ports
-freeports(n::AbstractNode) = n.freeports
-numports(n::AbstractNode) = length(n.freeports)
-updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
+# freeports(n::AbstractNode) = n.freeports
+portconnections(n::AbstractNode) = string.(n.ports)
+portweights(n::AbstractNode) = Int.(n.ports)
+numports(n::AbstractNode) = length(n.ports)
+updateport!(n::AbstractNode, idx::Int, pc::PortConnection) = n.ports[idx] = pc
 
-nextfreeport(n::AbstractNode) = findfirst(freeports(n))
+nextfreeport(n::AbstractNode) = findfirst(portconnections(n) .== "Free")
 function nextfreeport(j::Junction)
-    push!(j.freeports, true)
+    push!(j.ports, Free)
     numports(j)
 end
 # function nextfreeport(j::EqualFlow)
@@ -94,6 +99,11 @@ end
 #     i = nextfreeport(n)
 #     n.weights[i] = 1
 #     i
+# end
+
+# Weights (used when generating equations)
+# function bondweights(bg::BondGraph, n::AbstractNode)
+#     [nbr in g.inneighbors(bg, n) ? -1 : 1 for nbr in g.all_neighbors(bg, n)]
 # end
 
 # Vertex
