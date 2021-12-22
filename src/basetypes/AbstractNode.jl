@@ -9,9 +9,8 @@ struct Component{N} <: AbstractNode
     parameters::Vector{Num}
     state_vars::Vector{Num}
     equations::Vector{Equation}
-    function Component{N}(t, n, np::Int, v::Int,
-         p::Vector, x::Vector, eq::Vector) where N
-        new(Symbol(t), Symbol(n), ones(MVector{np,Bool}), Ref(v), p, x, d, eq)
+    function Component{N}(t, n, v::Int, p::Vector, x::Vector, eq::Vector) where {N}
+        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, eq)
     end
 end
 # function Component(type, name=type;
@@ -20,22 +19,22 @@ end
 #     Component{numports}(type, name, numports, vertex, parameters, state_vars, default, equations)
 # end
 
-function Component(type, name=type; library=standard_library, 
-        numports::Int=1, vertex::Int=0, parameters::Vector=Num[], state_vars::Vector=Num[],
-        equations::Vector=Equation[])
-    
-    if isnothing(library)
-        Component{numports}(type, name, numports, vertex, parameters, state_vars, equations)
-    else
+function Component(type, name = type; library = standard_library,
+    numports::Int = 1, vertex::Int = 0, parameters::Vector = Num[], state_vars::Vector = Num[],
+    equations::Vector = Equation[])
+
+    if !isnothing(library) && type in keys(library)
         d = library[type]
-        p = collect(keys(d[:parameters]))
-        if haskey(d, :state_vars)
-            x = collect(keys(d[:state_vars]))
+        parameters = collect(keys(d[:parameters]))
+        state_vars = if haskey(d, :state_vars)
+            collect(keys(d[:state_vars]))
         else
-            x = Num[]
+            Num[]
         end
-        Component(type, name; numports=d[:numports], parameters=p, state_vars=x, equations=d[:equations])
+        numports = d[:numports]
+        equations = d[:equations]
     end
+    Component{numports}(type, name, vertex, parameters, state_vars, equations)
 end
 
 
@@ -45,16 +44,17 @@ abstract type Junction <: AbstractNode end
 struct EqualEffort <: Junction
     name::Symbol
     freeports::Vector{Bool}
+    weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualEffort(; name=:𝟎, v::Int=0) = new(Symbol(name), Bool[], Ref(v))
+    EqualEffort(; name = :𝟎, v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
 end
 
 struct EqualFlow <: Junction
     name::Symbol
     freeports::Vector{Bool}
-    # weights::Vector{Int}
+    weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualFlow(; name=:𝟏, v::Int=0) = new(Symbol(name), Bool[], Ref(v))
+    EqualFlow(; name = :𝟏, v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
 end
 
 
@@ -69,12 +69,23 @@ name(n::AbstractNode) = n.name
 # Ports
 freeports(n::AbstractNode) = n.freeports
 numports(n::AbstractNode) = length(n.freeports)
+numports(::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
+
+# Weights
+weights(j::Junction) = j.weights
+set_weight!(j::Junction, idx::Int, w::Int) = j.weights[idx] = w
 
 nextfreeport(n::AbstractNode) = findfirst(freeports(n))
 function nextfreeport(j::Junction)
-    push!(j.freeports, true)
-    numports(j)
+    freeport = findfirst(freeports(j))
+    if isnothing(freeport)
+        push!(j.freeports, true)
+        push!(j.weights, 0)
+        return length(j.freeports)
+    else
+        return freeport
+    end
 end
 # function nextfreeport(j::EqualFlow)
 #     push!(j.weights,0)

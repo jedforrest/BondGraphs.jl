@@ -12,7 +12,7 @@ D = Differential(t)
 
 # Chemical species (:Ce)
 @parameters k R T
-@variables q_1(t)
+@variables q(t)
 Ce_dict = Dict(
     :description => "Chemical species",
     :numports => 1,
@@ -65,7 +65,7 @@ Re_dict = Dict(
 )
 
 # Normalised chemical reaction (:re)
-@parameters r R T
+@parameters r
 re_dict = Dict(
     :description => "Biochemical reaction (normalised)",
     :numports => 2,

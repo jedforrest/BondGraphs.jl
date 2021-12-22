@@ -1,3 +1,5 @@
+@parameters t
+
 # New simplification rules
 exponent_rules = [
     @rule(exp(log(~x)) => ~x),
@@ -30,15 +32,16 @@ function constitutive_relations(n::EqualFlow)
     N = numports(n)
     @variables E[1:N](t) F[1:N](t)
 
-    weighted_e = m.weights.*collect(E)
-    weighted_f = m.weights.*collect(F)
+    W = weights(n)
+    weighted_e = W .* collect(E)
+    weighted_f = W .* collect(F)
 
     effort_constraint = [0 ~ sum(weighted_e)]
     flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
-    return vcat(effort_constraint,flow_constraints)
+    return vcat(effort_constraint, flow_constraints)
 end
-function cr(m::BondGraph)
-    return simplify.(ModelingToolkit.equations(de_system(m)),rewriter=rewriter)
+function constitutive_relations(m::BondGraph)
+    return simplify.(ModelingToolkit.equations(de_system(m)), rewriter = rewriter)
 end
 function constitutive_relations(bgn::BondGraphNode)
     return constitutive_relations(bgn.bondgraph)
@@ -77,7 +80,7 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
         append!(connections,connect(src_port, dst_port))
     end
     
-    @named _model = ODESystem(connections,t; name=m.name)
+    @named _model = ODESystem(connections, t; name=m.name)
     model = compose(_model,collect(values(subsystems)))
 
     if simplify_eqs

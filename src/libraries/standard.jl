@@ -74,7 +74,7 @@ Sf_dict = Dict(
     :description => "Flow source",
     :numports => 1,
     :parameters => OrderedDict(
-        e => "Flow"
+        f => "Flow"
     ),
     :equations => [0 ~ f - F[1]]
 )

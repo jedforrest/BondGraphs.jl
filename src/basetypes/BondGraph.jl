@@ -31,11 +31,13 @@ function state_vars(bg::BondGraph)
     for c in components(bg), x in state_vars(c)
         push!(states, (c, x))
     end
+    @parameters t
     @variables x[1:length(states)](t)
     return OrderedDict(x[i] => y for (i, y) in enumerate(states))
 end
 
 function equations(bg::BondGraph; simplify_eqs = true)
+    isempty(bg.nodes) && return Equation[]
     ModelingToolkit.equations(ODESystem(bg; simplify_eqs))
 end
 
@@ -76,11 +78,11 @@ struct BondGraphNode <: AbstractNode
     name::Symbol
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    parameters::OrderedDict{Num,Tuple{T1,Num}} where {T1<:AbstractNode}
-    state_vars::OrderedDict{Num,Tuple{T2,Num}} where {T2<:AbstractNode}
+    parameters::OrderedDict
+    state_vars::OrderedDict
     equations::Vector{Equation}
     function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
-        new(bg, Symbol(type), Symbol(name), PortConnection[], Ref(vertex),
+        new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex),
             params(bg), state_vars(bg), equations(bg))
     end
 end
