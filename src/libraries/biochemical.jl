@@ -8,15 +8,11 @@ export biochemical_library
 @parameters t
 D = Differential(t)
 
-# Biochemical constant, reaction rate, Universal gas constant, Temperature
-@parameters k, r, R, T
-
-# Molar Quantity
-@variables q(t)
-
 @variables E[1:2](t) F[1:2](t)
 
 # Chemical species (:Ce)
+@parameters k R T
+@variables q_1(t)
 Ce_dict = Dict(
     :description => "Chemical species",
     :numports => 1,
@@ -29,12 +25,14 @@ Ce_dict = Dict(
         q => "Molar Quantity"
     ),
     :equations => [
-        0 ~ R * T * log(k * q) - E[1],
+        0 ~ R*T*log(k*q) - E[1],
         D(q) ~ F[1]
     ]
 )
 
 # Normalised chemical species (:ce)
+@parameters k
+@variables q(t)
 ce_dict = Dict(
     :description => "Chemical species (normalised)",
     :numports => 1,
@@ -45,12 +43,13 @@ ce_dict = Dict(
         q => "Molar Quantity"
     ),
     :equations => [
-        0 ~ log(k * q) - E[1],
+        0 ~ log(k*q) - E[1],
         D(q) ~ F[1]
     ]
 )
 
 # Chemical reaction (:Re)
+@parameters r R T
 Re_dict = Dict(
     :description => "Biochemical reaction",
     :numports => 2,
@@ -61,11 +60,12 @@ Re_dict = Dict(
     ),
     :equations => [
         0 ~ F[1] + F[2],
-        0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
+        0 ~ F[1] - r*(exp(E[1]/R/T) - exp(E[2]/R/T))
     ]
 )
 
 # Normalised chemical reaction (:re)
+@parameters r R T
 re_dict = Dict(
     :description => "Biochemical reaction (normalised)",
     :numports => 2,
@@ -74,7 +74,7 @@ re_dict = Dict(
     ),
     :equations => [
         0 ~ F[1] + F[2],
-        0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
+        0 ~ F[1] - r*(exp(E[1]) - exp(E[2]))
     ]
 )
 

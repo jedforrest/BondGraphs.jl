@@ -74,7 +74,7 @@ struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::Symbol
     name::Symbol
-    ports::Vector{PortConnection}
+    freeports::Vector{Bool}
     vertex::RefValue{Int}
     parameters::OrderedDict{Num,Tuple{T1,Num}} where {T1<:AbstractNode}
     state_vars::OrderedDict{Num,Tuple{T2,Num}} where {T2<:AbstractNode}

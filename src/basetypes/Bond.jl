@@ -3,9 +3,9 @@ struct Port
     node::AbstractNode
     index::Int
     function Port(node::AbstractNode, index)
-        ports = portconnections(node)
-        # any(ports .== Free) || error("Node $node has no free ports")
-        ports[index] == "Free" || error("Port $index in node $node is already connected")
+        ports = freeports(node)
+        any(ports) || error("Node $node has no free ports")
+        ports[index] || error("Port $index in node $node is already connected")
         new(node, index)
     end
     Port(node::Junction, index) = new(node, index)
