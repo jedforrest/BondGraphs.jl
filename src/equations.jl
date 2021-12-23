@@ -13,11 +13,11 @@ rewriter = Postwalk(rw_chain)
 # Constitutive relations
 constitutive_relations(n::AbstractNode) = n.equations
 function constitutive_relations(n::EqualEffort)
-    if isempty(portconnections(n))
+    if all(freeports(n)) # all ports are empty
         return Equation[]
     end
 
-    N = numports(m)
+    N = numports(n)
     @variables E[1:N](t) F[1:N](t)
 
     flow_constraint = [0 ~ sum(collect(F))]
@@ -25,7 +25,7 @@ function constitutive_relations(n::EqualEffort)
     return vcat(flow_constraint,effort_constraints)
 end
 function constitutive_relations(n::EqualFlow)
-    if isempty(portconnections(n))
+    if all(freeports(n)) # all ports are empty
         return Equation[]
     end
 
@@ -63,14 +63,14 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
     sub_rules = merge(e_sub_rules,f_sub_rules)
-    eqs = [substitute(eq,sub_rules) for eq in cr(n)]
+    eqs = [substitute(eq,sub_rules) for eq in constitutive_relations(n)]
 
     sys = ODESystem(eqs, t, state_vars(n), params(n); 
-                    name=n.name, defaults=default_value(n))
+                    name=n.name)#, defaults=default_value(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
-    subsystems = OrderedDict(c => ODESystem(c) for c in components(m))
+    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(m))
 
     # Add constraints from bonds
     connections = Equation[]

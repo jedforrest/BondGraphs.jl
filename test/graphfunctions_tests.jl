@@ -9,7 +9,7 @@ end
 
 @testset "Adding and removing elements" begin
     c = Component(:C, :C1)
-    r = Component(:R, :C1, numports=1)
+    r = Component(:R, :C1, numports = 1)
     j = EqualEffort()
 
     bg = BondGraph()
@@ -45,15 +45,15 @@ end
 
     @test bgn.type == :BG
     @test bgn.name == :RCI
-    @test bgn.ports == PortConnection[]
+    @test bgn.freeports == Bool[]
 end
 
 @testset "Printing" begin
     C = Component(:C)
     SS = Component(:SS, :Source)
-    J0 = EqualEffort(name=:J)
-    b1 = Bond(C,J0)
-    b2 = Bond(J0,SS)
+    J0 = EqualEffort(name = :J)
+    b1 = Bond(C, J0)
+    b2 = Bond(J0, SS)
     bg = BondGraph(:newbg)
     bgn = BondGraphNode(bg)
 

@@ -69,7 +69,7 @@ name(n::AbstractNode) = n.name
 # Ports
 freeports(n::AbstractNode) = n.freeports
 numports(n::AbstractNode) = length(n.freeports)
-numports(::Junction) = Inf
+# numports(::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
 
 # Weights

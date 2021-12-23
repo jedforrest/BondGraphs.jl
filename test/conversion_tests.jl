@@ -10,13 +10,13 @@
     @test ne(bg_rn) == 4
     
     @test any(n -> n.name == :R1, bg_rn.nodes)
-    @test any(n -> n isa Junction && BondGraphs.type(n) == Symbol("1"), bg_rn.nodes)
+    @test any(n -> n isa Junction && BondGraphs.type(n) == :𝟏, bg_rn.nodes)
 
     @test length(getnodes(bg_rn, :Ce)) == 3
-    @test length(getnodes(bg_rn, Symbol("1"))) == 1
+    @test length(getnodes(bg_rn,:𝟏)) == 1
     @test length(getnodes(bg_rn, :Re)) == 1
 
-    @test LightGraphs.degree(bg_rn) == [2, 3, 1, 1, 1]
+    @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
 end
 
 @testset "Reversible MM" begin
@@ -33,11 +33,11 @@ end
     
     @test length(getnodes(bg_rn, :Ce)) == 2
     @test length(getnodes(bg_rn, :Se)) == 2
-    @test_broken length(getnodes(bg_rn, Symbol("0"))) == 2
-    @test_broken length(getnodes(bg_rn, Symbol("1"))) == 2
+    @test_broken length(getnodes(bg_rn, :𝟎)) == 2
+    @test_broken length(getnodes(bg_rn, :𝟏)) == 2
     @test length(getnodes(bg_rn, :Re)) == 2
 
-    @test_broken LightGraphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
+    @test_broken Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
 
 @testset "Stoichiometry Test" begin

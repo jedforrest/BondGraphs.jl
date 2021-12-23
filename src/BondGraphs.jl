@@ -15,7 +15,7 @@ export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 Port, Bond, BondGraph, BondGraphNode,
 
 type, name, freeports, numports, weights, vertex, set_vertex!,
-params, state_vars, equations,
+params, state_vars, equations, constitutive_relations,
 
 srcnode, dstnode, nodes, bonds, getnodes, getbonds,
 

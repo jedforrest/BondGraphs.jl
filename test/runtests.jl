@@ -1,5 +1,6 @@
 using Revise
 using BondGraphs
+using BondGraphs.BiochemicalLibrary
 using Graphs
 using ModelingToolkit
 using Catalyst
