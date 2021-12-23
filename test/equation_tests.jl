@@ -27,6 +27,8 @@ end
 end
 
 @testset "Parameters" begin
+    set_library!(biochemical_library)
+
     tf = Component(:TF)
     @parameters r
     @test iszero(BondGraphs.params(tf) - [r])
@@ -38,6 +40,8 @@ end
     Re = Component(:Re, library = biochemical_library)
     @parameters r R T
     @test iszero(BondGraphs.params(Re) - [r, R, T])
+
+    set_library!()
 end
 
 @testset "State variables" begin
@@ -131,9 +135,11 @@ end
 end
 
 @testset "Chemical reaction A ⇌ B" begin
-    A = Component(:ce, :A, library = biochemical_library)
-    B = Component(:ce, :B, library = biochemical_library)
-    re = Component(:re, :r, library = biochemical_library)
+    set_library!(biochemical_library)
+
+    A = Component(:ce, :A)
+    B = Component(:ce, :B)
+    re = Component(:re, :r)
     bg = BondGraph()
 
     add_node!(bg, [A, B, re])
@@ -149,15 +155,19 @@ end
 
     @test eqs[1].rhs == e1.rhs
     @test eqs[2].rhs == e2.rhs
+
+    set_library!()
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
-    C_A = Component(:ce, :A, library = biochemical_library)
-    C_B = Component(:ce, :B, library = biochemical_library)
-    C_C = Component(:ce, :C, library = biochemical_library)
-    C_D = Component(:ce, :D, library = biochemical_library)
-    re1 = Component(:re, :r1, library = biochemical_library)
-    re2 = Component(:re, :r2, library = biochemical_library)
+    set_library!(biochemical_library)
+
+    C_A = Component(:ce, :A)
+    C_B = Component(:ce, :B)
+    C_C = Component(:ce, :C)
+    C_D = Component(:ce, :D)
+    re1 = Component(:re, :r1)
+    re2 = Component(:re, :r2)
     common_C = EqualEffort()
     BC = EqualFlow()
 
@@ -186,4 +196,6 @@ end
     @test_broken eqs[2].rhs == e2.rhs
     @test_broken eqs[3].rhs == e3.rhs
     @test eqs[4].rhs == e4.rhs
+
+    set_library!()
 end

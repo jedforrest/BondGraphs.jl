@@ -45,6 +45,7 @@ end
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
 junctions(bg::BondGraph) = filter(x -> x isa Junction, bg.nodes)
 
+getnodes(bg::BondGraph, T::DataType) = filter(x -> x isa T, bg.nodes)
 getnodes(bg::BondGraph, t::Symbol) = filter(x -> type(x) == t, bg.nodes)
 getnodes(bg::BondGraph, n) = filter(x -> name(x) == Symbol(n), bg.nodes)
 

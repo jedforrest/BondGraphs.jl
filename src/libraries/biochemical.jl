@@ -25,7 +25,7 @@ Ce_dict = Dict(
         q => "Molar Quantity"
     ),
     :equations => [
-        0 ~ R*T*log(k*q) - E[1],
+        0 ~ R * T * log(k * q) - E[1],
         D(q) ~ F[1]
     ]
 )
@@ -43,7 +43,7 @@ ce_dict = Dict(
         q => "Molar Quantity"
     ),
     :equations => [
-        0 ~ log(k*q) - E[1],
+        0 ~ log(k * q) - E[1],
         D(q) ~ F[1]
     ]
 )
@@ -60,7 +60,7 @@ Re_dict = Dict(
     ),
     :equations => [
         0 ~ F[1] + F[2],
-        0 ~ F[1] - r*(exp(E[1]/R/T) - exp(E[2]/R/T))
+        0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
     ]
 )
 
@@ -74,7 +74,21 @@ re_dict = Dict(
     ),
     :equations => [
         0 ~ F[1] + F[2],
-        0 ~ F[1] - r*(exp(E[1]) - exp(E[2]))
+        0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
+    ]
+)
+
+# Stoichiometric Ratio (:TF)
+@parameters r
+TF_dict = Dict(
+    :description => "Stoichiometric Ratio",
+    :numports => 2,
+    :parameters => OrderedDict(
+        r => "Ratio"
+    ),
+    :equations => [
+        0 ~ E[2] - r * E[1],
+        0 ~ F[1] - r * F[2]
     ]
 )
 
@@ -82,7 +96,8 @@ const biochemical_library = Dict(
     :Ce => Ce_dict,
     :ce => ce_dict,
     :Re => Re_dict,
-    :re => re_dict
+    :re => re_dict,
+    :TF => TF_dict
 )
 
 end

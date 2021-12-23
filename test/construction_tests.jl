@@ -190,17 +190,17 @@ end
     insert_node!(bg, (SS, 𝟎), J1_new_2)
 
     # Removing junction redundancies
-    @test_broken length(getnodes(bg, :𝟏)) == 1
+    @test length(getnodes(bg, EqualFlow)) == 2
     simplify_junctions!(bg, squash_identical = false)
-    @test length(getnodes(bg, :𝟏)) == 0
+    @test length(getnodes(bg, EqualFlow)) == 0
     @test nv(bg) == 7
     @test ne(bg) == 7
 
     # Squashing junction duplicates into a single junction
-    #simplify_junctions!(bg)
-    @test length(getnodes(bg, :𝟎)) == 1
-    @test_broken nv(bg) == 5
-    @test_broken ne(bg) == 4
+    simplify_junctions!(bg)
+    @test length(getnodes(bg, EqualEffort)) == 1
+    @test nv(bg) == 5
+    @test ne(bg) == 4
 end
 
 @testset "BondGraphNodes" begin
@@ -228,7 +228,7 @@ end
 end
 
 # @testset "Expose component" begin
-    
+
 # end
 
 # @testset "Nested BondGraphs" begin

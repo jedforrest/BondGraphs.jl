@@ -10,10 +10,10 @@
     @test ne(bg_rn) == 4
     
     @test any(n -> n.name == :R1, bg_rn.nodes)
-    @test any(n -> n isa Junction && BondGraphs.type(n) == :𝟏, bg_rn.nodes)
+    @test any(n -> n isa EqualFlow && name(n) == :𝟏, bg_rn.nodes)
 
     @test length(getnodes(bg_rn, :Ce)) == 3
-    @test length(getnodes(bg_rn,:𝟏)) == 1
+    @test length(getnodes(bg_rn, EqualFlow)) == 1
     @test length(getnodes(bg_rn, :Re)) == 1
 
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
@@ -30,7 +30,7 @@ end
     @test bg_rn.name == :MM_reversible
     @test_broken nv(bg_rn) == 10
     @test_broken ne(bg_rn) == 10
-    
+
     @test length(getnodes(bg_rn, :Ce)) == 2
     @test length(getnodes(bg_rn, :Se)) == 2
     @test_broken length(getnodes(bg_rn, :𝟎)) == 2
