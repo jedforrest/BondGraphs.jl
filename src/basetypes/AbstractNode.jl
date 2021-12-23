@@ -19,7 +19,7 @@ end
 #     Component{numports}(type, name, numports, vertex, parameters, state_vars, default, equations)
 # end
 
-function Component(type, name = type; library = standard_library,
+function Component(type, name = type; library = BondGraphs.DEFAULT_LIBRARY[],
     numports::Int = 1, vertex::Int = 0, parameters::Vector = Num[], state_vars::Vector = Num[],
     equations::Vector = Equation[])
 
@@ -61,7 +61,7 @@ end
 # PROPERTIES
 # Type
 type(n::AbstractNode) = n.type
-type(j::Junction) = j.name
+type(j::Junction) = typeof(j)
 
 # Name
 name(n::AbstractNode) = n.name
