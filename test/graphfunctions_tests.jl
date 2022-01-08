@@ -90,8 +90,8 @@ end
     add_edge!(bg, j, c2)
     add_edge!(bg, j, c3)
 
-    # Testing on a selection of common LG functions
+    # Testing on a selection of common graph functions
     @test Δ(bg) == 3
-    @test density(bg) == 0.25
+    @test Graphs.density(bg) == 0.25
     @test Array(adjacency_matrix(bg)) == [0 0 0 1; 0 0 0 0; 0 0 0 0; 0 1 1 0]
 end

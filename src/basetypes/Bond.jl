@@ -28,7 +28,7 @@ srcnode(b::Bond) = b.src.node
 dstnode(b::Bond) = b.dst.node
 
 # Base functions
-in(n::AbstractNode, b::Bond) = n == srcnode(b) || n == dstnode(b)
+in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing

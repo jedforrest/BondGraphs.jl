@@ -77,14 +77,14 @@ end
 
     add_node!(model, [R, C, zero_law])
     @test_logs (:warn, "R:R already in model") add_node!(model, R)
-    @test_logs (:warn, "𝟎 already in model") add_node!(model, zero_law)
+    @test_logs (:warn, "0 already in model") add_node!(model, zero_law)
 
     connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
     one_law = EqualFlow()
-    @test_logs (:warn, "𝟏 not in model") remove_node!(model, one_law)
+    @test_logs (:warn, "1 not in model") remove_node!(model, one_law)
 
     tf = Component(:TF)
     add_node!(model, tf)
@@ -138,10 +138,10 @@ end
 @testset "Inserting Nodes" begin
     bg = RCI()
 
-    c, r, 𝟎 = bg.nodes[[1, 2, 5]]
+    c, r, J0 = bg.nodes[[1, 2, 5]]
 
-    bondc0 = getbonds(bg, c, 𝟎)[1]
-    bondr0 = getbonds(bg, r, 𝟎)[1]
+    bondc0 = getbonds(bg, c, J0)[1]
+    bondr0 = getbonds(bg, r, J0)[1]
 
     tf = Component(:TF, numports = 2)
     insert_node!(bg, bondc0, tf)
@@ -167,27 +167,27 @@ end
     merge_nodes!(bg, R, newR; junction = EqualFlow())
 
     @test isempty(getnodes(bg, "newC"))
-    @test length(getnodes(bg, "𝟏")) == 1
-    @test length(getnodes(bg, "𝟎")) == 2
+    @test length(getnodes(bg, "1")) == 1
+    @test length(getnodes(bg, "0")) == 2
     @test nv(bg) == 7
     @test ne(bg) == 7
 end
 
 @testset "Simplifying Junctions" begin
     bg = RCI()
-    C, R, I, SS, 𝟎 = bg.nodes
+    C, R, I, SS, J0 = bg.nodes
 
     J0_new_1 = EqualEffort(; name = :new0_1)
     J0_new_2 = EqualEffort(; name = :new0_2)
-    insert_node!(bg, (C, 𝟎), J0_new_1)
-    insert_node!(bg, (R, 𝟎), J0_new_2)
+    insert_node!(bg, (C, J0), J0_new_1)
+    insert_node!(bg, (R, J0), J0_new_2)
     connect!(bg, J0_new_1, J0_new_2)
 
     J1_new_1 = EqualFlow(; name = :new1_1)
     J1_new_2 = EqualFlow(; name = :new1_2)
     add_node!(bg, J1_new_1)
-    connect!(bg, 𝟎, J1_new_1)
-    insert_node!(bg, (SS, 𝟎), J1_new_2)
+    connect!(bg, J0, J1_new_1)
+    insert_node!(bg, (SS, J0), J1_new_2)
 
     # Removing junction redundancies
     @test length(getnodes(bg, EqualFlow)) == 2

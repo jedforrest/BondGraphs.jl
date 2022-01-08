@@ -192,9 +192,9 @@ end
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
     # equations are not simplifying with exp/log rules
-    @test_broken eqs[1].rhs == e1.rhs
-    @test_broken eqs[2].rhs == e2.rhs
-    @test_broken eqs[3].rhs == e3.rhs
+    @test eqs[1].rhs == e1.rhs
+    @test eqs[2].rhs == e2.rhs
+    @test eqs[3].rhs == e3.rhs
     @test eqs[4].rhs == e4.rhs
 
     set_library!()

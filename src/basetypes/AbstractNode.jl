@@ -46,7 +46,7 @@ struct EqualEffort <: Junction
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualEffort(; name = :𝟎, v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
+    EqualEffort(; name = Symbol("0"), v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
 end
 
 struct EqualFlow <: Junction
@@ -54,7 +54,7 @@ struct EqualFlow <: Junction
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualFlow(; name = :𝟏, v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
+    EqualFlow(; name = Symbol("1"), v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
 end
 
 
