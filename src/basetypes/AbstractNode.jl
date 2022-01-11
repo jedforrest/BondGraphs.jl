@@ -6,35 +6,30 @@ struct Component{N} <: AbstractNode
     name::Symbol
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    parameters::Vector{Num}
-    state_vars::Vector{Num}
+    parameters::Vector{Num} # store as dict? Num => Real
+    states::Vector{Num}
     equations::Vector{Equation}
     function Component{N}(t, n, v::Int, p::Vector, x::Vector, eq::Vector) where {N}
         new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, eq)
     end
 end
-# function Component(type, name=type;
-#     numports::Int=1, vertex::Int=0, parameters::Vector=[], state_vars::Vector=[],
-#     equations::Vector=[])
-#     Component{numports}(type, name, numports, vertex, parameters, state_vars, default, equations)
-# end
 
 function Component(type, name = type; library = BondGraphs.DEFAULT_LIBRARY[],
-    numports::Int = 1, vertex::Int = 0, parameters::Vector = Num[], state_vars::Vector = Num[],
+    numports::Int = 1, vertex::Int = 0, parameters::Vector = Num[], states::Vector = Num[],
     equations::Vector = Equation[])
 
     if !isnothing(library) && type in keys(library)
         d = library[type]
         parameters = collect(keys(d[:parameters]))
-        state_vars = if haskey(d, :state_vars)
-            collect(keys(d[:state_vars]))
+        states = if haskey(d, :states)
+            collect(keys(d[:states]))
         else
             Num[]
         end
         numports = d[:numports]
         equations = d[:equations]
     end
-    Component{numports}(type, name, vertex, parameters, state_vars, equations)
+    Component{numports}(type, name, vertex, parameters, states, equations)
 end
 
 
@@ -87,37 +82,18 @@ function nextfreeport(j::Junction)
         return freeport
     end
 end
-# function nextfreeport(j::EqualFlow)
-#     push!(j.weights,0)
-#     push!(j.freeports,true)
-#     numports(j)
-# end
-
-# nextsrcport(n::AbstractNode) = nextfreeport(n)
-# function nextsrcport(n::EqualFlow)
-#     i = nextfreeport(n)
-#     n.weights[i] = -1
-#     i
-# end
-
-# nextdstport(n::AbstractNode) = nextfreeport(n)
-# function nextdstport(n::EqualFlow)
-#     i = nextfreeport(n)
-#     n.weights[i] = 1
-#     i
-# end
 
 # Vertex
 vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Parameters
-params(n::AbstractNode) = n.parameters
-params(::Junction) = Num[]
+parameters(n::AbstractNode) = n.parameters
+parameters(::Junction) = Num[]
 
 # State variables
-state_vars(n::AbstractNode) = n.state_vars
-state_vars(::Junction) = Num[]
+states(n::AbstractNode) = n.states
+states(::Junction) = Num[]
 
 # Equations
 equations(n::AbstractNode) = n.equations
@@ -125,13 +101,13 @@ equations(::Junction) = Equation[]
 
 # Set parameter values
 # function set_param!(n::Component,var,val)
-#     any(isequal.(params(n),var)) || error("Component does not have parameter.")
+#     any(isequal.(parameters(n),var)) || error("Component does not have parameter.")
 #     default_value(n)[var] = val
 # end
 
 # # Set initial conditions
 # function set_initial_value!(n::Component,var,val)
-#     any(isequal.(state_vars(n),var)) || error("Component does not have state variable.")
+#     any(isequal.(states(n),var)) || error("Component does not have state variable.")
 #     default_value(n)[var] = val
 # end
 

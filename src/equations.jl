@@ -65,7 +65,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     sub_rules = merge(e_sub_rules,f_sub_rules)
     eqs = [substitute(eq,sub_rules) for eq in constitutive_relations(n)]
 
-    sys = ODESystem(eqs, t, state_vars(n), params(n); 
+    sys = ODESystem(eqs, t, states(n), parameters(n); 
                     name=n.name)#, defaults=default_value(n))
     return compose(sys, ps...)
 end

@@ -31,29 +31,29 @@ end
 
     tf = Component(:TF)
     @parameters r
-    @test iszero(BondGraphs.params(tf) - [r])
+    @test iszero(BondGraphs.parameters(tf) - [r])
 
     Ce = Component(:Ce, library = biochemical_library)
     @parameters k R T
-    @test iszero(BondGraphs.params(Ce) - [k, R, T])
+    @test iszero(BondGraphs.parameters(Ce) - [k, R, T])
 
     Re = Component(:Re, library = biochemical_library)
     @parameters r R T
-    @test iszero(BondGraphs.params(Re) - [r, R, T])
+    @test iszero(BondGraphs.parameters(Re) - [r, R, T])
 
     set_library!()
 end
 
 @testset "State variables" begin
     r = Component(:R)
-    @test isempty(BondGraphs.state_vars(r))
+    @test isempty(BondGraphs.states(r))
 
     @variables q(t)
     c = Component(:C)
-    @test isequal(BondGraphs.state_vars(c), [q])
+    @test isequal(BondGraphs.states(c), [q])
 
     ce = Component(:ce, library = biochemical_library)
-    @test isequal(BondGraphs.state_vars(ce), [q])
+    @test isequal(BondGraphs.states(ce), [q])
 end
 
 @testset "0-junction equations" begin

@@ -1,4 +1,6 @@
 @testset "Set parameters" begin
+    set_library!(biochemical_library)
+    
     re = Component(:Re)
     @parameters r, R, T
     set_param!(re,r,1.0)
@@ -8,6 +10,8 @@
     @test default_value(re,r) == 1.0
     @test default_value(re,R) == 8.314
     @test default_value(re,T) == 310.0
+
+    set_library!()
 end
 
 @testset "Incompatible parameter fail" begin

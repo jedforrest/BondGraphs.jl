@@ -2,6 +2,7 @@ module BondGraphs
 
 import Graphs as g
 import Base: RefValue, eltype, show, in, iterate, ==, getproperty
+import ModelingToolkit: parameters, states, equations # Importing means names can be reused, but may be confusing
 
 using StaticArrays
 using ModelingToolkit
@@ -15,7 +16,7 @@ export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 Port, Bond, BondGraph, BondGraphNode,
 
 type, name, freeports, numports, weights, vertex, set_vertex!,
-params, state_vars, equations, constitutive_relations,
+constitutive_relations,
 
 srcnode, dstnode, nodes, bonds, getnodes, getbonds,
 

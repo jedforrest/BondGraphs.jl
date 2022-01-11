@@ -21,7 +21,7 @@ Ce_dict = Dict(
         R => "Universal Gas Constant",
         T => "Temperature"
     ),
-    :state_vars => OrderedDict(
+    :states => OrderedDict(
         q => "Molar Quantity"
     ),
     :equations => [
@@ -39,7 +39,7 @@ ce_dict = Dict(
     :parameters => OrderedDict(
         k => "Biochemical Constant; exp(mu_0/RT)/V"
     ),
-    :state_vars => OrderedDict(
+    :states => OrderedDict(
         q => "Molar Quantity"
     ),
     :equations => [

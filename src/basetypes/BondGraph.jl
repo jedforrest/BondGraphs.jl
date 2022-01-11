@@ -17,23 +17,23 @@ nodes(bg::BondGraph) = bg.nodes
 bonds(bg::BondGraph) = bg.bonds
 
 # AbstractNode properties 
-function params(bg::BondGraph)
-    parameters = Tuple{AbstractNode,Num}[]
-    for c in components(bg), p in params(c)
-        push!(parameters, (c, p))
+function parameters(bg::BondGraph)
+    params = Tuple{AbstractNode,Num}[]
+    for c in components(bg), p in parameters(c)
+        push!(params, (c, p))
     end
-    @parameters p[1:length(parameters)]
-    return OrderedDict(p[i] => y for (i, y) in enumerate(parameters))
+    @parameters p[1:length(params)]
+    return OrderedDict(p[i] => y for (i, y) in enumerate(params))
 end
 
-function state_vars(bg::BondGraph)
-    states = Tuple{AbstractNode,Num}[]
-    for c in components(bg), x in state_vars(c)
-        push!(states, (c, x))
+function states(bg::BondGraph)
+    state_vars = Tuple{AbstractNode,Num}[]
+    for c in components(bg), x in states(c)
+        push!(state_vars, (c, x))
     end
     @parameters t
-    @variables x[1:length(states)](t)
-    return OrderedDict(x[i] => y for (i, y) in enumerate(states))
+    @variables x[1:length(state_vars)](t)
+    return OrderedDict(x[i] => y for (i, y) in enumerate(state_vars))
 end
 
 function equations(bg::BondGraph; simplify_eqs = true)
@@ -80,11 +80,11 @@ struct BondGraphNode <: AbstractNode
     freeports::Vector{Bool}
     vertex::RefValue{Int}
     parameters::OrderedDict
-    state_vars::OrderedDict
+    states::OrderedDict
     equations::Vector{Equation}
     function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
         new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex),
-            params(bg), state_vars(bg), equations(bg))
+            parameters(bg), states(bg), equations(bg))
     end
 end
 

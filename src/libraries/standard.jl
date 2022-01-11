@@ -30,7 +30,7 @@ C_dict = Dict(
     :parameters => OrderedDict(
         C => "Capacitance"
     ),
-    :state_vars => OrderedDict(
+    :states => OrderedDict(
         q => "Generalised Position"
     ),
     :equations => [
@@ -48,7 +48,7 @@ I_dict = Dict(
     :parameters => OrderedDict(
         L => "Inductance"
     ),
-    :state_vars => OrderedDict(
+    :states => OrderedDict(
         p => "Generalised Momentum"
     ),
     :equations => [
