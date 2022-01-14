@@ -27,8 +27,6 @@ end
 end
 
 @testset "Parameters" begin
-    set_library!(biochemical_library)
-
     tf = Component(:TF)
     @parameters r
     @test iszero(BondGraphs.parameters(tf) - [r])
@@ -40,8 +38,6 @@ end
     Re = Component(:Re, library = biochemical_library)
     @parameters r R T
     @test iszero(BondGraphs.parameters(Re) - [r, R, T])
-
-    set_library!()
 end
 
 @testset "State variables" begin
@@ -135,8 +131,6 @@ end
 end
 
 @testset "Chemical reaction A ⇌ B" begin
-    set_library!(biochemical_library)
-
     A = Component(:ce, :A)
     B = Component(:ce, :B)
     re = Component(:re, :r)
@@ -155,13 +149,9 @@ end
 
     @test eqs[1].rhs == e1.rhs
     @test eqs[2].rhs == e2.rhs
-
-    set_library!()
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
-    set_library!(biochemical_library)
-
     C_A = Component(:ce, :A)
     C_B = Component(:ce, :B)
     C_C = Component(:ce, :C)
@@ -196,6 +186,4 @@ end
     @test eqs[2].rhs == e2.rhs
     @test eqs[3].rhs == e3.rhs
     @test eqs[4].rhs == e4.rhs
-
-    set_library!()
 end

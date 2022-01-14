@@ -1,5 +1,5 @@
-using .StandardLibrary
+using .StandardLibrary, .BiochemicalLibrary
 
-const DEFAULT_LIBRARY = Ref(standard_library)
+const DEFAULT_LIBRARY = merge(standard_library, biochemical_library)
 
-set_library!(lib = standard_library) = DEFAULT_LIBRARY[] = lib
+addlibrary!(newlib) = merge!(DEFAULT_LIBRARY, newlib)

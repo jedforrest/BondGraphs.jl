@@ -6,30 +6,24 @@ struct Component{N} <: AbstractNode
     name::Symbol
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    parameters::Vector{Num} # store as dict? Num => Real
+    parameters::Vector{Num}
     states::Vector{Num}
     equations::Vector{Equation}
-    function Component{N}(t, n, v::Int, p::Vector, x::Vector, eq::Vector) where {N}
-        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, eq)
+    defaults::AbstractDict
+    function Component{N}(t, n, v::Int, p::Vector, x::Vector, eq::Vector, def::AbstractDict) where {N}
+        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, eq, def)
     end
 end
 
-function Component(type, name = type; library = BondGraphs.DEFAULT_LIBRARY[],
-    numports::Int = 1, vertex::Int = 0, parameters::Vector = Num[], states::Vector = Num[],
-    equations::Vector = Equation[])
+function Component(type, name = type; vertex::Int = 0, library = BondGraphs.DEFAULT_LIBRARY,
+    comp_dict = haskey(library, type) ? library[type] : Dict(),
+    numports::Int = haskey(comp_dict, :numports) ? comp_dict[:numports] : 1,
+    parameters = haskey(comp_dict, :parameters) ? collect(keys(comp_dict[:parameters])) : Num[],
+    states = haskey(comp_dict, :states) ? collect(keys(comp_dict[:states])) : Num[],
+    equations = haskey(comp_dict, :equations) ? comp_dict[:equations] : Equation[],
+    defaults = haskey(comp_dict, :defaults) ? copy(comp_dict[:defaults]) : Dict())
 
-    if !isnothing(library) && type in keys(library)
-        d = library[type]
-        parameters = collect(keys(d[:parameters]))
-        states = if haskey(d, :states)
-            collect(keys(d[:states]))
-        else
-            Num[]
-        end
-        numports = d[:numports]
-        equations = d[:equations]
-    end
-    Component{numports}(type, name, vertex, parameters, states, equations)
+    Component{numports}(type, name, vertex, parameters, states, equations, defaults)
 end
 
 
@@ -99,23 +93,35 @@ states(::Junction) = Num[]
 equations(n::AbstractNode) = n.equations
 equations(::Junction) = Equation[]
 
-# Set parameter values
-# function set_param!(n::Component,var,val)
-#     any(isequal.(parameters(n),var)) || error("Component does not have parameter.")
-#     default_value(n)[var] = val
-# end
+# Defaults
+defaults(n::AbstractNode) = n.defaults
+# defaults(n::AbstractNode, var) = defaults(n)[@variables($var)[1]]
+# defaults(n::AbstractNode, var) = defaults(n)[var]
+defaults(::Junction) = Dict{Num,Any}()
 
-# # Set initial conditions
-# function set_initial_value!(n::Component,var,val)
-#     any(isequal.(states(n),var)) || error("Component does not have state variable.")
-#     default_value(n)[var] = val
-# end
+# Set and get default parameter values
+function get_parameter(n::AbstractNode, var)
+    p, = @parameters $var
+    p in keys(defaults(n)) || error("Component does not have parameter $var")
+    defaults(n)[p]
+end
+function set_parameter!(n::AbstractNode, var, val)
+    p, = @parameters $var
+    p in keys(defaults(n)) || error("Component does not have parameter $var")
+    defaults(n)[p] = val
+end
 
-# # Get default values
-# default_value(n::Component) = n.default
-# default_value(n::Component,v::Num) = default_value(n::Component)[v]
-# default_value(j::Junction) = Dict{Num,Any}()
-
+# Set and getinitial conditions
+function get_initial_value(n::AbstractNode, var)
+    _, x = @variables t, $var(t)
+    x in keys(defaults(n)) || error("Component does not have state variable $var")
+    defaults(n)[x]
+end
+function set_initial_value!(n::AbstractNode, var, val)
+    _, x = @variables t, $var(t)
+    x in keys(defaults(n)) || error("Component does not have state variable $var")
+    defaults(n)[x] = val
+end
 
 # BASE FUNCTIONS
 # This definition will need to expand when equations etc. are added

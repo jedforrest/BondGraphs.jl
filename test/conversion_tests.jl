@@ -1,6 +1,3 @@
-# Conversion examples here all use the biochemical library
-set_library!(biochemical_library)
-
 @testset "Simple Reaction System" begin
     rn = @reaction_network ABC begin
         1, A + B --> C
@@ -77,6 +74,3 @@ end
     @test nv(bg_rn) == 46
     @test ne(bg_rn) == 49
 end
-
-# Reset to standard library
-set_library!()

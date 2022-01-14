@@ -18,7 +18,8 @@ R_dict = Dict(
     :parameters => OrderedDict(
         R => "Resistance"
     ),
-    :equations => [0 ~ E[1]/R - F[1]]
+    :equations => [0 ~ E[1]/R - F[1]],
+    :defaults => Dict(R => 1.)
 )
 
 # Linear capacitor (:C)
@@ -36,7 +37,8 @@ C_dict = Dict(
     :equations => [
         0 ~ q/C - E[1],
         D(q) ~ F[1]
-    ]
+    ],
+    :defaults => Dict(C => 1., q => 0.)
 )
 
 # Linear inductance (:I)
@@ -54,7 +56,8 @@ I_dict = Dict(
     :equations => [
         0 ~ p/L - F[1],
         D(p) ~ E[1]
-    ]
+    ],
+    :defaults => Dict(L => 1., p => 0.)
 )
 
 # Source of effort (:Se)
@@ -65,7 +68,8 @@ Se_dict = Dict(
     :parameters => OrderedDict(
         e => "Effort"
     ),
-    :equations => [0 ~ e - E[1]]
+    :equations => [0 ~ e - E[1]],
+    :defaults => Dict(e => 1.)
 )
 
 # Source of flow (:Sf)
@@ -76,21 +80,23 @@ Sf_dict = Dict(
     :parameters => OrderedDict(
         f => "Flow"
     ),
-    :equations => [0 ~ f - F[1]]
+    :equations => [0 ~ f - F[1]],
+    :defaults => Dict(f => 1.)
 )
 
 # Transformer (:TF)
-@parameters r
+@parameters n
 TF_dict = Dict(
     :description => "Linear Transformer",
     :numports => 2,
     :parameters => OrderedDict(
-        r => "Winding ratio"
+        n => "Ratio"
     ),
     :equations => [
-        0 ~ E[2] - r*E[1],
-        0 ~ F[1] - r*F[2]
-    ]
+        0 ~ E[2] - n * E[1],
+        0 ~ F[1] - n * F[2]
+    ],
+    :defaults => Dict(n => 1.)
 )
 
 const standard_library = Dict(

@@ -66,7 +66,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     eqs = [substitute(eq,sub_rules) for eq in constitutive_relations(n)]
 
     sys = ODESystem(eqs, t, states(n), parameters(n); 
-                    name=n.name)#, defaults=default_value(n))
+                    name=n.name, defaults=defaults(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
@@ -97,7 +97,7 @@ end
 function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :ODE, kwargs...)
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs,0) for eq in ModelingToolkit.equations(sys)])
-    if probtype==:ODE || flag_ODE
+    if probtype == :ODE || flag_ODE
         prob = ODEProblem(sys, u0, tspan, pmap)
     else
         prob = ODAEProblem(sys, u0, tspan, pmap)
