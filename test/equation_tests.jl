@@ -28,28 +28,28 @@ end
 
 @testset "Parameters" begin
     tf = Component(:TF)
-    @parameters r
-    @test iszero(BondGraphs.parameters(tf) - [r])
+    @parameters n
+    @test iszero(parameters(tf) - [n])
 
-    Ce = Component(:Ce, library = biochemical_library)
+    Ce = Component(:Ce)
     @parameters k R T
-    @test iszero(BondGraphs.parameters(Ce) - [k, R, T])
+    @test iszero(parameters(Ce) - [k, R, T])
 
-    Re = Component(:Re, library = biochemical_library)
+    Re = Component(:Re)
     @parameters r R T
-    @test iszero(BondGraphs.parameters(Re) - [r, R, T])
+    @test iszero(parameters(Re) - [r, R, T])
 end
 
 @testset "State variables" begin
     r = Component(:R)
-    @test isempty(BondGraphs.states(r))
+    @test isempty(states(r))
 
     @variables q(t)
     c = Component(:C)
-    @test isequal(BondGraphs.states(c), [q])
+    @test isequal(states(c), [q])
 
-    ce = Component(:ce, library = biochemical_library)
-    @test isequal(BondGraphs.states(ce), [q])
+    ce = Component(:ce)
+    @test isequal(states(ce), [q])
 end
 
 @testset "0-junction equations" begin
@@ -172,7 +172,7 @@ end
     connect!(bg, re2, C_D; srcportindex = 2)
 
     sys = ODESystem(bg)
-    eqs = ModelingToolkit.equations(sys)
+    eqs = equations(sys)
 
     (xA, xB, xC, xD) = sys.states
     (KA, KB, KC, KD, r1, r2) = sys.ps
@@ -187,3 +187,4 @@ end
     @test eqs[3].rhs == e3.rhs
     @test eqs[4].rhs == e4.rhs
 end
+
