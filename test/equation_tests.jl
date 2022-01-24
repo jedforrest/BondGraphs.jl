@@ -20,10 +20,10 @@ end
     c = Component(:C)
     @parameters C
     @variables E[1](t) F[1](t) q(t)
-    @test constitutive_relations(c) == [
+    @test isequal(constitutive_relations(c), [
         0 ~ q / C - E[1],
         D(q) ~ F[1]
-    ]
+    ])
 end
 
 @testset "Parameters" begin
@@ -65,10 +65,10 @@ end
     @test numports(zero_law) == 2
 
     @variables E[1:2](t) F[1:2](t)
-    @test constitutive_relations(zero_law) == [
+    @test isequal(constitutive_relations(zero_law), [
         0 ~ F[1] + F[2],
         0 ~ E[1] - E[2]
-    ]
+    ])
 end
 
 @testset "1-junction equations" begin
@@ -88,11 +88,11 @@ end
     @test j.weights == [1, -1, -1]
 
     @variables E[1:3](t) F[1:3](t)
-    @test constitutive_relations(j) == [
+    @test isequal(constitutive_relations(j), [
         0 ~ E[1] - E[2] - E[3],
         0 ~ F[1] + F[2],
         0 ~ F[1] + F[3],
-    ]
+    ])
 end
 
 @testset "RC circuit" begin
