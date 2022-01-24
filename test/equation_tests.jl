@@ -103,31 +103,32 @@ end
     connect!(bg, r, c)
 
     sys = ODESystem(bg)
-    eqs = ModelingToolkit.equations(sys)
+    eqs = equations(sys)
     @test length(eqs) == 1
 
     (C, R) = sys.ps
     x = sys.states[1]
     e1 = eqs[1]
     e2 = D(x) ~ -x / C / R
-    @test e1.lhs == e2.lhs
-    @test expand(e1.rhs) == e2.rhs
+
+    @test isequal(e1.lhs, e2.lhs)
+    @test isequal(expand(e1.rhs), e2.rhs)
 end
 
 @testset "RLC circuit" begin
     bg = RLC()
-    eqs = BondGraphs.equations(bg)
+    eqs = equations(bg)
     @test length(eqs) == 2
 
     sys = ODESystem(bg)
-    eqs = ModelingToolkit.equations(sys)
+    eqs = equations(sys)
     (C, L, R) = sys.ps
     (qC, pL) = sys.states
-    e1 = D(qC) ~ -pL / L - qC / C / R
+    e1 = D(qC) ~ -pL / L + (- qC / C / R)
     e2 = D(pL) ~ qC / C
 
-    @test expand(eqs[1].rhs) == e1.rhs
-    @test eqs[2].rhs == e2.rhs
+    @test isequal(expand(eqs[1].rhs), e1.rhs)
+    @test isequal(eqs[2].rhs, e2.rhs)
 end
 
 @testset "Chemical reaction A ⇌ B" begin
@@ -147,8 +148,8 @@ end
     e1 = D(xA) ~ -r * (KA * xA - KB * xB)
     e2 = D(xB) ~ r * (KA * xA - KB * xB)
 
-    @test eqs[1].rhs == e1.rhs
-    @test eqs[2].rhs == e2.rhs
+    @test isequal(eqs[1].rhs, e1.rhs)
+    @test isequal(eqs[2].rhs, e2.rhs)
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
@@ -182,9 +183,9 @@ end
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
     # equations are not simplifying with exp/log rules
-    @test eqs[1].rhs == e1.rhs
-    @test eqs[2].rhs == e2.rhs
-    @test eqs[3].rhs == e3.rhs
-    @test eqs[4].rhs == e4.rhs
+    @test isequal(eqs[1].rhs, e1.rhs)
+    @test isequal(eqs[2].rhs, e2.rhs)
+    @test isequal(eqs[3].rhs, e3.rhs)
+    @test isequal(eqs[4].rhs, e4.rhs)
 end
 

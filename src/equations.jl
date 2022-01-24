@@ -107,5 +107,3 @@ function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :O
     end
     return solve(prob; kwargs...)
 end
-
-==(sym1::T, sym2::T) where {T<:SymbolicUtils.Symbolic{Real}} = (simplify(sym1) - simplify(sym2)) == 0
