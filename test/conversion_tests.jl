@@ -10,13 +10,13 @@
     @test ne(bg_rn) == 4
     
     @test any(n -> n.name == :R1, bg_rn.nodes)
-    @test any(n -> n isa Junction && BondGraphs.type(n) == Symbol("1"), bg_rn.nodes)
+    @test any(n -> n isa EqualFlow && name(n) == Symbol("1"), bg_rn.nodes)
 
     @test length(getnodes(bg_rn, :Ce)) == 3
-    @test length(getnodes(bg_rn, Symbol("1"))) == 1
+    @test length(getnodes(bg_rn, EqualFlow)) == 1
     @test length(getnodes(bg_rn, :Re)) == 1
 
-    @test LightGraphs.degree(bg_rn) == [2, 3, 1, 1, 1]
+    @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
 end
 
 @testset "Reversible MM" begin
@@ -28,16 +28,16 @@ end
     bg_rn = BondGraph(rn; chemostats=["S", "P"])
 
     @test bg_rn.name == :MM_reversible
-    @test_broken nv(bg_rn) == 10
-    @test_broken ne(bg_rn) == 10
-    
+    @test nv(bg_rn) == 10
+    @test ne(bg_rn) == 10
+
     @test length(getnodes(bg_rn, :Ce)) == 2
     @test length(getnodes(bg_rn, :Se)) == 2
-    @test_broken length(getnodes(bg_rn, Symbol("0"))) == 2
-    @test_broken length(getnodes(bg_rn, Symbol("1"))) == 2
+    @test length(getnodes(bg_rn, EqualEffort)) == 2
+    @test length(getnodes(bg_rn, EqualFlow)) == 2
     @test length(getnodes(bg_rn, :Re)) == 2
 
-    @test_broken LightGraphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
+    @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
 
 @testset "Stoichiometry Test" begin
@@ -71,6 +71,6 @@ end
     chemostats = ["MgATP", "MgADP", "Pi", "H", "Cai", "Casr"]
     bg_rn = BondGraph(rn; chemostats)
 
-    @test_broken nv(bg_rn) == 46
-    @test_broken ne(bg_rn) == 49
+    @test nv(bg_rn) == 46
+    @test ne(bg_rn) == 49
 end

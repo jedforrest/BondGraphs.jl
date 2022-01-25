@@ -1,6 +1,6 @@
 using Revise
 using BondGraphs
-using LightGraphs
+using Graphs
 using ModelingToolkit
 using Catalyst
 using Test

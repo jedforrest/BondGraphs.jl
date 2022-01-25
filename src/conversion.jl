@@ -6,21 +6,21 @@ function BondGraph(rs::ReactionSystem; chemostats=[])
     all_reactions = reactions(rs)
     reaction_num = 1
     for (i, reaction) in enumerate(all_reactions)
-        if i > 1 && is_reverse_off_previous(reaction, all_reactions[i-1])
+        if i > 1 && _is_reverse_off_previous(reaction, all_reactions[i-1])
             # Skip the second reaction
             continue
         end
 
         Re = Component(:Re, Symbol("R$reaction_num"), numports=2)
         add_node!(bg, Re)
-        half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats)
-        half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats)
+        _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats)
+        _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats)
 
         reaction_num += 1
     end
 
     # Combine common species across reactions
-    species_names = stringify_species.(species(rs))
+    species_names = _stringify_species.(species(rs))
     for spcs_name in species_names
         spcs_nodes = getnodes(bg, spcs_name)
         for node in spcs_nodes[2:end]
@@ -33,10 +33,10 @@ end
 
 # If this reaction is an exact reverse of the previous reaction,
 # then together they form a bi-directional reaction pair.
-is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
+_is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
 
-function half_equation!(bg, species, stoich, Re, chemostats)
-    species_names = stringify_species.(species)
+function _half_equation!(bg, species, stoich, Re, chemostats)
+    species_names = _stringify_species.(species)
 
     if length(species) > 1
         one_junction = EqualFlow()
@@ -68,4 +68,4 @@ function half_equation!(bg, species, stoich, Re, chemostats)
 end
 
 # removes "(t)" from the end of the species name
-stringify_species(species) = string(species)[1:end-3]
+_stringify_species(species) = string(species)[1:end-3]
