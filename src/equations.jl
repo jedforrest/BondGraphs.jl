@@ -44,7 +44,7 @@ function constitutive_relations(n::EqualFlow)
     return vcat(effort_constraint, flow_constraints)
 end
 function constitutive_relations(m::BondGraph)
-    return simplify.(ModelingToolkit.equations(de_system(m)), rewriter = rewriter)
+    return simplify.(ModelingToolkit.equations(m), rewriter = rewriter)
 end
 function constitutive_relations(bgn::BondGraphNode)
     return constitutive_relations(bgn.bondgraph)

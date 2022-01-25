@@ -56,7 +56,7 @@ end
     @test b1 in model.bonds
     @test I.freeports == [false]
 
-    disconnect!(model, zero_law, I)
+    disconnect!(model, I, zero_law) # test disconnect when node order is swapped
     @test ne(model) == 2
     @test !(b1 in model.bonds)
     @test I.freeports == [true]
@@ -79,7 +79,7 @@ end
     @test_logs (:warn, "R:R already in model") add_node!(model, R)
     @test_logs (:warn, "0 already in model") add_node!(model, zero_law)
 
-    connect!(model, R, zero_law)
+    bond = connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
@@ -89,6 +89,10 @@ end
     tf = Component(:TF)
     add_node!(model, tf)
     @test_throws ErrorException swap!(model, tf, C)
+
+    # if inserting a node fails, the original nodes should still remain connected
+    @test_throws ErrorException insert_node!(model, bond, Component(:I))
+    @test has_edge(model, bond)
 end
 
 @testset "Chemical reaction" begin

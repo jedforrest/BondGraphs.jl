@@ -1,10 +1,18 @@
 @testset "BondGraph Properties" begin
-    bg = BondGraph()
-    @test bg.name == :BG
+    bg = BondGraph("newBG")
+    @test type(bg) == :BG
+    @test name(bg) == :newBG
     @test isempty(bg.nodes)
+
+    @test eltype(BondGraph) == AbstractNode
     @test eltype(bg) == AbstractNode
+
+    @test edgetype(BondGraph) == Graphs.AbstractSimpleEdge{Integer}
     @test edgetype(bg) == Graphs.AbstractSimpleEdge{Integer}
     @test is_directed(bg)
+
+    @test size(zero(BondGraph)) == size(BondGraph())
+    @test size(zero(bg)) == size(BondGraph())
 end
 
 @testset "Adding and removing elements" begin
@@ -30,6 +38,9 @@ end
     @test nv(bg) == 3
     @test has_vertex(bg, j)
 
+    @test components(bg) == [c, r]
+    @test junctions(bg) == [j]
+
     @test inneighbors(bg, vertex(c)) == []
     @test outneighbors(bg, vertex(c)) == [3]
 
@@ -54,6 +65,7 @@ end
     J0 = EqualEffort(name = :J)
     b1 = Bond(C, J0)
     b2 = Bond(J0, SS)
+    port = b1.srcport
     bg = BondGraph(:newbg)
     bgn = BondGraphNode(bg)
 
@@ -62,6 +74,7 @@ end
     @test repr(SS) == "SS:Source"
     @test repr(b1) == "Bond C:C ⇀ J"
     @test repr(b2) == "Bond J ⇀ SS:Source"
+    @test repr(port) == "Port C:C (1)"
     @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
     @test repr(bgn) == "BG:newbg"
 

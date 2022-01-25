@@ -15,8 +15,8 @@ Port(node::AbstractNode) = Port(node, nextfreeport(node))
 
 # BOND
 struct Bond <: g.AbstractSimpleEdge{Int}
-    src::Port
-    dst::Port
+    srcport::Port
+    dstport::Port
 end
 function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
     Bond(Port(srcnode), Port(dstnode))
@@ -24,14 +24,14 @@ end
 
 
 # Source and Destination
-srcnode(b::Bond) = b.src.node
-dstnode(b::Bond) = b.dst.node
+srcnode(b::Bond) = b.srcport.node
+dstnode(b::Bond) = b.dstport.node
 
 # Base functions
 in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 
-iterate(b::Bond) = (b.src, true)
-iterate(b::Bond, state) = state ? (b.dst, false) : nothing
+iterate(b::Bond) = (b.srcport, true)
+iterate(b::Bond, state) = state ? (b.dstport, false) : nothing
 
 show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")

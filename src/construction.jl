@@ -34,11 +34,7 @@ end
 
 function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     # rem_edge! removes the bond regardless of the direction of the bond
-    deleted_bond = g.rem_edge!(bg, node1, node2)
-    if isnothing(deleted_bond) # if returned nothing, try flipping node1 and node2
-        deleted_bond = g.rem_edge!(bg, node2, node1)
-    end
-    return deleted_bond
+    return g.rem_edge!(bg, node1, node2)
 end
 
 # TODO 
@@ -106,17 +102,11 @@ function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; j
     node1.type == node2.type || error("$(node1.name) must be the same type as $(node2.name)")
 
     # node1 taken as the node to keep
-    for src in g.inneighbors(bg, node1)
-        junc_src = deepcopy(junction)
-        bond = getbonds(bg, src, node1)[1]
-        insert_node!(bg, bond, junc_src)
-        swap!(bg, node2, junc_src)
-    end
-    for dst in g.outneighbors(bg, node1)
-        junc_dst = deepcopy(junction)
-        bond = getbonds(bg, node1, dst)[1]
-        insert_node!(bg, bond, junc_dst)
-        swap!(bg, node2, junc_dst)
+    for nb in g.all_neighbors(bg, node1)
+        junc = deepcopy(junction)
+        bond = getbonds(bg, node1, nb)[1]
+        insert_node!(bg, bond, junc)
+        swap!(bg, node2, junc)
     end
 end
 function merge_nodes!(bg::BondGraph, node1::Junction, node2::Junction)

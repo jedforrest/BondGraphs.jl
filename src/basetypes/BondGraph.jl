@@ -17,24 +17,9 @@ nodes(bg::BondGraph) = bg.nodes
 bonds(bg::BondGraph) = bg.bonds
 
 # AbstractNode properties 
-function parameters(bg::BondGraph)
-    params = Tuple{AbstractNode,Num}[]
-    for c in components(bg), p in parameters(c)
-        push!(params, (c, p))
-    end
-    @parameters p[1:length(params)]
-    return OrderedDict(p[i] => y for (i, y) in enumerate(params))
-end
+parameters(bg::BondGraph) = [p for c in components(bg) for p in parameters(c)]
 
-function states(bg::BondGraph)
-    state_vars = Tuple{AbstractNode,Num}[]
-    for c in components(bg), x in states(c)
-        push!(state_vars, (c, x))
-    end
-    @parameters t
-    @variables x[1:length(state_vars)](t)
-    return OrderedDict(x[i] => y for (i, y) in enumerate(state_vars))
-end
+states(bg::BondGraph) = [x for c in components(bg) for x in states(c)]
 
 function equations(bg::BondGraph; simplify_eqs = true)
     isempty(bg.nodes) && return Equation[]
@@ -79,8 +64,8 @@ struct BondGraphNode <: AbstractNode
     name::Symbol
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    parameters::OrderedDict
-    states::OrderedDict
+    parameters::Vector{Num}
+    states::Vector{Num}
     equations::Vector{Equation}
     function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
         new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex),

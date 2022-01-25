@@ -20,10 +20,16 @@ end
     c = Component(:C)
     @parameters C
     @variables E[1](t) F[1](t) q(t)
-    @test isequal(constitutive_relations(c), [
+    cr = [
         0 ~ q / C - E[1],
         D(q) ~ F[1]
-    ])
+    ]
+
+    @test isequal(equations(c), cr)
+    @test isequal(constitutive_relations(c), cr)
+
+    j = EqualEffort()
+    @test isequal(equations(j), Equation[])
 end
 
 @testset "Parameters" begin
@@ -38,6 +44,10 @@ end
     Re = Component(:Re)
     @parameters r R T
     @test iszero(parameters(Re) - [r, R, T])
+
+    bg = RLC()
+    @parameters C L R
+    @test iszero(parameters(bg) - [C, L, R])
 end
 
 @testset "State variables" begin
@@ -50,6 +60,33 @@ end
 
     ce = Component(:ce)
     @test isequal(states(ce), [q])
+
+    bg = RLC()
+    @variables q(t) p(t)
+    @test iszero(states(bg) - [q, p])
+end
+
+@testset "Constitutive relations" begin
+    eqE = EqualEffort()
+    eqF = EqualFlow()
+    @test constitutive_relations(eqE) == Equation[]
+    @test constitutive_relations(eqF) == Equation[]
+
+    bg = RLC()
+    cr_bg = constitutive_relations(bg)
+    sys = ODESystem(bg)
+
+    C, L, R = sys.ps
+    q, p = sys.states
+    cr1 = D(q) ~ -(q / C) / R + (-p) / L
+    cr2 = D(p) ~ q / C
+
+    @test isequal(cr_bg[1], cr1)
+    @test isequal(cr_bg[2], cr2)
+
+    cr_bgn = constitutive_relations(BondGraphNode(bg))
+    @test isequal(cr_bgn[1], cr1)
+    @test isequal(cr_bgn[2], cr2)
 end
 
 @testset "0-junction equations" begin
@@ -124,7 +161,7 @@ end
     eqs = equations(sys)
     (C, L, R) = sys.ps
     (qC, pL) = sys.states
-    e1 = D(qC) ~ -pL / L + (- qC / C / R)
+    e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
     @test isequal(expand(eqs[1].rhs), e1.rhs)

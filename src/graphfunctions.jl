@@ -68,8 +68,8 @@ function g.add_edge!(bg::BondGraph, srcport::Port, dstport::Port)
     g.has_edge(bg, dstnode, srcnode) && error("Bond already exists between $dstnode and $srcnode")
     new_bond = Bond(srcport, dstport)
     push!(bg.bonds, new_bond)
-    srcportidx = new_bond.src.index
-    dstportidx = new_bond.dst.index
+    srcportidx = new_bond.srcport.index
+    dstportidx = new_bond.dstport.index
     updateport!(srcnode, srcportidx)
     updateport!(dstnode, dstportidx)
     srcnode isa Junction && set_weight!(srcnode, srcportidx, -1)
@@ -80,16 +80,20 @@ function g.add_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode
     g.add_edge!(bg, Port(srcnode), Port(dstnode))
 end
 
-function g.rem_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
-    g.has_edge(bg, srcnode, dstnode) || g.has_edge(bg, dstnode, srcnode) || return
-    index = findfirst(b -> srcnode in b && dstnode in b, bg.bonds)
+function g.rem_edge!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
+    g.has_edge(bg, node1, node2) || g.has_edge(bg, node2, node1) || return
+    index = findfirst(b -> node1 in b && node2 in b, bg.bonds)
     deleted_bond = bg.bonds[index]
     deleteat!(bg.bonds, index)
-    srcportidx = deleted_bond.src.index
-    dstportidx = deleted_bond.dst.index
-    updateport!(srcnode, srcportidx)
-    updateport!(dstnode, dstportidx)
-    srcnode isa Junction && set_weight!(srcnode, srcportidx, 0)
-    dstnode isa Junction && set_weight!(dstnode, dstportidx, 0)
+
+    src_node = srcnode(deleted_bond)
+    dst_node = dstnode(deleted_bond)
+    srcportidx = deleted_bond.srcport.index
+    dstportidx = deleted_bond.dstport.index
+
+    updateport!(src_node, srcportidx)
+    updateport!(dst_node, dstportidx)
+    src_node isa Junction && set_weight!(src_node, srcportidx, 0)
+    dst_node isa Junction && set_weight!(dst_node, dstportidx, 0)
     return deleted_bond
 end

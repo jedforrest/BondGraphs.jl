@@ -58,7 +58,6 @@ name(n::AbstractNode) = n.name
 # Ports
 freeports(n::AbstractNode) = n.freeports
 numports(n::AbstractNode) = length(n.freeports)
-# numports(::Junction) = Inf
 updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
 
 # Weights
@@ -95,8 +94,6 @@ equations(::Junction) = Equation[]
 
 # Defaults
 defaults(n::AbstractNode) = n.defaults
-# defaults(n::AbstractNode, var) = defaults(n)[@variables($var)[1]]
-# defaults(n::AbstractNode, var) = defaults(n)[var]
 defaults(::Junction) = Dict{Num,Any}()
 
 # Set and get default parameter values
