@@ -21,7 +21,7 @@ ModelingToolkit = "7"
 OrderedCollections = "1"
 Setfield = "0.8"
 StaticArrays = "1"
-SymbolicUtils = "0.18"
+SymbolicUtils = "0.18, 0.19"
 julia = "1"
 
 [extras]
