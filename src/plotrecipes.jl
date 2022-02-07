@@ -1,17 +1,40 @@
-# @recipe function f(bg::BondGraph)
-#     # curves --> false
+@recipe function f(bg::BondGraph)
+    # Default attributes
+    # markersize --> 0.2
+    fontsize --> 10
+    nodecolor --> nodecolours(bg.nodes)
 
-#     # GraphRecipes.graphplot(bg, curves = false, title = "test")
-#     # RecipesBase.recipetype(:graphplot, bg)
-#     # graphplot(bg)
-#     # plt
-#     ()
+
+    title --> bg.name
+    names --> bg.nodes
+
+    # Forced attributes
+    curves := false
+    nodeshape := :rect
+
+    g.SimpleDiGraph(g.adjacency_matrix(bg))
+end
+
+# @recipe function f(bg::BondGraph)
+#     curves := false
+#     RecipesBase.recipetype(:graphplot, bg)
 # end
 
-@recipe function f(bg::BondGraph)
-    markershape --> :auto        # if markershape is unset, make it :auto
-    xrotation --> 45           # if xrotation is unset, make it 45
-    zrotation --> 90           # if zrotation is unset, make it 90
-    # rand(10, 10)
-    bg
+function nodecolours(nodes)
+    colours = []
+    for n in nodes
+        type_n = type(n)
+        # colour i is the i-th default plotting colour
+        c = if type_n in [:Se, :Sf, :SS]
+            3
+        elseif n isa Component{1}
+            1
+        elseif n isa Component # more than 1 port
+            2
+        elseif n isa Junction
+            :lightgray
+        end
+        push!(colours, c)
+    end
+    colours
 end
