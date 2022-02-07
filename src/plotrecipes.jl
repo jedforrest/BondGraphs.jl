@@ -1,10 +1,6 @@
 @recipe function f(bg::BondGraph)
     # Default attributes
-    # markersize --> 0.2
-    fontsize --> 10
     nodecolor --> nodecolours(bg.nodes)
-
-
     title --> bg.name
     names --> bg.nodes
 
