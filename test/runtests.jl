@@ -11,4 +11,5 @@ using Test
     @testset "Equations" begin include("equation_tests.jl") end
     @testset "Simulations" begin include("simulation_tests.jl") end
     @testset "Conversions" begin include("conversion_tests.jl") end
+    @testset "Miscellaneous" begin include("misc_tests.jl") end
 end

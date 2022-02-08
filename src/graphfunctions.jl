@@ -18,7 +18,7 @@ g.has_edge(bg::BondGraph, s::Int, d::Int) =
 g.vertices(bg::BondGraph) = vertex.(bg.nodes)
 g.nv(bg::BondGraph) = length(bg.nodes)
 g.has_vertex(bg::BondGraph, node::AbstractNode) = any(n -> n === node, bg.nodes) # strong equality
-g.has_vertex(bg::BondGraph, v::Int) = v <= length(bg.nodes)
+g.has_vertex(bg::BondGraph, v::Int) = 1 <= v <= length(bg.nodes)
 
 # inneighbors, outneighbors
 g.inneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[g.inneighbors(bg, vertex(n))]

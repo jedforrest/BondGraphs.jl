@@ -229,6 +229,10 @@ end
     add_node!(main, bgn3)
 
     @test main.BG3.BG2.BG1.C === C
+
+    C2 = Component(:C) # Same name
+    add_node!(bg1, C2)
+    @test main.BG3.BG2.BG1.C == [C, C2]
 end
 
 # @testset "Expose component" begin
