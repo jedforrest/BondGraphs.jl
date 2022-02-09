@@ -2,11 +2,12 @@
     bg = BondGraph("newBG")
     @test type(bg) == :BG
     @test name(bg) == :newBG
-    @test isempty(bg.nodes)
+    @test isempty(vertices(bg))
 
     @test eltype(BondGraph) == AbstractNode
     @test eltype(bg) == AbstractNode
 
+    @test isempty(edges(bg))
     @test edgetype(BondGraph) == Graphs.AbstractSimpleEdge{Integer}
     @test edgetype(bg) == Graphs.AbstractSimpleEdge{Integer}
     @test is_directed(bg)
@@ -37,6 +38,8 @@ end
 
     @test nv(bg) == 3
     @test has_vertex(bg, j)
+    @test has_vertex(bg, 3)
+    @test !has_vertex(bg, 0)
 
     @test components(bg) == [c, r]
     @test junctions(bg) == [j]
@@ -86,7 +89,7 @@ end
     @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
 end
 
-@testset "LightGraph Extra Functions" begin
+@testset "Graphs.jl Extra Functions" begin
     c1 = Component(:C)
     c2 = Component(:R)
     c3 = Component(:I)

@@ -11,6 +11,7 @@ using SymbolicUtils, SymbolicUtils.Rewriters
 using OrderedCollections
 using Setfield
 using Catalyst
+using RecipesBase
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 Port, Bond, BondGraph, BondGraphNode,
@@ -31,13 +32,16 @@ include("libraries/biochemical.jl")
 include("libraries/standard.jl")
 include("libraries/libraryfunctions.jl")
 
+# Types used by BondGraphs
 include("basetypes/AbstractNode.jl")
 include("basetypes/Bond.jl")
 include("basetypes/BondGraph.jl")
 
+# Core functionality
 include("graphfunctions.jl")
 include("construction.jl")
 include("equations.jl")
 include("conversion.jl")
+include("plotrecipes.jl")
 
 end
