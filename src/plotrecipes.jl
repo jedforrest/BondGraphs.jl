@@ -8,13 +8,8 @@
     curves := false
     nodeshape := :rect
 
-    g.SimpleDiGraph(g.adjacency_matrix(bg))
+    GraphRecipes.GraphPlot([bg])
 end
-
-# @recipe function f(bg::BondGraph)
-#     curves := false
-#     RecipesBase.recipetype(:graphplot, bg)
-# end
 
 function nodecolours(nodes)
     colours = []
