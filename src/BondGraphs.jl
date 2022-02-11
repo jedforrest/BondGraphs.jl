@@ -11,7 +11,7 @@ using SymbolicUtils, SymbolicUtils.Rewriters
 using OrderedCollections
 using Setfield
 using Catalyst
-using RecipesBase
+using RecipesBase, GraphRecipes
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 Port, Bond, BondGraph, BondGraphNode,
