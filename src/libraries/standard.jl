@@ -18,7 +18,7 @@ R_dict = Dict(
     :parameters => OrderedDict(
         R => "Resistance"
     ),
-    :equations => [0 ~ E[1]/R - F[1]],
+    :equations => [0 ~ E[1] - R*F[1]],
     :defaults => Dict(R => 1.)
 )
 

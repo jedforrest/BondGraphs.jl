@@ -51,12 +51,16 @@ function constitutive_relations(bgn::BondGraphNode)
 end
 
 @connector function MTKPort(; name)
-    vars = @variables E(t) F(t)
+    vars = @variables E(t) F(t) [connect = Flow]
     ODESystem(Equation[], t, vars, []; name = name)
 end
 
-ModelingToolkit.connect(::Type{MTKPort}, p1, p2) =
-    [0 ~ p1.F + p2.F, 0 ~ p1.E - p2.E]
+function get_connection_eq(b::Bond,subsystems)
+    (s,d) = b
+    src_port = getproperty(subsystems[s.node], Symbol("p$(s.index)"))
+    dst_port = getproperty(subsystems[d.node], Symbol("p$(d.index)"))
+    connect(src_port, dst_port)
+end
 
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
@@ -76,19 +80,14 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
     subsystems = OrderedDict(n => ODESystem(n) for n in nodes(m))
 
     # Add constraints from bonds
-    connections = Equation[]
-    for (s, d) in bonds(m)
-        src_port = getproperty(subsystems[s.node], Symbol("p$(s.index)"))
-        dst_port = getproperty(subsystems[d.node], Symbol("p$(d.index)"))
-        append!(connections, connect(src_port, dst_port))
-    end
+    connections = [get_connection_eq(b,subsystems) for b in bonds(m)]
 
     @named _model = ODESystem(connections, t; name = m.name)
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
         simplified_model = structural_simplify(model)
-        simplified_eqs = simplify.(ModelingToolkit.equations(simplified_model); expand = true, rewriter = rewriter)
+        simplified_eqs = simplify.(full_equations(simplified_model); expand = true, rewriter = rewriter)
         # '@set!' allows mutation of an immutable field 
         @set! simplified_model.eqs = simplified_eqs
         return simplified_model
