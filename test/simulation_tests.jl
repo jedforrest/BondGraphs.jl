@@ -56,3 +56,35 @@ end
         @test isapprox(sol(t)[1], f(t, 10, 3), atol = 1e-5)
     end
 end
+
+@testset "Equivalent resistance (DAE)" begin
+    r1 = Component(:R, :r1)
+    r2 = Component(:R, :r2)
+    c = Component(:C)
+    kcl = EqualFlow(name = :kcl)
+    bg = BondGraph(:RRC)
+    
+    add_node!(bg, [c, r1, r2, kcl])
+    connect!(bg, c, kcl)
+    connect!(bg, kcl, r1)
+    connect!(bg, kcl, r2)
+    
+    R1 = 1.0
+    R2 = 2.0
+    Req = R1+R2
+    C = 3.0
+    τ = Req*C
+    
+    set_parameter!(r1, :R, R1)
+    set_parameter!(r2, :R, R2)
+    set_parameter!(c, :C, C)
+    set_initial_value!(c, :q, 10.0)
+
+    f(x, a, τ) = a * exp(-x / τ)
+
+    tspan = (0.0, 10.0)
+    sol = simulate(bg, tspan)
+    for t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t)[1], f(t, 10, Req*C), atol = 1e-5)
+    end
+end

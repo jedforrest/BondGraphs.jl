@@ -44,7 +44,7 @@ function constitutive_relations(n::EqualFlow)
     return vcat(effort_constraint, flow_constraints)
 end
 function constitutive_relations(m::BondGraph)
-    return simplify.(ModelingToolkit.equations(m), rewriter = rewriter)
+    return simplify.(full_equations(ODESystem(m)); expand = true, rewriter = rewriter)
 end
 function constitutive_relations(bgn::BondGraphNode)
     return constitutive_relations(bgn.bondgraph)
@@ -86,17 +86,13 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
-        simplified_model = structural_simplify(model)
-        simplified_eqs = simplify.(full_equations(simplified_model); expand = true, rewriter = rewriter)
-        # '@set!' allows mutation of an immutable field 
-        @set! simplified_model.eqs = simplified_eqs
-        return simplified_model
+        return structural_simplify(model)
     else
-        return initialize_system_structure(model)
+        return model
     end
 end
 
-function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :ODE, kwargs...)
+function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :default, kwargs...)
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
     if probtype == :ODE || flag_ODE

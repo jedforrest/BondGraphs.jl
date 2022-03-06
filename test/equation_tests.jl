@@ -142,7 +142,7 @@ end
     connect!(bg, r, c)
 
     sys = ODESystem(bg)
-    eqs = equations(sys)
+    eqs = constitutive_relations(bg)
     @test length(eqs) == 1
 
     (C, R) = sys.ps
@@ -174,7 +174,6 @@ end
     @test length(eqs) == 2
 
     sys = ODESystem(bg)
-    eqs = equations(sys)
     (C, L, R) = sys.ps
     (qC, pL) = sys.states
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
@@ -194,7 +193,7 @@ end
     connect!(bg, A, re; dstportindex = 1)
     connect!(bg, re, B; srcportindex = 2)
     sys = ODESystem(bg)
-    eqs = ModelingToolkit.equations(sys)
+    eqs = constitutive_relations(bg)
 
     (xA, xB) = sys.states
     (KA, KB, r) = sys.ps
@@ -226,7 +225,7 @@ end
     connect!(bg, re2, C_D; srcportindex = 2)
 
     sys = ODESystem(bg)
-    eqs = equations(sys)
+    eqs = constitutive_relations(bg)
 
     (xA, xB, xC, xD) = sys.states
     (KA, KB, KC, KD, r1, r2) = sys.ps
