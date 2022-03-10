@@ -1,109 +1,133 @@
 @testset "Set parameters" begin
-    re = new(:Re)
-    @parameters r, R, T
-    set_param!(re,r,1.0)
-    set_param!(re,R,8.314)
-    set_param!(re,T,310.0)
+    re = Component(:Re)
 
-    @test default_value(re,r) == 1.0
-    @test default_value(re,R) == 8.314
-    @test default_value(re,T) == 310.0
+    @test get_parameter(re, :r) == 1.0
+    @test get_parameter(re, :R) == 8.314
+    @test get_parameter(re, :T) == 310.0
+
+    set_parameter!(re, :T, 200.0)
+    @test get_parameter(re, :T) == 200.0
 end
 
 @testset "Incompatible parameter fail" begin
-    re = new(:Re)
-    @parameters s
-    @test_throws ErrorException set_param!(re,s,1.0)
+    re = Component(:Re)
+    @test_throws ErrorException set_parameter!(re, :s, 1.0)
 end
 
 @testset "Set initial conditions" begin
-    c = new(:C)
-    @variables q(t)
-    set_initial_value!(c,q,2.0)
-    @test default_value(c,q) == 2.0
+    c = Component(:C)
+    set_initial_value!(c, :q, 2.0)
+    @test get_initial_value(c, :q) == 2.0
 end
 
 @testset "Missing state variable fail" begin
-    c = new(:C)
-    @parameters q
-    @variables p(t)
-    @test_throws ErrorException set_initial_value!(c,q,2.0)
-    @test_throws ErrorException set_initial_value!(c,p,2.0)
+    c = Component(:C)
+    @test_throws ErrorException set_parameter!(c, :q, 2.0)
+    @test_throws ErrorException set_initial_value!(c, :p, 2.0)
 end
 
 @testset "Simulate RC circuit" begin
-    r = new(:R)
-    c = new(:C)
+    r = Component(:R)
+    c = Component(:C)
     bg = BondGraph(:RC)
 
     add_node!(bg, [c, r])
     connect!(bg, r, c)
 
-    @parameters R, C
-    @variables q(t)
-    set_param!(r,R,2.0)
-    set_param!(c,C,1.0)
-    set_initial_value!(c,q,10.0)
+    set_parameter!(r, :R, 2.0)
+    set_parameter!(c, :C, 1.0)
+    set_initial_value!(c, :q, 10.0)
 
-    f(x,a,τ) = a*exp(-x/τ)
+    f(x, a, τ) = a * exp(-x / τ)
 
-    tspan = (0.0,10.0)
-    sol = simulate(bg,tspan)
-    for t in [0.5,1.0,5.0,10.0]
-        @test isapprox(sol(t)[1], f(t,10,2), atol=1e-5)
+    tspan = (0.0, 10.0)
+    sol = simulate(bg, tspan)
+    for t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t)[1], f(t, 10, 2), atol = 1e-5)
     end
 
-    sol = simulate(bg,tspan; u0=[5.0])
-    for t in [0.5,1.0,5.0,10.0]
-        @test isapprox(sol(t)[1], f(t,5,2), atol=1e-5)
+    sol = simulate(bg, tspan; u0 = [5.0])
+    for t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t)[1], f(t, 5, 2), atol = 1e-5)
     end
 
-    sol = simulate(bg,tspan; pmap=[1.0,3.0])
-    for t in [0.5,1.0,5.0,10.0]
-        @test isapprox(sol(t)[1], f(t,10,3), atol=1e-5)
+    sol = simulate(bg, tspan; pmap = [1.0, 3.0])
+    for t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t)[1], f(t, 10, 3), atol = 1e-5)
     end
 end
 
-# Notes: The SciMLBase package contains a getindex function for syms.
-# Within this function, sym_to_index(sym,A) will return the index of the variable.
-@testset "Extract specific variables" begin
-    # Make a model of the reaction A + B ⇌ C + D
-    C_A = new(:ce,:A)
-    C_B = new(:ce,:B)
-    C_C = new(:ce,:C)
-    C_D = new(:ce,:D)
-    re = new(:re,:r)
-    AB = EqualFlow(name=:AB)
-    CD = EqualFlow(name=:CD)
+@testset "Equivalent resistance (DAE)" begin
+    r1 = Component(:R, :r1)
+    r2 = Component(:R, :r2)
+    c = Component(:C)
+    kcl = EqualFlow(name = :kcl)
+    bg = BondGraph(:RRC)
     
-    bg = BondGraph()
-    add_node!(bg,[C_A,C_B,C_C,C_D,re,AB,CD])
-    connect!(bg,C_A,AB)
-    connect!(bg,C_B,AB)
-    connect!(bg,AB,re; dstportindex=1)
-    connect!(bg,re,CD; srcportindex=2)
-    connect!(bg,CD,C_C)
-    connect!(bg,CD,C_D)
+    add_node!(bg, [c, r1, r2, kcl])
+    connect!(bg, c, kcl)
+    connect!(bg, kcl, r1)
+    connect!(bg, kcl, r2)
     
-    @parameters t, r, k
-    @variables q(t)
-    set_param!(C_A,k,1.0)
-    set_param!(C_B,k,2.0)
-    set_param!(C_C,k,1.0)
-    set_param!(C_D,k,2.0)
-    set_param!(re,r,1.0)
-    set_initial_value!(C_A,q,1.0)
-    set_initial_value!(C_B,q,4.0)
-    set_initial_value!(C_C,q,2.0)
-    set_initial_value!(C_D,q,1.0)
+    R1 = 1.0
+    R2 = 2.0
+    Req = R1+R2
+    C = 3.0
+    τ = Req*C
     
-    tspan = (t0,t1) = (0.0,10.0)
-    sol = simulate(bg,tspan)
+    set_parameter!(r1, :R, R1)
+    set_parameter!(r2, :R, R2)
+    set_parameter!(c, :C, C)
+    set_initial_value!(c, :q, 10.0)
 
-    xA = sol["C:A"]
-    @test xA[1] = 1.0
-    @test xA[end] ≈ 0.75
+    f(x, a, τ) = a * exp(-x / τ)
+
+    tspan = (0.0, 10.0)
+    sol = simulate(bg, tspan)
+    for t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t)[1], f(t, 10, Req*C), atol = 1e-5)
+    end
+end
+
+@testset "π-filter" begin
+    Se = Component(:Se, :Pin); set_parameter!(Se, :e, 1)
+
+    Pa = EqualEffort(name = :Pa)
+    fa = EqualFlow(name = :fa)
+    ca = Component(:C, :Ca); set_parameter!(ca, :C, 1); set_initial_value!(ca, :q, 1)
+    rpa = Component(:R, :Rpa); set_parameter!(rpa, :R, 1)
     
-    # Test that system is near equilibrium
-    @test sol("C:A";t=t1)*sol("C:B";t=t1)/sol("C:C";t=t1)/sol("C:D";t=t1) ≈ 1
+    Pb = EqualEffort(name = :Pb)
+    fb = EqualFlow(name = :fb)
+    cb = Component(:C, :Cb); set_parameter!(cb, :C, 1); set_initial_value!(cb, :q, 2)
+    rpb = Component(:R, :Rpb); set_parameter!(rpb, :R, 1)
+    
+    fs = EqualFlow(name = :fs)
+    l = Component(:I, :L); set_parameter!(l, :L, 1); set_initial_value!(l, :p, 1)
+    r = Component(:R, :Rs); set_parameter!(r, :R, 1)
+    
+    rl = Component(:R, :RL); set_parameter!(rl, :R, 1)
+    
+    bg = BondGraph(:π_filter)
+    add_node!(bg, [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl])
+    
+    connect!(bg, Se, Pa)
+    connect!(bg, Pa, fa)
+    connect!(bg, fa, ca)
+    connect!(bg, fa, rpa)
+    connect!(bg, Pa, fs)
+    connect!(bg, fs, l)
+    connect!(bg, fs, r)
+    connect!(bg, fs, Pb)
+    connect!(bg, Pb, fb)
+    connect!(bg, fb, cb)
+    connect!(bg, fb, rpb)
+    connect!(bg, Pb, rl)
+    
+    tspan = (0,100.0)
+    sol = simulate(bg,tspan)
+    @test sol[1] == [1,2,1]
+    @test isapprox(sol[end][1], 1.0, atol=1e-5)
+    @test isapprox(sol[end][2], 0.5, atol=1e-5)
+    @test isapprox(sol[end][3], 0.5, atol=1e-5)
 end

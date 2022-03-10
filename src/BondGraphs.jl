@@ -1,27 +1,47 @@
 module BondGraphs
 
-import LightGraphs as lg
-import Base: RefValue, eltype, show, in
+import Graphs as g
+import Base: RefValue, eltype, show, in, iterate, ==, getproperty
+import ModelingToolkit: parameters, states, equations # Importing means names can be reused, but may be confusing
 
 using StaticArrays
 using ModelingToolkit
 using DifferentialEquations
-using Symbolics
-using SymbolicUtils
-using SymbolicUtils.Rewriters
-using DataStructures
+using SymbolicUtils, SymbolicUtils.Rewriters
+using OrderedCollections
+using Setfield
+using Catalyst
+using RecipesBase, GraphRecipes
 
-export AbstractNode, Component, Junction, Port, Bond, BondGraph,
-EqualEffort, EqualFlow,
-vertex, set_vertex!, freeports, numports, srcnode, dstnode, 
-cr, params, state_vars, set_param!, set_initial_value!, 
-default_value, equations, simulate,
-new, add_node!, remove_node!, connect!, disconnect!, swap!
+export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
+Port, Bond, BondGraph, BondGraphNode,
 
-include("basetypes.jl")
+type, name, freeports, numports, weights, vertex, set_vertex!,
+parameters, states, defaults, constitutive_relations,
+get_parameter, set_parameter!, get_initial_value, set_initial_value!,
+
+srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
+
+add_node!, remove_node!, connect!, disconnect!, 
+swap!, insert_node!, merge_nodes!, simplify_junctions!,
+
+simulate, addlibrary!
+
+# Component libraries
+include("libraries/biochemical.jl")
+include("libraries/standard.jl")
+include("libraries/libraryfunctions.jl")
+
+# Types used by BondGraphs
+include("basetypes/AbstractNode.jl")
+include("basetypes/Bond.jl")
+include("basetypes/BondGraph.jl")
+
+# Core functionality
 include("graphfunctions.jl")
 include("construction.jl")
-include("components.jl")
 include("equations.jl")
+include("conversion.jl")
+include("plotrecipes.jl")
 
 end

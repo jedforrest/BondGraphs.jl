@@ -1,3 +1,20 @@
+function RCI(name = :RCI)
+    model = BondGraph(name)
+    C = Component(:C)
+    R = Component(:R)
+    I = Component(:I)
+    SS = Component(:SS)
+    zero_law = EqualEffort()
+
+    add_node!(model, [C, R, I, SS, zero_law])
+    connect!(model, R, zero_law)
+    connect!(model, C, zero_law)
+    connect!(model, zero_law, I)
+    connect!(model, zero_law, SS)
+
+    model
+end
+
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
 @testset "BondGraph Construction" begin
     model = BondGraph(:RC)
@@ -39,7 +56,7 @@ end
     @test b1 in model.bonds
     @test I.freeports == [false]
 
-    disconnect!(model, zero_law, I)
+    disconnect!(model, I, zero_law) # test disconnect when node order is swapped
     @test ne(model) == 2
     @test !(b1 in model.bonds)
     @test I.freeports == [true]
@@ -54,21 +71,28 @@ end
 
 @testset "Construction Failure" begin
     model = BondGraph(:RC)
-    C = new(:C)
-    R = new(:R)
+    C = Component(:C)
+    R = Component(:R)
     zero_law = EqualEffort()
 
     add_node!(model, [R, C, zero_law])
-    @test_throws ErrorException add_node!(model, R)
-    @test_throws ErrorException add_node!(model, zero_law)
+    @test_logs (:warn, "R:R already in model") add_node!(model, R)
+    @test_logs (:warn, "0 already in model") add_node!(model, zero_law)
 
-    connect!(model, R, zero_law)
+    bond = connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
-    tf = new(:TF)
-    @test_throws ErrorException remove_node!(model, tf)
-    @test_throws ErrorException swap!(model, C, tf)
+    one_law = EqualFlow()
+    @test_logs (:warn, "1 not in model") remove_node!(model, one_law)
+
+    tf = Component(:TF)
+    add_node!(model, tf)
+    @test_throws ErrorException swap!(model, tf, C)
+
+    # if inserting a node fails, the original nodes should still remain connected
+    @test_throws ErrorException insert_node!(model, bond, Component(:I))
+    @test has_edge(model, bond)
 end
 
 @testset "Chemical reaction" begin
@@ -77,7 +101,7 @@ end
     B = Component(:C, :B)
     C = Component(:C, :C)
     D = Component(:C, :D)
-    Re = Component(:Re, :Reaction, numports=2)
+    Re = Component(:Re, :Reaction, numports = 2)
     J_AB = EqualFlow()
     J_CD = EqualFlow()
 
@@ -91,13 +115,13 @@ end
     @test freeports(J_AB) == [false, false]
 
     # Connecting junctions to specific ports in Re
-    connect!(model, Re, J_CD, srcportindex=2)
+    connect!(model, Re, J_CD, srcportindex = 2)
     @test freeports(Re) == [true, false]
 
     # connecting to a full port should fail
-    @test_throws ErrorException connect!(model, J_AB, Re, dstportindex=2)
+    @test_throws ErrorException connect!(model, J_AB, Re, dstportindex = 2)
 
-    connect!(model, J_AB, Re, dstportindex=1)
+    connect!(model, J_AB, Re, dstportindex = 1)
     @test freeports(Re) == [false, false]
 
     @test nv(model) == 7
@@ -105,51 +129,125 @@ end
 end
 
 @testset "Standard components" begin
-    tf = new(:TF,:n)
+    tf = Component(:TF, :n)
     @test tf isa Component{2}
     @test tf.type == :TF
     @test numports(tf) == 2
 
-    r = new(:R)
+    r = Component(:R)
     @test r isa Component{1}
     @test r.type == :R
 end
 
-@parameters t
-D = Differential(t)
+@testset "Inserting Nodes" begin
+    bg = RCI()
 
-@testset "Equations" begin
-    c = new(:C)
-    @parameters C
-    @variables E[1](t) F[1](t) q(t)
-    @test cr(c) == [
-        0 ~ q/C - E[1],
-        D(q) ~ F[1]
-    ]
+    c, r, J0 = bg.nodes[[1, 2, 5]]
+
+    bondc0 = getbonds(bg, c, J0)[1]
+    bondr0 = getbonds(bg, r, J0)[1]
+
+    tf = Component(:TF, numports = 2)
+    insert_node!(bg, bondc0, tf)
+    insert_node!(bg, bondr0, EqualFlow())
+
+    @test tf in bg.nodes
+    @test nv(bg) == 7
+    @test ne(bg) == 6
 end
 
-@testset "Parameters" begin
-    tf = new(:TF)
-    @parameters r
-    @test iszero(params(tf) - [r])
+@testset "Merging components" begin
+    bg = RCI()
 
-    Ce = new(:Ce)
-    @parameters k R T
-    @test iszero(params(Ce) - [k, R, T])
+    newC = Component(:C, :newC)
+    newR = Component(:R, :newR)
+    add_node!(bg, [newC, newR])
+    connect!(bg, newC, newR)
 
-    Re = new(:Re)
-    @parameters r R T
-    @test iszero(params(Re) - [r, R, T])
+    C = getnodes(bg, "C")[1]
+    merge_nodes!(bg, C, newC)
+
+    R = getnodes(bg, "R")[1]
+    merge_nodes!(bg, R, newR; junction = EqualFlow())
+
+    @test isempty(getnodes(bg, "newC"))
+    @test length(getnodes(bg, "1")) == 1
+    @test length(getnodes(bg, "0")) == 2
+    @test nv(bg) == 7
+    @test ne(bg) == 7
 end
 
-@testset "State variables" begin
-    r = new(:R)
-    @test isempty(state_vars(r))
+@testset "Simplifying Junctions" begin
+    bg = RCI()
+    C, R, I, SS, J0 = bg.nodes
 
-    @variables q(t)
-    c = new(:C)
-    @test isequal(state_vars(c), [q])
+    J0_new_1 = EqualEffort(; name = :new0_1)
+    J0_new_2 = EqualEffort(; name = :new0_2)
+    insert_node!(bg, (C, J0), J0_new_1)
+    insert_node!(bg, (R, J0), J0_new_2)
+    connect!(bg, J0_new_1, J0_new_2)
 
-    ce = new(:ce)
-    @test isequal(state_vars(c), [q])
+    J1_new_1 = EqualFlow(; name = :new1_1)
+    J1_new_2 = EqualFlow(; name = :new1_2)
+    add_node!(bg, J1_new_1)
+    connect!(bg, J0, J1_new_1)
+    insert_node!(bg, (SS, J0), J1_new_2)
+
+    # Removing junction redundancies
+    @test length(getnodes(bg, EqualFlow)) == 2
+    simplify_junctions!(bg, squash_identical = false)
+    @test length(getnodes(bg, EqualFlow)) == 0
+    @test nv(bg) == 7
+    @test ne(bg) == 7
+
+    # Squashing junction duplicates into a single junction
+    simplify_junctions!(bg)
+    @test length(getnodes(bg, EqualEffort)) == 1
+    @test nv(bg) == 5
+    @test ne(bg) == 4
 end
+
+@testset "BondGraphNodes" begin
+    C = Component(:C)
+    bg1 = BondGraph(:BG1)
+    bg2 = BondGraph(:BG2)
+    bg3 = BondGraph(:BG3)
+    main = BondGraph(:Main)
+
+    bgn1 = BondGraphNode(bg1)
+    bgn2 = BondGraphNode(bg2)
+    bgn3 = BondGraphNode(bg3)
+
+    @test bgn1.bondgraph === bg1
+    @test bgn1.type === :BG
+    @test bgn1.name === bg1.name
+    @test freeports(bgn1) == Bool[]
+
+    add_node!(bg1, C)
+    add_node!(bg2, bgn1)
+    add_node!(bg3, bgn2)
+    add_node!(main, bgn3)
+
+    @test main.BG3.BG2.BG1.C === C
+
+    C2 = Component(:C) # Same name
+    add_node!(bg1, C2)
+    @test main.BG3.BG2.BG1.C == [C, C2]
+end
+
+# @testset "Expose component" begin
+
+# end
+
+# @testset "Nested BondGraphs" begin
+#     bg_1 = RCI("RCI_1")
+#     bg_2 = RCI("RCI_2")
+#     bgn_1 = BondGraphNode(bg_1)
+#     bgn_2 = BondGraphNode(bg_2)
+
+#     bg_main = BondGraph("BG_Main")
+
+#     #add_node!(bg_main, [bgn_1, bgn_2])
+#     #connect!(bg_main, bgn_1, bgn_2)
+
+# end

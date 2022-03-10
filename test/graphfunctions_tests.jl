@@ -1,15 +1,24 @@
 @testset "BondGraph Properties" begin
-    bg = BondGraph()
-    @test bg.type == :BG
-    @test isempty(bg.nodes)
+    bg = BondGraph("newBG")
+    @test type(bg) == :BG
+    @test name(bg) == :newBG
+    @test isempty(vertices(bg))
+
+    @test eltype(BondGraph) == AbstractNode
     @test eltype(bg) == AbstractNode
-    @test edgetype(bg) == LightGraphs.AbstractSimpleEdge{Integer}
+
+    @test isempty(edges(bg))
+    @test edgetype(BondGraph) == Graphs.AbstractSimpleEdge{Integer}
+    @test edgetype(bg) == Graphs.AbstractSimpleEdge{Integer}
     @test is_directed(bg)
+
+    @test size(zero(BondGraph)) == size(BondGraph())
+    @test size(zero(bg)) == size(BondGraph())
 end
 
 @testset "Adding and removing elements" begin
     c = Component(:C, :C1)
-    r = Component(:R, :C1, numports=1)
+    r = Component(:R, :C1, numports = 1)
     j = EqualEffort()
 
     bg = BondGraph()
@@ -29,6 +38,11 @@ end
 
     @test nv(bg) == 3
     @test has_vertex(bg, j)
+    @test has_vertex(bg, 3)
+    @test !has_vertex(bg, 0)
+
+    @test components(bg) == [c, r]
+    @test junctions(bg) == [j]
 
     @test inneighbors(bg, vertex(c)) == []
     @test outneighbors(bg, vertex(c)) == [3]
@@ -39,28 +53,43 @@ end
     @test nv(bg) == 2
 end
 
+@testset "BondGraphNode" begin
+    bg = BondGraph(:RCI)
+    bgn = BondGraphNode(bg)
+
+    @test bgn.type == :BG
+    @test bgn.name == :RCI
+    @test bgn.freeports == Bool[]
+end
+
 @testset "Printing" begin
     C = Component(:C)
     SS = Component(:SS, :Source)
-    J0 = EqualEffort(name=:J)
+    J0 = EqualEffort(name = :J)
+    b1 = Bond(C, J0)
+    b2 = Bond(J0, SS)
+    port = b1.srcport
     bg = BondGraph(:newbg)
-    @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
-
-    add_vertex!(bg, C)
-    add_vertex!(bg, SS)
-    add_vertex!(bg, J0)
-    b1 = add_edge!(bg, C, J0)
-    b2 = add_edge!(bg, J0, SS)
-    @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
+    bgn = BondGraphNode(bg)
 
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
-    @test repr(b1) == "Bond C:C ⇀ 0:J"
-    @test repr(b2) == "Bond 0:J ⇀ SS:Source"
+    @test repr(b1) == "Bond C:C ⇀ J"
+    @test repr(b2) == "Bond J ⇀ SS:Source"
+    @test repr(port) == "Port C:C (1)"
+    @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
+    @test repr(bgn) == "BG:newbg"
+
+    add_vertex!(bg, C)
+    add_vertex!(bg, SS)
+    add_vertex!(bg, J0)
+    add_edge!(bg, C, J0)
+    add_edge!(bg, J0, SS)
+    @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
 end
 
-@testset "LightGraph Extra Functions" begin
+@testset "Graphs.jl Extra Functions" begin
     c1 = Component(:C)
     c2 = Component(:R)
     c3 = Component(:I)
@@ -77,8 +106,8 @@ end
     add_edge!(bg, j, c2)
     add_edge!(bg, j, c3)
 
-    # Testing on a selection of common LG functions
+    # Testing on a selection of common graph functions
     @test Δ(bg) == 3
-    @test density(bg) == 0.25
+    @test Graphs.density(bg) == 0.25
     @test Array(adjacency_matrix(bg)) == [0 0 0 1; 0 0 0 0; 0 0 0 0; 0 1 1 0]
 end
