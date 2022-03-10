@@ -13,8 +13,10 @@
     bgn = expose(bg, [SSA, SSB])
     @test numports(bgn) == 2
 
-    eqns = equations(bgn; simplify_eqs = false)
-    #TODO: Check whether external variables are in equations
+    sys = ODESystem(bgn) 
+    expanded_sys = expand_connections(sys) # Note that the equations shouldn't simplify by default
+    eqns = equations(expanded_sys)
+    # Todo: add a test for the external ports
 end
 
 @testset "Modular RLC circuit" begin
