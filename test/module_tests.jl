@@ -1,18 +1,3 @@
-function RLC()
-    r = Component(:R)
-    l = Component(:I)
-    c = Component(:C)
-    kvl = EqualEffort(name = :kvl)
-
-    bg = BondGraph()
-    add_node!(bg, [c, l, kvl, r])
-
-    connect!(bg, r, kvl)
-    connect!(bg, l, kvl)
-    connect!(bg, c, kvl)
-    return bg
-end
-
 @testset "Expose models" begin
     r = Component(:R)
     kcl = EqualFlow(name = :kcl)
