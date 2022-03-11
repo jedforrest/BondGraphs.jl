@@ -46,6 +46,14 @@ struct EqualFlow <: Junction
     EqualFlow(; name = Symbol("1"), v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
 end
 
+# Source-sensor
+struct SourceSensor <: AbstractNode
+    name::Symbol
+    freeports::MVector{1,Bool}
+    vertex::RefValue{Int}
+    SourceSensor(; name=:SS, v::Int = 0) = new(Symbol(name), ones(MVector{1,Bool}) , Ref(v))
+end
+
 
 # PROPERTIES
 # Type

@@ -65,12 +65,8 @@ struct BondGraphNode <: AbstractNode
     name::Symbol
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    parameters::Vector{Num}
-    states::Vector{Num}
-    equations::Vector{Equation}
     function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
-        new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex),
-            parameters(bg), states(bg), equations(bg))
+        new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex))
     end
 end
 

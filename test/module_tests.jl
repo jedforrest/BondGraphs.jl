@@ -1,3 +1,15 @@
+SS = Component(:SS)
+sys = ODESystem(SS)
+
+@testset "SS component system" begin
+    SS = Component(:SS)
+    sys = ODESystem(SS)
+    # Todo: fix tests
+    @test length(sys.systems) == 1
+    @test sys.p1.E isa Var
+    @test sys.p1.F isa Var
+end
+
 @testset "Expose models" begin
     r = Component(:R)
     kcl = EqualFlow(name = :kcl)
