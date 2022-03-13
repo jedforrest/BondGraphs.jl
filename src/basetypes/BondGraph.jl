@@ -63,11 +63,12 @@ struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::Symbol
     name::Symbol
+    exposed::Vector{SourceSensor}
     freeports::Vector{Bool}
     vertex::RefValue{Int}
 end
 function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
-    new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex))
+    BondGraphNode(bg, Symbol(type), Symbol(name), [], [], Ref(vertex))
 end
 
 # Easier referencing systems using a.b notation

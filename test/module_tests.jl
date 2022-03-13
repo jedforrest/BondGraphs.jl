@@ -15,11 +15,16 @@
     @test sys.p1.F isa Num
 end
 
+function find_subsys(sys,s)
+    subsys = ModelingToolkit.get_systems(sys)
+    return filter(x -> nameof(x) == s, subsys)[1]
+end
+
 @testset "Expose models" begin
     r = Component(:R)
     kcl = EqualFlow(name = :kcl)
-    SSA = Component(:SS, :A)
-    SSB = Component(:SS, :B)
+    SSA = SourceSensor(name = :A)
+    SSB = SourceSensor(name = :B)
 
     bg = BondGraph()
     add_node!(bg, [r, kcl, SSA, SSB])
@@ -33,7 +38,19 @@ end
     sys = ODESystem(bgn) 
     expanded_sys = expand_connections(sys) # Note that the equations shouldn't simplify by default
     eqns = equations(expanded_sys)
-    # Todo: add a test for the external ports
+    
+    p1 = find_subsys(sys,:p1)
+    p2 = find_subsys(sys,:p2)
+    (E1,F1,E2,F2) = (p1.E, p1.F, p2.E, p2.F)
+
+    Asys = find_subsys(sys,:A)
+    Bsys = find_subsys(sys,:B)
+    (AE,AF,BE,BF) = (Asys.p1.E, Asys.p1.F, Bsys.p1.E, Bsys.p1.F)
+
+    @test (E1 ~ AE) in eqns
+    @test (F1 ~ AF) in eqns
+    @test (E2 ~ BE) in eqns
+    @test (F2 ~ BF) in eqns
 end
 
 @testset "Modular RLC circuit" begin

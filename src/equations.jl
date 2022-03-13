@@ -81,8 +81,19 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
     compose_bg_model(subsystems, connections, m.name, simplify_eqs)
 end
 function ModelingToolkit.ODESystem(bgn::BondGraphNode; simplify_eqs = false)
+    N = numports(bgn)
+    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
+
     (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
-    connections
+    es = [subsystems[c].p1.E for c in exposed(bgn)]
+    fs = [subsystems[c].p1.F for c in exposed(bgn)]
+    port_eqs = [
+        [p.E ~ E for (E,p) in zip(es,ps)];
+        [p.F ~ F for (F,p) in zip(fs,ps)]
+    ]
+    eqs = [connections; port_eqs]
+    sys = compose_bg_model(subsystems, eqs, bgn.name, simplify_eqs)
+    compose(sys, ps...)
 end
 
 function get_subsys_and_connections(bg::BondGraph)
@@ -93,8 +104,8 @@ function get_subsys_and_connections(bg::BondGraph)
     return subsystems, connections
 end
 
-function compose_bg_model(subsystems, connections, name, simplify_eqs)
-    @named _model = ODESystem(connections, t; name = name)
+function compose_bg_model(subsystems, eqs, name, simplify_eqs)
+    @named _model = ODESystem(eqs, t; name = name)
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
