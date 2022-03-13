@@ -58,35 +58,37 @@ end
     l = Component(:I)
     c = Component(:C)
     kvl = EqualEffort(name = :kvl)
-    SS1 = Component(:SS, :SS1)
-    SS2 = Component(:SS, :SS2)
-
-    bg1 = BondGraph()
+    SS1 = SourceSensor(name = :SS1)
+    SS2 = SourceSensor(name = :SS2)
+    
+    bg1 = BondGraph(:RC)
     add_node!(bg1, [r, c, kvl, SS1])
     connect!(bg1, r, kvl)
     connect!(bg1, c, kvl)
     connect!(bg1, SS1, kvl)
     bgn1 = expose(bg1, [SS1])
-
-    bg2 = BondGraph()
+    
+    bg2 = BondGraph(:L)
     add_node!(bg2, [l, SS2])
     connect!(bg2, l, SS2)
     bgn2 = expose(bg2, [SS2])
-
+    
     bg = BondGraph()
-    add_node(bg, [bgn1, bgn2])
+    add_node!(bg, [bgn1, bgn2])
     connect!(bg, bgn1, bgn2)
-
-    eqns = constitutive_relations(bg)
+    
+    eqs = constitutive_relations(bg)
     @test length(eqs) == 2
-
+    
     sys = ODESystem(bg)
-    (C, L, R) = sys.ps
+    (R, C, L) = sys.ps
     (qC, pL) = sys.states
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
-
+    
+    @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(simplify(eqs[1].rhs-e1.rhs), 0)
+    @test isequal(eqs[2].lhs, e2.lhs)
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
