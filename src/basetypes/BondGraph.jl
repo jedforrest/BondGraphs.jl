@@ -65,9 +65,9 @@ struct BondGraphNode <: AbstractNode
     name::Symbol
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
-        new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex))
-    end
+end
+function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
+    new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex))
 end
 
 # Easier referencing systems using a.b notation

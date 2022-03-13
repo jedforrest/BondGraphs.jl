@@ -77,12 +77,24 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
-    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(m))
+    (subsystems, connections) = get_subsys_and_connections(m)
+    compose_bg_model(subsystems, connections, m.name, simplify_eqs)
+end
+function ModelingToolkit.ODESystem(bgn::BondGraphNode; simplify_eqs = false)
+    (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
+    connections
+end
 
+function get_subsys_and_connections(bg::BondGraph)
+    # Collect constitutive relations from components
+    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(bg))
     # Add constraints from bonds
-    connections = [get_connection_eq(b,subsystems) for b in bonds(m)]
+    connections = [get_connection_eq(b,subsystems) for b in bonds(bg)]
+    return subsystems, connections
+end
 
-    @named _model = ODESystem(connections, t; name = m.name)
+function compose_bg_model(subsystems, connections, name, simplify_eqs)
+    @named _model = ODESystem(connections, t; name = name)
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
