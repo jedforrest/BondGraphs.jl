@@ -1,13 +1,18 @@
-SS = Component(:SS)
-sys = ODESystem(SS)
-
 @testset "SS component system" begin
-    SS = Component(:SS)
-    sys = ODESystem(SS)
+    SS = SourceSensor(name = :SS)
+
+    @test length(freeports(SS)) == 1
+    @test numports(SS) == 1
+    @test length(parameters(SS)) == 0
+    @test length(states(SS)) == 0
+    @test length(equations(SS)) == 0
+    @test length(constitutive_relations(SS)) == 0
+
     # Todo: fix tests
+    sys = ODESystem(SS)
     @test length(sys.systems) == 1
-    @test sys.p1.E isa Var
-    @test sys.p1.F isa Var
+    @test sys.p1.E isa Num
+    @test sys.p1.F isa Num
 end
 
 @testset "Expose models" begin

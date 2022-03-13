@@ -14,7 +14,7 @@ rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
 rewriter = Postwalk(rw_chain)
 
 # Constitutive relations
-constitutive_relations(n::AbstractNode) = n.equations
+constitutive_relations(n::AbstractNode) = equations(n)
 function constitutive_relations(n::EqualEffort)
     if all(freeports(n)) # all ports are empty
         return Equation[]
@@ -70,7 +70,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
     sub_rules = merge(e_sub_rules, f_sub_rules)
-    eqs = [substitute(eq, sub_rules) for eq in constitutive_relations(n)]
+    eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
     sys = ODESystem(eqs, t, states(n), parameters(n);
         name = n.name, defaults = defaults(n))
