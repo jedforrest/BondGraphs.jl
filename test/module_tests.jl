@@ -47,10 +47,10 @@ end
     Bsys = find_subsys(sys,:B)
     (AE,AF,BE,BF) = (Asys.p1.E, Asys.p1.F, Bsys.p1.E, Bsys.p1.F)
 
-    @test (E1 ~ AE) in eqns
-    @test (F1 ~ AF) in eqns
-    @test (E2 ~ BE) in eqns
-    @test (F2 ~ BF) in eqns
+    @test (0 ~ E1 - AE) in eqns
+    @test (0 ~ F1 + AF) in eqns
+    @test (0 ~ E2 - BE) in eqns
+    @test (0 ~ F2 + BF) in eqns
 end
 
 @testset "Modular RLC circuit" begin
@@ -93,30 +93,32 @@ end
 end
 
 @testset "Modular reaction" begin
-    bg1 = BondGraph()
+    bg1 = BondGraph(:R)
     re = Component(:re, :r)
-    SSA = Component(:SS, :SSA)
-    SSB = Component(:SS, :SSB)
+    SSA = SourceSensor(name = :A)
+    SSB = SourceSensor(name = :B)
     add_node!(bg1, [SSA, SSB, re])
     connect!(bg1, SSA, re; dstportindex = 1)
     connect!(bg1, re, SSB; srcportindex = 2)
     bgn1 = expose(bg1, [SSA, SSB])
-
+    
     bg = BondGraph()
     A = Component(:ce, :A)
     B = Component(:ce, :B)
     add_node!(bg, [A, B, bgn1])
     connect!(bg, A, bgn1; dstportindex = 1)
     connect!(bg, bgn1, B; srcportindex = 2)
-
+    
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
-
+    
     (xA, xB) = sys.states
     (KA, KB, r) = sys.ps
     e1 = D(xA) ~ -r * (KA * xA - KB * xB)
     e2 = D(xB) ~ r * (KA * xA - KB * xB)
-
+    
+    @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(eqs[1].rhs, e1.rhs)
+    @test isequal(eqs[2].lhs, e2.lhs)
     @test isequal(eqs[2].rhs, e2.rhs)
 end

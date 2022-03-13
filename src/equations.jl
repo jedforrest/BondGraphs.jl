@@ -88,8 +88,8 @@ function ModelingToolkit.ODESystem(bgn::BondGraphNode; simplify_eqs = false)
     es = [subsystems[c].p1.E for c in exposed(bgn)]
     fs = [subsystems[c].p1.F for c in exposed(bgn)]
     port_eqs = [
-        [p.E ~ E for (E,p) in zip(es,ps)];
-        [p.F ~ F for (F,p) in zip(fs,ps)]
+        [0 ~ p.E - E for (E,p) in zip(es,ps)];
+        [0 ~ p.F + F for (F,p) in zip(fs,ps)]
     ]
     eqs = [connections; port_eqs]
     sys = compose_bg_model(subsystems, eqs, bgn.name, simplify_eqs)
