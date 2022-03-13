@@ -43,6 +43,5 @@ include("construction.jl")
 include("equations.jl")
 include("conversion.jl")
 include("plotrecipes.jl")
-include("modules.jl")
 
 end
