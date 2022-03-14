@@ -163,12 +163,12 @@ end
     
     τ = 2
     ω = sqrt(3)/2
-    x(t,τ,ω) = exp(-t/τ)*[
+    f(t,τ,ω) = exp(-t/τ)*[
         cos(ω*t) - sqrt(3)*sin(ω*t),
         cos(ω*t) + sqrt(3)*sin(ω*t)
     ]
     
     for t in [0.0, 0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t), x(t,τ,ω), atol = 1e-5)
+        @test isapprox(sol(t), f(t,τ,ω), atol = 1e-5)
     end
 end
