@@ -8,7 +8,6 @@
     @test length(equations(SS)) == 0
     @test length(constitutive_relations(SS)) == 0
 
-    # Todo: fix tests
     sys = ODESystem(SS)
     @test length(sys.systems) == 1
     @test sys.p1.E isa Num
@@ -32,7 +31,7 @@ end
     connect!(bg, SSA, kcl)
     connect!(bg, kcl, SSB)
 
-    bgn = expose(bg, [SSA, SSB])
+    bgn = BondGraphNode(bg)
     @test numports(bgn) == 2
 
     sys = ODESystem(bgn) 
@@ -66,12 +65,12 @@ end
     connect!(bg1, r, kvl)
     connect!(bg1, c, kvl)
     connect!(bg1, SS1, kvl)
-    bgn1 = expose(bg1, [SS1])
+    bgn1 = BondGraphNode(bg1)
     
     bg2 = BondGraph(:L)
     add_node!(bg2, [l, SS2])
     connect!(bg2, l, SS2)
-    bgn2 = expose(bg2, [SS2])
+    bgn2 = BondGraphNode(bg2)
     
     bg = BondGraph()
     add_node!(bg, [bgn1, bgn2])
@@ -100,7 +99,7 @@ end
     add_node!(bg1, [SSA, SSB, re])
     connect!(bg1, SSA, re; dstportindex = 1)
     connect!(bg1, re, SSB; srcportindex = 2)
-    bgn1 = expose(bg1, [SSA, SSB])
+    bgn1 = BondGraphNode(bg1)
     
     bg = BondGraph()
     A = Component(:ce, :A)

@@ -145,12 +145,12 @@ end
     connect!(bg1, r, kvl)
     connect!(bg1, c, kvl)
     connect!(bg1, SS1, kvl)
-    bgn1 = expose(bg1, [SS1])
+    bgn1 = BondGraphNode(bg1)
     
     bg2 = BondGraph(:L)
     add_node!(bg2, [l, SS2])
     connect!(bg2, l, SS2)
-    bgn2 = expose(bg2, [SS2])
+    bgn2 = BondGraphNode(bg2)
     
     bg = BondGraph()
     add_node!(bg, [bgn1, bgn2])
