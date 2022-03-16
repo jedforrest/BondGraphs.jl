@@ -56,3 +56,78 @@ end
         @test isapprox(sol(t)[1], f(t, 10, 3), atol = 1e-5)
     end
 end
+
+@testset "Equivalent resistance (DAE)" begin
+    r1 = Component(:R, :r1)
+    r2 = Component(:R, :r2)
+    c = Component(:C)
+    kcl = EqualFlow(name = :kcl)
+    bg = BondGraph(:RRC)
+    
+    add_node!(bg, [c, r1, r2, kcl])
+    connect!(bg, c, kcl)
+    connect!(bg, kcl, r1)
+    connect!(bg, kcl, r2)
+    
+    R1 = 1.0
+    R2 = 2.0
+    Req = R1+R2
+    C = 3.0
+    τ = Req*C
+    
+    set_parameter!(r1, :R, R1)
+    set_parameter!(r2, :R, R2)
+    set_parameter!(c, :C, C)
+    set_initial_value!(c, :q, 10.0)
+
+    f(x, a, τ) = a * exp(-x / τ)
+
+    tspan = (0.0, 10.0)
+    sol = simulate(bg, tspan)
+    for t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t)[1], f(t, 10, Req*C), atol = 1e-5)
+    end
+end
+
+@testset "π-filter" begin
+    Se = Component(:Se, :Pin); set_parameter!(Se, :e, 1)
+
+    Pa = EqualEffort(name = :Pa)
+    fa = EqualFlow(name = :fa)
+    ca = Component(:C, :Ca); set_parameter!(ca, :C, 1); set_initial_value!(ca, :q, 1)
+    rpa = Component(:R, :Rpa); set_parameter!(rpa, :R, 1)
+    
+    Pb = EqualEffort(name = :Pb)
+    fb = EqualFlow(name = :fb)
+    cb = Component(:C, :Cb); set_parameter!(cb, :C, 1); set_initial_value!(cb, :q, 2)
+    rpb = Component(:R, :Rpb); set_parameter!(rpb, :R, 1)
+    
+    fs = EqualFlow(name = :fs)
+    l = Component(:I, :L); set_parameter!(l, :L, 1); set_initial_value!(l, :p, 1)
+    r = Component(:R, :Rs); set_parameter!(r, :R, 1)
+    
+    rl = Component(:R, :RL); set_parameter!(rl, :R, 1)
+    
+    bg = BondGraph(:π_filter)
+    add_node!(bg, [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl])
+    
+    connect!(bg, Se, Pa)
+    connect!(bg, Pa, fa)
+    connect!(bg, fa, ca)
+    connect!(bg, fa, rpa)
+    connect!(bg, Pa, fs)
+    connect!(bg, fs, l)
+    connect!(bg, fs, r)
+    connect!(bg, fs, Pb)
+    connect!(bg, Pb, fb)
+    connect!(bg, fb, cb)
+    connect!(bg, fb, rpb)
+    connect!(bg, Pb, rl)
+    
+    tspan = (0,100.0)
+    sol = simulate(bg,tspan)
+    @test sol[1] == [1,2,1]
+    @test isapprox(sol[end][1], 1.0, atol=1e-5)
+    @test isapprox(sol[end][2], 0.5, atol=1e-5)
+    @test isapprox(sol[end][3], 0.5, atol=1e-5)
+end

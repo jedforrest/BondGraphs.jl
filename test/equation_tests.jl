@@ -81,11 +81,13 @@ end
     cr1 = D(q) ~ -(q / C) / R + (-p) / L
     cr2 = D(p) ~ q / C
 
-    @test isequal(cr_bg[1], cr1)
+    @test isequal(cr_bg[1].lhs,cr1.lhs)
+    @test isequal(simplify(cr_bg[1].rhs-cr1.rhs), 0)
     @test isequal(cr_bg[2], cr2)
 
     cr_bgn = constitutive_relations(BondGraphNode(bg))
-    @test isequal(cr_bgn[1], cr1)
+    @test isequal(cr_bgn[1].lhs,cr1.lhs)
+    @test isequal(simplify(cr_bgn[1].rhs-cr1.rhs), 0)
     @test isequal(cr_bgn[2], cr2)
 end
 
@@ -140,7 +142,7 @@ end
     connect!(bg, r, c)
 
     sys = ODESystem(bg)
-    eqs = equations(sys)
+    eqs = constitutive_relations(bg)
     @test length(eqs) == 1
 
     (C, R) = sys.ps
@@ -152,19 +154,32 @@ end
     @test isequal(expand(e1.rhs), e2.rhs)
 end
 
+@testset "RL circuit" begin
+    r = Component(:R)
+    l = Component(:I)
+    bg = BondGraph(:RL)
+    add_node!(bg, [r, l])
+    connect!(bg, l, r)
+
+    eqs = constitutive_relations(bg)
+    sys = ODESystem(bg)
+    x = sys.states[1]
+    (R,L) = sys.ps
+    @test eqs == [D(x) ~ -R*x/L]
+end
+
 @testset "RLC circuit" begin
     bg = RLC()
-    eqs = equations(bg)
+    eqs = constitutive_relations(bg)
     @test length(eqs) == 2
 
     sys = ODESystem(bg)
-    eqs = equations(sys)
     (C, L, R) = sys.ps
     (qC, pL) = sys.states
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
-    @test isequal(expand(eqs[1].rhs), e1.rhs)
+    @test isequal(simplify(eqs[1].rhs-e1.rhs), 0)
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
@@ -178,7 +193,7 @@ end
     connect!(bg, A, re; dstportindex = 1)
     connect!(bg, re, B; srcportindex = 2)
     sys = ODESystem(bg)
-    eqs = ModelingToolkit.equations(sys)
+    eqs = constitutive_relations(bg)
 
     (xA, xB) = sys.states
     (KA, KB, r) = sys.ps
@@ -210,7 +225,7 @@ end
     connect!(bg, re2, C_D; srcportindex = 2)
 
     sys = ODESystem(bg)
-    eqs = equations(sys)
+    eqs = constitutive_relations(bg)
 
     (xA, xB, xC, xD) = sys.states
     (KA, KB, KC, KD, r1, r2) = sys.ps

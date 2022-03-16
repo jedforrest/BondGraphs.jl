@@ -23,7 +23,8 @@ states(bg::BondGraph) = [x for c in components(bg) for x in states(c)]
 
 function equations(bg::BondGraph; simplify_eqs = true)
     isempty(bg.nodes) && return Equation[]
-    ModelingToolkit.equations(ODESystem(bg; simplify_eqs))
+    sys = ODESystem(bg; simplify_eqs = simplify_eqs)
+    return equations(sys)
 end
 
 # Filtering
