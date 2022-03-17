@@ -14,7 +14,7 @@ rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
 rewriter = Postwalk(rw_chain)
 
 # Constitutive relations
-constitutive_relations(n::AbstractNode) = n.equations
+constitutive_relations(n::AbstractNode) = equations(n)
 function constitutive_relations(n::EqualEffort)
     if all(freeports(n)) # all ports are empty
         return Equation[]
@@ -70,19 +70,42 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
     sub_rules = merge(e_sub_rules, f_sub_rules)
-    eqs = [substitute(eq, sub_rules) for eq in constitutive_relations(n)]
+    eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
     sys = ODESystem(eqs, t, states(n), parameters(n);
         name = n.name, defaults = defaults(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
-    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(m))
+    (subsystems, connections) = get_subsys_and_connections(m)
+    compose_bg_model(subsystems, connections, m.name, simplify_eqs)
+end
+function ModelingToolkit.ODESystem(bgn::BondGraphNode; simplify_eqs = false)
+    N = numports(bgn)
+    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
 
+    (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
+    es = [subsystems[c].p1.E for c in exposed(bgn)]
+    fs = [subsystems[c].p1.F for c in exposed(bgn)]
+    port_eqs = [
+        [0 ~ p.E - E for (E,p) in zip(es,ps)];
+        [0 ~ p.F + F for (F,p) in zip(fs,ps)]
+    ]
+    eqs = [connections; port_eqs]
+    sys = compose_bg_model(subsystems, eqs, bgn.name, simplify_eqs)
+    compose(sys, ps...)
+end
+
+function get_subsys_and_connections(bg::BondGraph)
+    # Collect constitutive relations from components
+    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(bg))
     # Add constraints from bonds
-    connections = [get_connection_eq(b,subsystems) for b in bonds(m)]
+    connections = [get_connection_eq(b,subsystems) for b in bonds(bg)]
+    return subsystems, connections
+end
 
-    @named _model = ODESystem(connections, t; name = m.name)
+function compose_bg_model(subsystems, eqs, name, simplify_eqs)
+    @named _model = ODESystem(eqs, t; name = name)
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs

@@ -46,11 +46,20 @@ struct EqualFlow <: Junction
     EqualFlow(; name = Symbol("1"), v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
 end
 
+# Source-sensor
+struct SourceSensor <: AbstractNode
+    name::Symbol
+    freeports::MVector{1,Bool}
+    vertex::RefValue{Int}
+    SourceSensor(; name=:SS, v::Int = 0) = new(Symbol(name), ones(MVector{1,Bool}) , Ref(v))
+end
+
 
 # PROPERTIES
 # Type
 type(n::AbstractNode) = n.type
 type(j::Junction) = typeof(j)
+type(ss::SourceSensor) = :SS
 
 # Name
 name(n::AbstractNode) = n.name
@@ -83,18 +92,22 @@ set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 # Parameters
 parameters(n::AbstractNode) = n.parameters
 parameters(::Junction) = Num[]
+parameters(::SourceSensor) = Num[]
 
 # State variables
 states(n::AbstractNode) = n.states
 states(::Junction) = Num[]
+states(::SourceSensor) = Num[]
 
 # Equations
 equations(n::AbstractNode) = n.equations
 equations(::Junction) = Equation[]
+equations(::SourceSensor) = Equation[]
 
 # Defaults
 defaults(n::AbstractNode) = n.defaults
 defaults(::Junction) = Dict{Num,Any}()
+defaults(::SourceSensor) = Dict{Num,Any}()
 
 # Set and get default parameter values
 function get_parameter(n::AbstractNode, var)
@@ -124,5 +137,5 @@ end
 # This definition will need to expand when equations etc. are added
 ==(n1::AbstractNode, n2::AbstractNode) = type(n1) == type(n2) && n1.name == n2.name
 
-show(io::IO, node::AbstractNode) = print(io, "$(node.type):$(node.name)")
+show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.name)")

@@ -131,3 +131,44 @@ end
     @test isapprox(sol[end][2], 0.5, atol=1e-5)
     @test isapprox(sol[end][3], 0.5, atol=1e-5)
 end
+
+@testset "Simulate modular BG" begin
+    r = Component(:R); set_parameter!(r, :R, 1)
+    l = Component(:I); set_parameter!(l, :L, 1); set_initial_value!(l, :p, 1)
+    c = Component(:C); set_parameter!(c, :C, 1); set_initial_value!(c, :q, 1)
+    kvl = EqualEffort(name = :kvl)
+    SS1 = SourceSensor(name = :SS1)
+    SS2 = SourceSensor(name = :SS2)
+    
+    bg1 = BondGraph(:RC)
+    add_node!(bg1, [r, c, kvl, SS1])
+    connect!(bg1, r, kvl)
+    connect!(bg1, c, kvl)
+    connect!(bg1, SS1, kvl)
+    bgn1 = BondGraphNode(bg1)
+    
+    bg2 = BondGraph(:L)
+    add_node!(bg2, [l, SS2])
+    connect!(bg2, l, SS2)
+    bgn2 = BondGraphNode(bg2)
+    
+    bg = BondGraph()
+    add_node!(bg, [bgn1, bgn2])
+    connect!(bg, bgn1, bgn2)
+    
+    constitutive_relations(bg)
+    
+    tspan = (0,10.0)
+    sol = simulate(bg,tspan)
+    
+    τ = 2
+    ω = sqrt(3)/2
+    f(t,τ,ω) = exp(-t/τ)*[
+        cos(ω*t) - sqrt(3)*sin(ω*t),
+        cos(ω*t) + sqrt(3)*sin(ω*t)
+    ]
+    
+    for t in [0.0, 0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(t), f(t,τ,ω), atol = 1e-5)
+    end
+end

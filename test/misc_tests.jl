@@ -10,6 +10,9 @@
     addlibrary!(lib)
     # Component now exists
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :A)
+
+    # Delete fake component for later tests
+    delete!(BondGraphs.DEFAULT_LIBRARY, :A)
 end
 
 @testset "Graph Node Colour Selection" begin

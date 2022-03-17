@@ -13,4 +13,5 @@ using RecipesBase
     @testset "Simulations" begin include("simulation_tests.jl") end
     @testset "Conversions" begin include("conversion_tests.jl") end
     @testset "Miscellaneous" begin include("misc_tests.jl") end
+    @testset "Modules" begin include("module_tests.jl") end
 end

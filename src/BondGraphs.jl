@@ -14,7 +14,7 @@ using Catalyst
 using RecipesBase, GraphRecipes
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
-Port, Bond, BondGraph, BondGraphNode,
+SourceSensor, Port, Bond, BondGraph, BondGraphNode,
 
 type, name, freeports, numports, weights, vertex, set_vertex!,
 parameters, states, defaults, constitutive_relations,
@@ -23,7 +23,7 @@ get_parameter, set_parameter!, get_initial_value, set_initial_value!,
 srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
 
 add_node!, remove_node!, connect!, disconnect!, 
-swap!, insert_node!, merge_nodes!, simplify_junctions!,
+swap!, insert_node!, merge_nodes!, simplify_junctions!, expose,
 
 simulate, addlibrary!
 

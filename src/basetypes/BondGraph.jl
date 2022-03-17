@@ -63,15 +63,17 @@ struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::Symbol
     name::Symbol
+    exposed::Vector{SourceSensor}
     freeports::Vector{Bool}
     vertex::RefValue{Int}
-    parameters::Vector{Num}
-    states::Vector{Num}
-    equations::Vector{Equation}
-    function BondGraphNode(bg::BondGraph, type = :BG, name = bg.name; vertex::Int = 0)
-        new(bg, Symbol(type), Symbol(name), Bool[], Ref(vertex),
-            parameters(bg), states(bg), equations(bg))
-    end
+end
+function BondGraphNode(bg::BondGraph, name = name(bg); vertex::Int = 0, deepcopy = false)
+    _bg = deepcopy ? deepcopy(bg) : bg
+
+    exposed_ports = getnodes(_bg, SourceSensor)
+    freeports = fill(true, length(exposed_ports))
+
+    BondGraphNode(_bg, :BG, Symbol(name), exposed_ports, freeports, Ref(vertex))
 end
 
 # Easier referencing systems using a.b notation
@@ -83,3 +85,5 @@ function getproperty(bgn::BondGraphNode, sym::Symbol)
         return getfield(bgn, sym)
     end
 end
+
+exposed(bgn::BondGraphNode) = bgn.exposed
