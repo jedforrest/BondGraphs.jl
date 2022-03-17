@@ -13,13 +13,16 @@ D = Differential(t)
 # Linear resistance (:R)
 @parameters R
 R_dict = Dict(
-    :description => "Generalised Linear Resistor",
+    :description => """
+    Generalised Linear Resistor
+    e = R*f
+    R: Resistance (1.0)
+    """,
     :numports => 1,
     :parameters => OrderedDict(
-        R => "Resistance"
+        R => 1.0
     ),
-    :equations => [0 ~ E[1] - R*F[1]],
-    :defaults => Dict(R => 1.)
+    :equations => [0 ~ E[1] - R * F[1]]
 )
 
 # Linear capacitor (:C)
@@ -35,10 +38,10 @@ C_dict = Dict(
         q => "Generalised Position"
     ),
     :equations => [
-        0 ~ q/C - E[1],
+        0 ~ q / C - E[1],
         D(q) ~ F[1]
     ],
-    :defaults => Dict(C => 1., q => 0.)
+    :defaults => Dict(C => 1.0, q => 0.0)
 )
 
 # Linear inductance (:I)
@@ -54,10 +57,10 @@ I_dict = Dict(
         p => "Generalised Momentum"
     ),
     :equations => [
-        0 ~ p/L - F[1],
+        0 ~ p / L - F[1],
         D(p) ~ E[1]
     ],
-    :defaults => Dict(L => 1., p => 0.)
+    :defaults => Dict(L => 1.0, p => 0.0)
 )
 
 # Source of effort (:Se)
@@ -69,7 +72,7 @@ Se_dict = Dict(
         e => "Effort"
     ),
     :equations => [0 ~ e - E[1]],
-    :defaults => Dict(e => 1.)
+    :defaults => Dict(e => 1.0)
 )
 
 # Source of flow (:Sf)
@@ -81,7 +84,7 @@ Sf_dict = Dict(
         f => "Flow"
     ),
     :equations => [0 ~ f - F[1]],
-    :defaults => Dict(f => 1.)
+    :defaults => Dict(f => 1.0)
 )
 
 # Transformer (:TF)
@@ -96,7 +99,7 @@ TF_dict = Dict(
         0 ~ E[2] - n * E[1],
         0 ~ F[1] - n * F[2]
     ],
-    :defaults => Dict(n => 1.)
+    :defaults => Dict(n => 1.0)
 )
 
 const standard_library = Dict(

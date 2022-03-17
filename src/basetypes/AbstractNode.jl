@@ -6,10 +6,12 @@ struct Component{N} <: AbstractNode
     name::Symbol
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    parameters::Vector{Num}
-    states::Vector{Num}
+    parameters::AbstractDict{Num,Any}
+    # parameters::Vector{Num}
+    states::AbstractDict{Num,Any}
+    # states::Vector{Num}
     equations::Vector{Equation}
-    defaults::AbstractDict
+    # defaults::AbstractDict
     function Component{N}(t, n, v::Int, p::Vector, x::Vector, eq::Vector, def::AbstractDict) where {N}
         new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, eq, def)
     end
@@ -24,6 +26,14 @@ function Component(type, name = type; vertex::Int = 0, library = BondGraphs.DEFA
     defaults = haskey(comp_dict, :defaults) ? copy(comp_dict[:defaults]) : Dict())
 
     Component{numports}(type, name, vertex, parameters, states, equations, defaults)
+end
+
+# Source-sensor
+struct SourceSensor <: AbstractNode
+    name::Symbol
+    freeports::MVector{1,Bool}
+    vertex::RefValue{Int}
+    SourceSensor(; name = :SS, v::Int = 0) = new(Symbol(name), ones(MVector{1,Bool}), Ref(v))
 end
 
 
@@ -44,14 +54,6 @@ struct EqualFlow <: Junction
     weights::Vector{Int}
     vertex::RefValue{Int}
     EqualFlow(; name = Symbol("1"), v::Int = 0) = new(Symbol(name), [true], [0], Ref(v))
-end
-
-# Source-sensor
-struct SourceSensor <: AbstractNode
-    name::Symbol
-    freeports::MVector{1,Bool}
-    vertex::RefValue{Int}
-    SourceSensor(; name=:SS, v::Int = 0) = new(Symbol(name), ones(MVector{1,Bool}) , Ref(v))
 end
 
 
@@ -90,12 +92,12 @@ vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Parameters
-parameters(n::AbstractNode) = n.parameters
+parameters(n::AbstractNode) = keys(n.parameters)
 parameters(::Junction) = Num[]
 parameters(::SourceSensor) = Num[]
 
 # State variables
-states(n::AbstractNode) = n.states
+states(n::AbstractNode) = keys(n.states)
 states(::Junction) = Num[]
 states(::SourceSensor) = Num[]
 
@@ -105,9 +107,9 @@ equations(::Junction) = Equation[]
 equations(::SourceSensor) = Equation[]
 
 # Defaults
-defaults(n::AbstractNode) = n.defaults
-defaults(::Junction) = Dict{Num,Any}()
-defaults(::SourceSensor) = Dict{Num,Any}()
+# defaults(n::AbstractNode) = n.defaults
+# defaults(::Junction) = Dict{Num,Any}()
+# defaults(::SourceSensor) = Dict{Num,Any}()
 
 # Set and get default parameter values
 function get_parameter(n::AbstractNode, var)

@@ -25,7 +25,7 @@ srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
 add_node!, remove_node!, connect!, disconnect!, 
 swap!, insert_node!, merge_nodes!, simplify_junctions!, expose,
 
-simulate, addlibrary!
+simulate, addlibrary!, description
 
 # Component libraries
 include("libraries/biochemical.jl")
