@@ -1,14 +1,13 @@
 module StandardLibrary
 
 using ModelingToolkit
-using OrderedCollections
 
 export standard_library
 
 @parameters t
 D = Differential(t)
 
-@variables E[1:2](t) F[1:2](t)
+@variables e[1:2](t) f[1:2](t)
 
 # Linear resistance (:R)
 @parameters R
@@ -16,90 +15,110 @@ R_dict = Dict(
     :description => """
     Generalised Linear Resistor
     e = R*f
-    R: Resistance (1.0)
+    R: Resistance [1.0]
     """,
     :numports => 1,
-    :parameters => OrderedDict(
-        R => 1.0
+    :parameters => Dict(
+        R => 1.
     ),
-    :equations => [0 ~ E[1] - R * F[1]]
+    :equations => [0 ~ e[1] - R * f[1]]
 )
 
 # Linear capacitor (:C)
 @parameters C
 @variables q(t)
 C_dict = Dict(
-    :description => "Generalised Linear Resistor",
+    :description => """
+    Generalised Linear Capacitor
+    e = (1/C)*q
+    dq/dt = f
+    C: Capacitance [1.0]
+    q: Generalised position [0.0]
+    """,
     :numports => 1,
-    :parameters => OrderedDict(
-        C => "Capacitance"
+    :parameters => Dict(
+        C => 1.
     ),
-    :states => OrderedDict(
-        q => "Generalised Position"
+    :states => Dict(
+        q => 0.
     ),
     :equations => [
-        0 ~ q / C - E[1],
-        D(q) ~ F[1]
+        0 ~ q / C - e[1],
+        D(q) ~ f[1]
     ],
-    :defaults => Dict(C => 1.0, q => 0.0)
 )
 
 # Linear inductance (:I)
 @parameters L
 @variables p(t)
 I_dict = Dict(
-    :description => "Generalised Linear Inductor",
+    :description => """
+    Generalised Linear Inductor
+    f = (1/L)*p
+    dp/dt = e
+    L: Inductance [1.0]
+    p: Generalised momentum [0.0]
+    """,
     :numports => 1,
-    :parameters => OrderedDict(
-        L => "Inductance"
+    :parameters => Dict(
+        L => 1.
     ),
-    :states => OrderedDict(
-        p => "Generalised Momentum"
+    :states => Dict(
+        p => 0.
     ),
     :equations => [
-        0 ~ p / L - F[1],
-        D(p) ~ E[1]
+        0 ~ p / L - f[1],
+        D(p) ~ e[1]
     ],
-    :defaults => Dict(L => 1.0, p => 0.0)
 )
 
 # Source of effort (:Se)
-@parameters e
+@parameters E
 Se_dict = Dict(
-    :description => "Effort source",
+    :description => """
+    Effort Source
+    e = E
+    E: Effort (source) [1.0]
+    """,
     :numports => 1,
-    :parameters => OrderedDict(
-        e => "Effort"
+    :parameters => Dict(
+        E => 1.
     ),
-    :equations => [0 ~ e - E[1]],
-    :defaults => Dict(e => 1.0)
+    :equations => [0 ~ E - e[1]],
 )
 
 # Source of flow (:Sf)
-@parameters f
+@parameters F
 Sf_dict = Dict(
-    :description => "Flow source",
+    :description => """
+    Flow Source
+    f = F
+    F: Flow (source) [1.0]
+    """,
     :numports => 1,
-    :parameters => OrderedDict(
-        f => "Flow"
+    :parameters => Dict(
+        F => 1.
     ),
-    :equations => [0 ~ f - F[1]],
-    :defaults => Dict(f => 1.0)
+    :equations => [0 ~ F - f[1]],
 )
 
 # Transformer (:TF)
 @parameters n
 TF_dict = Dict(
-    :description => "Linear Transformer",
+    :description => """
+    Linear Transformer
+    e₂ = n*e₁
+    f₁ = n*f₂
+    n = Winding ratio [1.0]
+    """,
     :numports => 2,
-    :parameters => OrderedDict(
-        n => "Ratio"
+    :parameters => Dict(
+        n => 1.
     ),
     :equations => [
-        0 ~ E[2] - n * E[1],
-        0 ~ F[1] - n * F[2]
+        0 ~ e[2] - n * e[1],
+        0 ~ f[1] - n * f[2]
     ],
-    :defaults => Dict(n => 1.0)
 )
 
 const standard_library = Dict(
