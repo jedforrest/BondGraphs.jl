@@ -21,7 +21,7 @@ function Component(type, name=type; vertex::Int=0, library=BondGraphs.DEFAULT_LI
     states=haskey(comp_dict, :states) ? comp_dict[:states] : Dict(),
     equations=haskey(comp_dict, :equations) ? comp_dict[:equations] : Equation[])
 
-    Component{numports}(type, name, vertex, parameters, states, equations)
+    Component{numports}(type, name, vertex, copy(parameters), copy(states), equations)
 end
 
 # Source-sensor
@@ -130,8 +130,6 @@ function set_initial_value!(n::AbstractNode, var, val)
     string(x) in string.(states(n)) || error("Component does not have state variable $var")
     n.states[x] = val
 end
-
-# _check_if_var_exists(Vars, var::Num) = any(var - v == 0 for v in Vars)
 
 # BASE FUNCTIONS
 # This definition will need to expand when equations etc. are added

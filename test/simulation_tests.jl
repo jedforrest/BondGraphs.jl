@@ -85,7 +85,7 @@ end
     tspan = (0.0, 10.0)
     sol = simulate(bg, tspan)
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, Req * C), atol=1e-5)
+        @test isapprox(sol(t)[1], f(t, 10, τ), atol=1e-5)
     end
 end
 

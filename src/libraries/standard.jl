@@ -7,7 +7,7 @@ export standard_library
 @parameters t
 D = Differential(t)
 
-@variables e[1:2](t) f[1:2](t)
+@variables E[1:2](t) F[1:2](t)
 
 # Linear resistance (:R)
 @parameters R
@@ -19,9 +19,9 @@ R_dict = Dict(
     """,
     :numports => 1,
     :parameters => Dict(
-        R => 1.
+        R => 1.0
     ),
-    :equations => [0 ~ e[1] - R * f[1]]
+    :equations => [0 ~ E[1] - R * F[1]]
 )
 
 # Linear capacitor (:C)
@@ -37,14 +37,14 @@ C_dict = Dict(
     """,
     :numports => 1,
     :parameters => Dict(
-        C => 1.
+        C => 1.0
     ),
     :states => Dict(
-        q => 0.
+        q => 0.0
     ),
     :equations => [
-        0 ~ q / C - e[1],
-        D(q) ~ f[1]
+        0 ~ q / C - E[1],
+        D(q) ~ F[1]
     ],
 )
 
@@ -61,45 +61,45 @@ I_dict = Dict(
     """,
     :numports => 1,
     :parameters => Dict(
-        L => 1.
+        L => 1.0
     ),
     :states => Dict(
-        p => 0.
+        p => 0.0
     ),
     :equations => [
-        0 ~ p / L - f[1],
-        D(p) ~ e[1]
+        0 ~ p / L - F[1],
+        D(p) ~ E[1]
     ],
 )
 
 # Source of effort (:Se)
-@parameters E
+@parameters e
 Se_dict = Dict(
     :description => """
     Effort Source
-    e = E
-    E: Effort (source) [1.0]
+    e = eₛ
+    eₛ: Effort (source) [1.0]
     """,
     :numports => 1,
     :parameters => Dict(
-        E => 1.
+        e => 1.0
     ),
-    :equations => [0 ~ E - e[1]],
+    :equations => [0 ~ e - E[1]],
 )
 
 # Source of flow (:Sf)
-@parameters F
+@parameters f
 Sf_dict = Dict(
     :description => """
     Flow Source
-    f = F
-    F: Flow (source) [1.0]
+    f = fₛ
+    fₛ: Flow (source) [1.0]
     """,
     :numports => 1,
     :parameters => Dict(
-        F => 1.
+        f => 1.0
     ),
-    :equations => [0 ~ F - f[1]],
+    :equations => [0 ~ f - F[1]],
 )
 
 # Transformer (:TF)
@@ -113,11 +113,11 @@ TF_dict = Dict(
     """,
     :numports => 2,
     :parameters => Dict(
-        n => 1.
+        n => 1.0
     ),
     :equations => [
-        0 ~ e[2] - n * e[1],
-        0 ~ f[1] - n * f[2]
+        0 ~ E[2] - n * E[1],
+        0 ~ F[1] - n * F[2]
     ],
 )
 

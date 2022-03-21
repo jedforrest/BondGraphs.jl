@@ -10,7 +10,7 @@ const _T = 310.0
 @parameters t
 D = Differential(t)
 
-@variables e[1:2](t) f[1:2](t)
+@variables E[1:2](t) F[1:2](t)
 
 # Chemical species (:Ce)
 @parameters K R T
@@ -35,8 +35,8 @@ Ce_dict = Dict(
         q => 0.0
     ),
     :equations => [
-        0 ~ R * T * log(K * q) - e[1],
-        D(q) ~ f[1]
+        0 ~ R * T * log(K * q) - E[1],
+        D(q) ~ F[1]
     ],
 )
 
@@ -59,8 +59,8 @@ ce_dict = Dict(
         q => 0.0
     ),
     :equations => [
-        0 ~ log(K * q) - e[1],
-        D(q) ~ f[1]
+        0 ~ log(K * q) - E[1],
+        D(q) ~ F[1]
     ],
 )
 
@@ -82,8 +82,8 @@ Re_dict = Dict(
         T => _T
     ),
     :equations => [
-        0 ~ f[1] + f[2],
-        0 ~ f[1] - r * (exp(e[1] / R / T) - exp(e[2] / R / T))
+        0 ~ F[1] + F[2],
+        0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
     ],
 )
 
@@ -101,8 +101,8 @@ re_dict = Dict(
         r => 1.
     ),
     :equations => [
-        0 ~ f[1] + f[2],
-        0 ~ f[1] - r * (exp(e[1]) - exp(e[2]))
+        0 ~ F[1] + F[2],
+        0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
     ],
 )
 
