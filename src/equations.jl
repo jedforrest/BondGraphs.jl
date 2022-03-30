@@ -64,16 +64,27 @@ end
 
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
-    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
+    ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
 
     @variables E[1:N](t) F[1:N](t)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
-    sub_rules = merge(e_sub_rules, f_sub_rules)
+
+    # for u in controls(n)
+    #     # @register_symbolic $(u)
+    #     u_fun = n.controls[u]
+    #     # @register_symbolic u_fun
+    #     push!(eqs, u ~ u_fun(t))
+    # end
+    u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
+    
+    sub_rules = merge(e_sub_rules, f_sub_rules, u_sub_rules)
     eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
-    sys = ODESystem(eqs, t, states(n), parameters(n);
-        name = n.name, defaults = defaults(n))
+    p_ctrl = [parameters(n); controls(n)]
+
+    sys = ODESystem(eqs, t, states(n), p_ctrl;
+        name=n.name, defaults=defaults(n), controls=controls(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)

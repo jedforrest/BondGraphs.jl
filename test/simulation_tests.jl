@@ -1,29 +1,36 @@
 @testset "Set parameters" begin
     re = Component(:Re)
 
-    @test get_parameter(re, :r) == 1.0
-    @test get_parameter(re, :R) == 8.314
-    @test get_parameter(re, :T) == 310.0
+    @test get_default(re, :r) == 1.0
+    @test get_default(re, :R) == 8.314
+    @test get_default(re, :T) == 310.0
 
-    set_parameter!(re, :T, 200.0)
-    @test get_parameter(re, :T) == 200.0
+    set_default!(re, :T, 200.0)
+    @test get_default(re, :T) == 200.0
 end
 
-@testset "Incompatible parameter fail" begin
+@testset "Setting non-numeric control variables" begin
+    f(t) = sin(2t) # forcing function
+
+    sf = Component(:Sf)
+    @test get_default(sf, :fs)(1) ≈ 1
+
+    set_default!(sf, :fs, f)
+    @test get_default(sf, :fs) == f
+    @test get_default(sf, :fs)(1) ≈ f(1)
+end
+
+@testset "Incompatible variables fail" begin
     re = Component(:Re)
-    @test_throws ErrorException set_parameter!(re, :s, 1.0)
+    c = Component(:C)
+    @test_throws ErrorException set_default!(re, :s, 1.0)
+    @test_throws ErrorException set_default!(c, :p, 2.0)
 end
 
 @testset "Set initial conditions" begin
     c = Component(:C)
-    set_initial_value!(c, :q, 2.0)
-    @test get_initial_value(c, :q) == 2.0
-end
-
-@testset "Missing state variable fail" begin
-    c = Component(:C)
-    @test_throws ErrorException set_parameter!(c, :q, 2.0)
-    @test_throws ErrorException set_initial_value!(c, :p, 2.0)
+    set_default!(c, :q, 2.0)
+    @test get_default(c, :q) == 2.0
 end
 
 @testset "Simulate RC circuit" begin
@@ -34,9 +41,9 @@ end
     add_node!(bg, [c, r])
     connect!(bg, r, c)
 
-    set_parameter!(r, :R, 2.0)
-    set_parameter!(c, :C, 1.0)
-    set_initial_value!(c, :q, 10.0)
+    set_default!(r, :R, 2.0)
+    set_default!(c, :C, 1.0)
+    set_default!(c, :q, 10.0)
 
     f(x, a, τ) = a * exp(-x / τ)
 
@@ -75,10 +82,10 @@ end
     C = 3.0
     τ = Req * C
 
-    set_parameter!(r1, :R, R1)
-    set_parameter!(r2, :R, R2)
-    set_parameter!(c, :C, C)
-    set_initial_value!(c, :q, 10.0)
+    set_default!(r1, :R, R1)
+    set_default!(r2, :R, R2)
+    set_default!(c, :C, C)
+    set_default!(c, :q, 10.0)
 
     f(x, a, τ) = a * exp(-x / τ)
 
@@ -91,33 +98,33 @@ end
 
 @testset "π-filter" begin
     Se = Component(:Se, :Pin)
-    set_parameter!(Se, :e, 1)
+    set_default!(Se, :e, 1)
 
     Pa = EqualEffort(name=:Pa)
     fa = EqualFlow(name=:fa)
     ca = Component(:C, :Ca)
-    set_parameter!(ca, :C, 1)
-    set_initial_value!(ca, :q, 1)
+    set_default!(ca, :C, 1)
+    set_default!(ca, :q, 1)
     rpa = Component(:R, :Rpa)
-    set_parameter!(rpa, :R, 1)
+    set_default!(rpa, :R, 1)
 
     Pb = EqualEffort(name=:Pb)
     fb = EqualFlow(name=:fb)
     cb = Component(:C, :Cb)
-    set_parameter!(cb, :C, 1)
-    set_initial_value!(cb, :q, 2)
+    set_default!(cb, :C, 1)
+    set_default!(cb, :q, 2)
     rpb = Component(:R, :Rpb)
-    set_parameter!(rpb, :R, 1)
+    set_default!(rpb, :R, 1)
 
     fs = EqualFlow(name=:fs)
     l = Component(:I, :L)
-    set_parameter!(l, :L, 1)
-    set_initial_value!(l, :p, 1)
+    set_default!(l, :L, 1)
+    set_default!(l, :p, 1)
     r = Component(:R, :Rs)
-    set_parameter!(r, :R, 1)
+    set_default!(r, :R, 1)
 
     rl = Component(:R, :RL)
-    set_parameter!(rl, :R, 1)
+    set_default!(rl, :R, 1)
 
     bg = BondGraph(:π_filter)
     add_node!(bg, [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl])
@@ -145,13 +152,13 @@ end
 
 @testset "Simulate modular BG" begin
     r = Component(:R)
-    set_parameter!(r, :R, 1)
+    set_default!(r, :R, 1)
     l = Component(:I)
-    set_parameter!(l, :L, 1)
-    set_initial_value!(l, :p, 1)
+    set_default!(l, :L, 1)
+    set_default!(l, :p, 1)
     c = Component(:C)
-    set_parameter!(c, :C, 1)
-    set_initial_value!(c, :q, 1)
+    set_default!(c, :C, 1)
+    set_default!(c, :q, 1)
     kvl = EqualEffort(name=:kvl)
     SS1 = SourceSensor(name=:SS1)
     SS2 = SourceSensor(name=:SS2)
@@ -188,3 +195,43 @@ end
         @test isapprox(sol(t), f(t, τ, ω), atol=1e-5)
     end
 end
+
+# @testset "Driven Filter Circuit" begin
+model = BondGraph("RC")
+C = Component(:C)
+R = Component(:R)
+zero_law = EqualEffort()
+C, R, zero_law
+add_node!(model, [C, R, zero_law])
+connect!(model, R, zero_law)
+connect!(model, C, zero_law)
+set_default!(C, :C, 1.0)
+set_default!(R, :R, 1.0)
+
+# forcing function
+f(t) = -sin(2t)
+# f(t) = t <= 1 ? -1 : 0
+Sf = Component(:Sf)
+add_node!(model, Sf)
+connect!(model, Sf, zero_law)
+set_default!(Sf, :fs, f)
+
+tspan = (0.0, 5.0)
+u0 = [1]
+
+sys = ODESystem(model, simplify_eqs=true)
+constitutive_relations(model)
+
+sol = simulate(model, tspan; u0)
+
+using Plots
+plot(sol)
+# end
+
+p = plot();
+for i in 1:4
+    f(t) = -cos(i * t)
+    sol = simulate(model, tspan; u0)
+    plot!(p, sol)
+end
+plot(p)

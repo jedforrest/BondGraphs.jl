@@ -6,11 +6,12 @@ struct Component{N} <: AbstractNode
     name::Symbol
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    parameters::AbstractDict
-    states::AbstractDict
+    parameters::Dict{Num,Number}
+    states::Dict{Num,Number}
+    controls::Dict{Num,Function}
     equations::Vector{Equation}
-    function Component{N}(t, n, v, p, x, eq) where {N}
-        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, eq)
+    function Component{N}(t, n, v, p, x, c, eq) where {N}
+        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, c, eq)
     end
 end
 
@@ -19,9 +20,10 @@ function Component(type, name=type; vertex::Int=0, library=BondGraphs.DEFAULT_LI
     numports::Int=haskey(comp_dict, :numports) ? comp_dict[:numports] : 1,
     parameters=haskey(comp_dict, :parameters) ? comp_dict[:parameters] : Dict(),
     states=haskey(comp_dict, :states) ? comp_dict[:states] : Dict(),
+    controls=haskey(comp_dict, :controls) ? comp_dict[:controls] : Dict(),
     equations=haskey(comp_dict, :equations) ? comp_dict[:equations] : Equation[])
 
-    Component{numports}(type, name, vertex, copy(parameters), copy(states), equations)
+    Component{numports}(type, name, vertex, copy(parameters), copy(states), copy(controls), equations)
 end
 
 # Source-sensor
@@ -97,38 +99,43 @@ states(n::AbstractNode) = collect(keys(n.states))
 states(::Junction) = Num[]
 states(::SourceSensor) = Num[]
 
+# Control variables
+controls(n::AbstractNode) = collect(keys(n.controls))
+controls(::Junction) = Num[]
+controls(::SourceSensor) = Num[]
+
 # Equations
 equations(n::AbstractNode) = n.equations
 equations(::Junction) = Equation[]
 equations(::SourceSensor) = Equation[]
 
 # Defaults
-defaults(n::AbstractNode) = merge(n.parameters, n.states)
+defaults(n::AbstractNode) = merge(n.parameters, n.states, n.controls)
 defaults(::Junction) = Dict{Num,Any}()
 defaults(::SourceSensor) = Dict{Num,Any}()
 
-# Set and get default parameter values
-function get_parameter(n::AbstractNode, var)
-    p, = @parameters $var
-    string(p) in string.(parameters(n)) || error("Component does not have parameter $var")
-    n.parameters[p]
+function get_default(n::AbstractNode, var)
+    default_dict, _var = _find_var(n, var)
+    default_dict[_var]
 end
-function set_parameter!(n::AbstractNode, var, val)
-    p, = @parameters $var
-    string(p) in string.(parameters(n)) || error("Component does not have parameter $var")
-    n.parameters[p] = val
+function set_default!(n::AbstractNode, var, val)
+    default_dict, _var = _find_var(n, var)
+    default_dict[_var] = val
 end
 
-# Set and getinitial conditions
-function get_initial_value(n::AbstractNode, var)
+function _find_var(n::AbstractNode, var)
+    # Try both parameters and state/control vars
+    p, = @parameters $var
     _, x = @variables t, $var(t)
-    string(x) in string.(states(n)) || error("Component does not have state variable $var")
-    n.states[x]
-end
-function set_initial_value!(n::AbstractNode, var, val)
-    _, x = @variables t, $var(t)
-    string(x) in string.(states(n)) || error("Component does not have state variable $var")
-    n.states[x] = val
+    if string(p) in string.(parameters(n))
+        return n.parameters, p
+    elseif string(x) in string.(states(n))
+        return n.states, x
+    elseif string(x) in string.(controls(n))
+        return n.controls, x
+    else
+        error("Component does not have variable $var")
+    end
 end
 
 # BASE FUNCTIONS

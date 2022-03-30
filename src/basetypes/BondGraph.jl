@@ -21,6 +21,8 @@ parameters(bg::BondGraph) = [p for c in components(bg) for p in parameters(c)]
 
 states(bg::BondGraph) = [x for c in components(bg) for x in states(c)]
 
+controls(bg::BondGraph) = [u for c in components(bg) for u in controls(c)]
+
 function equations(bg::BondGraph; simplify_eqs = true)
     isempty(bg.nodes) && return Equation[]
     sys = ODESystem(bg; simplify_eqs = simplify_eqs)
