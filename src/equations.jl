@@ -1,4 +1,4 @@
-@parameters t
+@variables t
 
 # New simplification rules
 exponent_rules = [
@@ -62,6 +62,14 @@ function get_connection_eq(b::Bond,subsystems)
     connect(src_port, dst_port)
 end
 
+# register_control_function!(u_fun) = @eval @register_symbolic $(Symbol(u_fun))(t)
+function register_control_function!(u_fun)
+    @eval begin
+        @register_symbolic Main.$(Symbol(u_fun))(t)
+        return Main.$(Symbol(u_fun))(t)
+    end
+end
+
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
@@ -70,14 +78,16 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
 
-    # for u in controls(n)
-    #     # @register_symbolic $(u)
-    #     u_fun = n.controls[u]
-    #     # @register_symbolic u_fun
-    #     push!(eqs, u ~ u_fun(t))
-    # end
-    u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
-    
+    u_sub_rules = Dict()
+    for u in controls(n)
+        u_fun = n.controls[u]
+        # register_control_function!(u_fun)
+        u_sub_rules[u] = register_control_function!(u_fun)
+        # u_sub_rules[u] = @eval $(Symbol(u_fun))(t)
+    end
+    # register_control_function!(n)
+    # u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
+
     sub_rules = merge(e_sub_rules, f_sub_rules, u_sub_rules)
     eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 

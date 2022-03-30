@@ -214,7 +214,10 @@ f(t) = -sin(2t)
 Sf = Component(:Sf)
 add_node!(model, Sf)
 connect!(model, Sf, zero_law)
-set_default!(Sf, :fs, f)
+
+hh(t) = t % 1 <= 0.5 ? 2 : 0
+
+set_default!(Sf, :fs, hh)
 
 tspan = (0.0, 5.0)
 u0 = [1]
@@ -235,3 +238,35 @@ for i in 1:4
     plot!(p, sol)
 end
 plot(p)
+
+@variables t
+
+u_sub_rules = Dict()
+for u in controls(Sf)
+    # u_fun(t) = Sf.controls[u](t)
+    println(Sf.controls[u])
+    @register_symbolic (Sf.controls[u])(t)
+    u_sub_rules[u] = u_fun
+end
+u_sub_rules = Dict(u => Sf.controls[u](t) for u in controls(Sf))
+
+u = controls(Sf)[1]
+uu(t) = Sf.controls[u](t)
+
+@register_symbolic eval( quote $(Symbol(Sf.controls[u]))(t) end)
+
+uu(1)
+h(t) = (t <= 1) ? 1 : 0
+@register_symbolic
+
+@eval $(Symbol(Sf.controls[u]))(t)
+
+@eval $(Sf.controls[u])(t)
+
+u_sub_rules = Dict(u => Sf.controls[u](t) for u in controls(Sf))
+
+Sf.controls[u]
+
+@eval @register_symbolic Main.$(Symbol(Sf.controls[u]))(t)
+
+sys
