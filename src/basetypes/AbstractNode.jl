@@ -120,7 +120,12 @@ function get_default(n::AbstractNode, var)
 end
 function set_default!(n::AbstractNode, var, val)
     default_dict, _var = _find_var(n, var)
-    default_dict[_var] = val
+    if default_dict isa Dict{Num,Function} && val isa Number
+        # control var constant replace by constant function
+        default_dict[_var] = (t -> val)
+    else
+        default_dict[_var] = val
+    end
 end
 
 function _find_var(n::AbstractNode, var)

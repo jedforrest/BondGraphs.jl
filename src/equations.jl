@@ -62,13 +62,13 @@ function get_connection_eq(b::Bond,subsystems)
     connect(src_port, dst_port)
 end
 
-# register_control_function!(u_fun) = @eval @register_symbolic $(Symbol(u_fun))(t)
-function register_control_function!(u_fun)
-    @eval begin
-        @register_symbolic Main.$(Symbol(u_fun))(t)
-        return Main.$(Symbol(u_fun))(t)
-    end
-end
+# # register_control_function!(u_fun) = @eval @register_symbolic $(Symbol(u_fun))(t)
+# function register_control_function!(u_fun)
+#     @eval begin
+#         @register_symbolic Main.$(Symbol(u_fun))(t)
+#         return Main.$(Symbol(u_fun))(t)
+#     end
+# end
 
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
@@ -77,23 +77,15 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     @variables E[1:N](t) F[1:N](t)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
-
-    u_sub_rules = Dict()
-    for u in controls(n)
-        u_fun = n.controls[u]
-        # register_control_function!(u_fun)
-        u_sub_rules[u] = register_control_function!(u_fun)
-        # u_sub_rules[u] = @eval $(Symbol(u_fun))(t)
-    end
-    # register_control_function!(n)
-    # u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
+    u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
 
     sub_rules = merge(e_sub_rules, f_sub_rules, u_sub_rules)
     eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
-    p_ctrl = [parameters(n); controls(n)]
+    # controls must be a subset of parameters
+    params = [parameters(n); controls(n)]
 
-    sys = ODESystem(eqs, t, states(n), p_ctrl;
+    sys = ODESystem(eqs, t, states(n), params;
         name=n.name, defaults=defaults(n), controls=controls(n))
     return compose(sys, ps...)
 end

@@ -73,8 +73,7 @@ I_dict = Dict(
 )
 
 # Source of effort (:Se)
-es(t) = 1.0 # default constant
-@register es(t)
+@parameters es(t)
 Se_dict = Dict(
     :description => """
     Effort Source
@@ -83,26 +82,12 @@ Se_dict = Dict(
     """,
     :numports => 1,
     :controls => Dict(
-        :es => es
+        es => (t -> 1.0)
     ),
-    :equations => [0 ~ es(t) - E[1]],
+    :equations => [0 ~ es - E[1]],
 )
 
 # Source of flow (:Sf)
-# fs(t) = 1.0 # default constant
-# @register fs(t)
-# Sf_dict = Dict(
-#     :description => """
-#     Flow Source
-#     f = fₛ
-#     fₛ: Flow (source) [1.0]
-#     """,
-#     :numports => 1,
-#     :controls => Dict(
-#         :fs => fs
-#     ),
-#     :equations => [0 ~ fs(t) - F[1]],
-# )
 @parameters fs(t)
 Sf_dict = Dict(
     :description => """
@@ -114,9 +99,6 @@ Sf_dict = Dict(
     :controls => Dict(
         fs => (t -> 1.0)
     ),
-    # :controls => (
-    #     :(fs(t) = 1.0),
-    # ),
     :equations => [0 ~ fs - F[1]],
 )
 

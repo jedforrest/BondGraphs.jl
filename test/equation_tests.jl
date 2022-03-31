@@ -38,12 +38,12 @@ end
     @test iszero(parameters(tf) - [n])
 
     Ce = Component(:Ce)
-    @parameters k R T
-    @test iszero(parameters(Ce) - [k, R, T])
+    @parameters K R T
+    @test iszero(parameters(Ce) - [T, R, K])
 
     Re = Component(:Re)
     @parameters r R T
-    @test iszero(parameters(Re) - [r, R, T])
+    @test iszero(parameters(Re) - [T, R, r])
 
     bg = RLC()
     @parameters C L R

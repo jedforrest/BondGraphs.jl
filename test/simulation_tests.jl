@@ -98,7 +98,7 @@ end
 
 @testset "π-filter" begin
     Se = Component(:Se, :Pin)
-    set_default!(Se, :e, 1)
+    set_default!(Se, :es, 1)
 
     Pa = EqualEffort(name=:Pa)
     fa = EqualFlow(name=:fa)
@@ -196,77 +196,47 @@ end
     end
 end
 
-# @testset "Driven Filter Circuit" begin
-model = BondGraph("RC")
-C = Component(:C)
-R = Component(:R)
-zero_law = EqualEffort()
-C, R, zero_law
-add_node!(model, [C, R, zero_law])
-connect!(model, R, zero_law)
-connect!(model, C, zero_law)
-set_default!(C, :C, 1.0)
-set_default!(R, :R, 1.0)
+@testset "Driven Filter Circuit" begin
+    model = BondGraph("RC")
+    C = Component(:C)
+    R = Component(:R)
+    zero_law = EqualEffort()
+    C, R, zero_law
+    add_node!(model, [C, R, zero_law])
+    connect!(model, R, zero_law)
+    connect!(model, C, zero_law)
+    set_default!(C, :C, 1.0)
+    set_default!(R, :R, 1.0)
 
-# forcing function
-f(t) = -sin(2t)
-# f(t) = t <= 1 ? -1 : 0
-Sf = Component(:Sf)
-add_node!(model, Sf)
-connect!(model, Sf, zero_law)
+    # Source of flow in the model
+    Sf = Component(:Sf)
+    add_node!(model, Sf)
+    connect!(model, Sf, zero_law)
 
-hh(t) = t % 1 <= 0.5 ? 2 : 0
+    # Simulation parameters
+    tspan = (0.0, 5.0)
+    u0 = [1]
 
-set_default!(Sf, :fs, hh)
-
-tspan = (0.0, 5.0)
-u0 = [1]
-
-sys = ODESystem(model, simplify_eqs=true)
-constitutive_relations(model)
-
-sol = simulate(model, tspan; u0)
-
-using Plots
-plot(sol)
-# end
-
-p = plot();
-for i in 1:4
-    f(t) = -cos(i * t)
+    # Case 1: constant forcing funciton
+    set_default!(Sf, :fs, -3)
+    ODESystem(model)
+    constitutive_relations(model)
     sol = simulate(model, tspan; u0)
-    plot!(p, sol)
+    @test isapprox(sol[end], [2.98651], atol=1e-5)
+
+    # Case 2: regular forcing function
+    f(t) = -sin(2t)
+    set_default!(Sf, :fs, f)
+    sol = simulate(model, tspan; u0)
+    @test isapprox(sol[end], [0.23625], atol=1e-5)
+
+    # @register_symbolic needs to be called at the top level
+    # Therefore this test fails, despite the code working in REPL
+    
+    # Case 3: arbitrary forcing function
+    # g(t) = t % 1 <= 0.5 ? 2 : 0
+    # @register_symbolic g(t)
+    # set_default!(Sf, :fs, g)
+    # sol = simulate(model, tspan; u0)
+    # @test isapprox(sol[end], [-0.70709], atol=1e-5)
 end
-plot(p)
-
-@variables t
-
-u_sub_rules = Dict()
-for u in controls(Sf)
-    # u_fun(t) = Sf.controls[u](t)
-    println(Sf.controls[u])
-    @register_symbolic (Sf.controls[u])(t)
-    u_sub_rules[u] = u_fun
-end
-u_sub_rules = Dict(u => Sf.controls[u](t) for u in controls(Sf))
-
-u = controls(Sf)[1]
-uu(t) = Sf.controls[u](t)
-
-@register_symbolic eval( quote $(Symbol(Sf.controls[u]))(t) end)
-
-uu(1)
-h(t) = (t <= 1) ? 1 : 0
-@register_symbolic
-
-@eval $(Symbol(Sf.controls[u]))(t)
-
-@eval $(Sf.controls[u])(t)
-
-u_sub_rules = Dict(u => Sf.controls[u](t) for u in controls(Sf))
-
-Sf.controls[u]
-
-@eval @register_symbolic Main.$(Symbol(Sf.controls[u]))(t)
-
-sys
