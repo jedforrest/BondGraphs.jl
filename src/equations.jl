@@ -62,14 +62,6 @@ function get_connection_eq(b::Bond,subsystems)
     connect(src_port, dst_port)
 end
 
-# # register_control_function!(u_fun) = @eval @register_symbolic $(Symbol(u_fun))(t)
-# function register_control_function!(u_fun)
-#     @eval begin
-#         @register_symbolic Main.$(Symbol(u_fun))(t)
-#         return Main.$(Symbol(u_fun))(t)
-#     end
-# end
-
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
@@ -137,4 +129,16 @@ function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :d
         prob = ODAEProblem(sys, u0, tspan, pmap)
     end
     return solve(prob; kwargs...)
+end
+
+
+# Custom post-processing of latex display for equations
+function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
+    # invoke the original method to get the old LaTeX string
+    ltx = latexify(x)
+
+    ltx = replace(ltx, r"(.){\\_\+}(.)" => s"\2_{\1}")
+    ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
+
+    print(io, ltx)
 end

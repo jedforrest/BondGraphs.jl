@@ -13,6 +13,7 @@ using OrderedCollections
 using Setfield
 using Catalyst
 using RecipesBase, GraphRecipes
+using Latexify
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 SourceSensor, Port, Bond, BondGraph, BondGraphNode,
