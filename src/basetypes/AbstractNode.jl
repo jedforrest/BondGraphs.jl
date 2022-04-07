@@ -143,6 +143,8 @@ function _find_var(n::AbstractNode, var)
     _, x = @variables t, $var(t)
     if string(p) in string.(parameters(n))
         return n.parameters, p
+    elseif string(p) in string.(globals(n))
+        return n.globals, GlobalScope(p)
     elseif string(x) in string.(states(n))
         return n.states, x
     elseif string(x) in string.(controls(n))

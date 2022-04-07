@@ -77,9 +77,9 @@ end
     c = Component(:C)
     @parameters fs(t) es(t)
 
-    @test controls(se) == [es]
-    @test controls(sf) == [fs]
-    @test controls(c) == Num[]
+    @test isequal(controls(se), [es])
+    @test isequal(controls(sf), [fs])
+    @test isequal(controls(c), Num[])
 end
 
 @testset "Constitutive relations" begin
