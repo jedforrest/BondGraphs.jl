@@ -7,24 +7,28 @@ struct Component{N} <: AbstractNode
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
     parameters::Dict{Num,Number}
+    globals::Dict{Num,Number}
     states::Dict{Num,Number}
     controls::Dict{Num,Function}
     equations::Vector{Equation}
-    function Component{N}(t, n, v, p, x, c, eq) where {N}
-        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, x, c, eq)
+    function Component{N}(t, n, v, p, g, x, c, eq) where {N}
+        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, g, x, c, eq)
     end
 end
 
 function Component(type, name=type; vertex::Int=0, library=BondGraphs.DEFAULT_LIBRARY,
-    comp_dict=haskey(library, type) ? library[type] : Dict(),
-    numports::Int=haskey(comp_dict, :numports) ? comp_dict[:numports] : 1,
-    parameters=haskey(comp_dict, :parameters) ? comp_dict[:parameters] : Dict(),
-    states=haskey(comp_dict, :states) ? comp_dict[:states] : Dict(),
-    controls=haskey(comp_dict, :controls) ? comp_dict[:controls] : Dict(),
-    equations=haskey(comp_dict, :equations) ? comp_dict[:equations] : Equation[])
+    comp_dict = _set_comp_def(library, type),
+    numports::Int = _set_comp_def(comp_dict, :numports, 1),
+    parameters = _set_comp_def(comp_dict, :parameters),
+    globals = _set_comp_def(comp_dict, :globals),
+    states = _set_comp_def(comp_dict, :states),
+    controls = _set_comp_def(comp_dict, :controls),
+    equations = _set_comp_def(comp_dict, :equations, Equation[]))
 
-    Component{numports}(type, name, vertex, copy(parameters), copy(states), copy(controls), equations)
+    Component{numports}(type, name, vertex, copy(parameters), copy(globals), copy(states), copy(controls), equations)
 end
+
+_set_comp_def(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
 
 # Source-sensor
 struct SourceSensor <: AbstractNode
@@ -94,6 +98,11 @@ parameters(n::AbstractNode) = collect(keys(n.parameters))
 parameters(::Junction) = Num[]
 parameters(::SourceSensor) = Num[]
 
+# Globals
+globals(n::AbstractNode) = collect(keys(n.globals))
+globals(::Junction) = Num[]
+globals(::SourceSensor) = Num[]
+
 # State variables
 states(n::AbstractNode) = collect(keys(n.states))
 states(::Junction) = Num[]
@@ -110,7 +119,7 @@ equations(::Junction) = Equation[]
 equations(::SourceSensor) = Equation[]
 
 # Defaults
-defaults(n::AbstractNode) = merge(n.parameters, n.states, n.controls)
+defaults(n::AbstractNode) = merge(n.parameters, n.globals, n.states, n.controls)
 defaults(::Junction) = Dict{Num,Any}()
 defaults(::SourceSensor) = Dict{Num,Any}()
 

@@ -19,7 +19,7 @@ export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 SourceSensor, Port, Bond, BondGraph, BondGraphNode,
 
 type, name, freeports, numports, weights, vertex, set_vertex!,
-parameters, states, controls, constitutive_relations,
+parameters, globals, states, controls, constitutive_relations,
 get_default, set_default!,
 
 srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,

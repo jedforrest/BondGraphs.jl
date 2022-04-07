@@ -75,7 +75,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
     # controls must be a subset of parameters
-    params = [parameters(n); controls(n)]
+    params = [parameters(n); controls(n); globals(n)]
 
     sys = ODESystem(eqs, t, states(n), params;
         name=n.name, defaults=defaults(n), controls=controls(n))
@@ -134,10 +134,9 @@ end
 
 # Custom post-processing of latex display for equations
 function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
-    # invoke the original method to get the old LaTeX string
     ltx = latexify(x)
 
-    ltx = replace(ltx, r"(.){\\_\+}(.)" => s"\2_{\1}")
+    ltx = replace(ltx, r"(\w+){\\_\+}(\w+)" => s"\2_{\1}")
     ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
 
     print(io, ltx)

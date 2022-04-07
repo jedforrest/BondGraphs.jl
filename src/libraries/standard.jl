@@ -4,6 +4,15 @@ using ModelingToolkit
 
 export standard_library
 
+# Schema Explanation
+# :description -> written description of the component: name, equation, parameter and variable definitions
+# :numports -> the number of ports the component has (fixed)
+# :parameters -> constant parameters, unique for each component instance (will have a namespace)
+# :globals -> global parameters (no namespace in the model)
+# :states -> time-dependent state variables
+# :controls -> time-dependent parameters, can accept an arbitrary julia function (can also remain constant)
+# :equations -> symbolic description of the constitutive equations
+
 @parameters t
 D = Differential(t)
 

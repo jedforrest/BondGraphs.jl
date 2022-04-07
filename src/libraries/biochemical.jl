@@ -7,13 +7,17 @@ export biochemical_library
 const _R = 8.314
 const _T = 310.0
 
+# GlobalScope parameters do not have a namespace
+@parameters R T
+R, T = GlobalScope(R), GlobalScope(T)
+
 @parameters t
 D = Differential(t)
 
 @variables E[1:2](t) F[1:2](t)
 
 # Chemical species (:Ce)
-@parameters K R T
+@parameters K #R T
 @variables q(t)
 Ce_dict = Dict(
     :description => """
@@ -27,7 +31,9 @@ Ce_dict = Dict(
     """,
     :numports => 1,
     :parameters => Dict(
-        K => 1.0,
+        K => 1.0
+    ),
+    :globals => Dict(
         R => _R,
         T => _T
     ),
@@ -65,7 +71,7 @@ ce_dict = Dict(
 )
 
 # Chemical reaction (:Re)
-@parameters r R T
+@parameters r #R T
 Re_dict = Dict(
     :description => """
     Biochemical reaction
@@ -77,7 +83,9 @@ Re_dict = Dict(
     """,
     :numports => 2,
     :parameters => Dict(
-        r => 1.0,
+        r => 1.0
+    ),
+    :globals => Dict(
         R => _R,
         T => _T
     ),
@@ -98,7 +106,7 @@ re_dict = Dict(
     """,
     :numports => 2,
     :parameters => Dict(
-        r => 1.
+        r => 1.0
     ),
     :equations => [
         0 ~ F[1] + F[2],

@@ -232,11 +232,28 @@ end
 
     # @register_symbolic needs to be called at the top level
     # Therefore this test fails, despite the code working in REPL
-    
+
     # Case 3: arbitrary forcing function
     # g(t) = t % 1 <= 0.5 ? 2 : 0
     # @register_symbolic g(t)
     # set_default!(Sf, :fs, g)
     # sol = simulate(model, tspan; u0)
     # @test isapprox(sol[end], [-0.70709], atol=1e-5)
+end
+
+@testset "Simple Biochemical Simulation" begin
+    abc = @reaction_network ABC begin
+        1, A + B --> C
+    end
+
+    bg_abc = BondGraph(abc)
+
+    sys = ODESystem(bg_abc)
+    eqs = constitutive_relations(bg_abc)
+
+    tspan = (0.0, 3.0)
+    u0 = [1, 2, 3]
+    sol = simulate(bg_abc, tspan; u0)
+
+    @test isapprox(sol[end], [1.23606, 2.23606, 2.76393], atol=1e-5)
 end

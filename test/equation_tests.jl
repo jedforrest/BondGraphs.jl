@@ -5,7 +5,7 @@ function RLC()
     r = Component(:R)
     l = Component(:I)
     c = Component(:C)
-    kvl = EqualEffort(name = :kvl)
+    kvl = EqualEffort(name=:kvl)
 
     bg = BondGraph()
     add_node!(bg, [c, l, kvl, r])
@@ -38,16 +38,21 @@ end
     @test iszero(parameters(tf) - [n])
 
     Ce = Component(:Ce)
-    @parameters K R T
-    @test iszero(parameters(Ce) - [T, R, K])
-
-    Re = Component(:Re)
-    @parameters r R T
-    @test iszero(parameters(Re) - [T, R, r])
+    @parameters K
+    @test iszero(parameters(Ce) - [K])
 
     bg = RLC()
     @parameters C L R
     @test iszero(parameters(bg) - [C, L, R])
+end
+
+@testset "Globals" begin
+    re = Component(:Re)
+    c = Component(:C)
+    @parameters R T
+
+    @test iszero(globals(re) - [T, R])
+    @test globals(c) == Num[]
 end
 
 @testset "State variables" begin
@@ -66,6 +71,17 @@ end
     @test iszero(states(bg) - [q, p])
 end
 
+@testset "Controls" begin
+    se = Component(:Se)
+    sf = Component(:Sf)
+    c = Component(:C)
+    @parameters fs(t) es(t)
+
+    @test controls(se) == [es]
+    @test controls(sf) == [fs]
+    @test controls(c) == Num[]
+end
+
 @testset "Constitutive relations" begin
     eqE = EqualEffort()
     eqF = EqualFlow()
@@ -81,13 +97,13 @@ end
     cr1 = D(q) ~ -(q / C) / R + (-p) / L
     cr2 = D(p) ~ q / C
 
-    @test isequal(cr_bg[1].lhs,cr1.lhs)
-    @test isequal(simplify(cr_bg[1].rhs-cr1.rhs), 0)
+    @test isequal(cr_bg[1].lhs, cr1.lhs)
+    @test isequal(simplify(cr_bg[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bg[2], cr2)
 
     cr_bgn = constitutive_relations(BondGraphNode(bg))
-    @test isequal(cr_bgn[1].lhs,cr1.lhs)
-    @test isequal(simplify(cr_bgn[1].rhs-cr1.rhs), 0)
+    @test isequal(cr_bgn[1].lhs, cr1.lhs)
+    @test isequal(simplify(cr_bgn[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bgn[2], cr2)
 end
 
@@ -164,8 +180,8 @@ end
     eqs = constitutive_relations(bg)
     sys = ODESystem(bg)
     x = sys.states[1]
-    (R,L) = sys.ps
-    @test eqs == [D(x) ~ -R*x/L]
+    (R, L) = sys.ps
+    @test eqs == [D(x) ~ -R * x / L]
 end
 
 @testset "RLC circuit" begin
@@ -179,7 +195,7 @@ end
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
-    @test isequal(simplify(eqs[1].rhs-e1.rhs), 0)
+    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
@@ -190,8 +206,8 @@ end
     bg = BondGraph()
 
     add_node!(bg, [A, B, re])
-    connect!(bg, A, re; dstportindex = 1)
-    connect!(bg, re, B; srcportindex = 2)
+    connect!(bg, A, re; dstportindex=1)
+    connect!(bg, re, B; srcportindex=2)
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
 
@@ -216,13 +232,13 @@ end
 
     bg = BondGraph()
     add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
-    connect!(bg, C_A, re1; dstportindex = 1)
-    connect!(bg, re1, BC; srcportindex = 2)
+    connect!(bg, C_A, re1; dstportindex=1)
+    connect!(bg, re1, BC; srcportindex=2)
     connect!(bg, BC, C_B)
     connect!(bg, BC, common_C)
     connect!(bg, common_C, C_C)
-    connect!(bg, common_C, re2; dstportindex = 1)
-    connect!(bg, re2, C_D; srcportindex = 2)
+    connect!(bg, common_C, re2; dstportindex=1)
+    connect!(bg, re2, C_D; srcportindex=2)
 
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
