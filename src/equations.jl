@@ -136,8 +136,10 @@ end
 function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
     ltx = latexify(x)
 
+    # _+ becomes ₊
+    ltx = replace(ltx, r"{\\_\+}" => s"_+")
     # dX₊q(t) becomes dqₓ(t)
-    ltx = replace(ltx, r"([^d\W]+){\\_\+}(\w+)" => s"\2_{\1}")
+    # ltx = replace(ltx, r"([^d\W]+){\\_\+}(\w+)" => s"\2_{\1}")
     # \mathrm{...} is removed
     ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
 

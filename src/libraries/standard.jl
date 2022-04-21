@@ -108,7 +108,7 @@ Sf_dict = Dict(
     :controls => Dict(
         fs => (t -> 1.0)
     ),
-    :equations => [0 ~ fs - F[1]],
+    :equations => [0 ~ fs + F[1]],
 )
 
 # Transformer (:TF)
