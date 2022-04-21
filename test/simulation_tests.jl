@@ -218,14 +218,14 @@ end
     u0 = [1]
 
     # Case 1: constant forcing funciton
-    set_default!(Sf, :fs, -3)
+    set_default!(Sf, :fs, 3)
     ODESystem(model)
     constitutive_relations(model)
     sol = simulate(model, tspan; u0)
     @test isapprox(sol[end], [2.98651], atol=1e-5)
 
     # Case 2: regular forcing function
-    f(t) = -sin(2t)
+    f(t) = sin(2t)
     set_default!(Sf, :fs, f)
     sol = simulate(model, tspan; u0)
     @test isapprox(sol[end], [0.23625], atol=1e-5)
