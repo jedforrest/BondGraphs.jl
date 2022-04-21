@@ -35,15 +35,15 @@ end
 @testset "Parameters" begin
     tf = Component(:TF)
     @parameters n
-    @test iszero(parameters(tf) - [n])
+    @test iszero(parameters(tf) .- [n])
 
     Ce = Component(:Ce)
     @parameters K
-    @test iszero(parameters(Ce) - [K])
+    @test iszero(parameters(Ce) .- [K])
 
     bg = RLC()
     @parameters C L R
-    @test iszero(parameters(bg) - [C, L, R])
+    @test iszero(parameters(bg) .- [C, L, R])
 end
 
 @testset "Globals" begin
@@ -51,7 +51,8 @@ end
     c = Component(:C)
     @parameters R T
 
-    @test iszero(globals(re) - [T, R])
+    @test iszero(globals(re) .- [T, R])
+    # re_globals = globals(re)
     @test globals(c) == Num[]
 end
 
@@ -80,6 +81,10 @@ end
     @test isequal(controls(se), [es])
     @test isequal(controls(sf), [fs])
     @test isequal(controls(c), Num[])
+
+    bg = RLC()
+    add_node!(bg, [se, sf])
+    @test isequal(controls(bg), [es, fs])
 end
 
 @testset "Constitutive relations" begin
