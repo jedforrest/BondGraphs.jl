@@ -1,4 +1,4 @@
-@parameters t
+@variables t
 
 # New simplification rules
 exponent_rules = [
@@ -64,16 +64,21 @@ end
 
 function ModelingToolkit.ODESystem(n::AbstractNode)
     N = numports(n)
-    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
+    ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
 
     @variables E[1:N](t) F[1:N](t)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
-    sub_rules = merge(e_sub_rules, f_sub_rules)
+    u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
+
+    sub_rules = merge(e_sub_rules, f_sub_rules, u_sub_rules)
     eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
-    sys = ODESystem(eqs, t, states(n), parameters(n);
-        name = n.name, defaults = defaults(n))
+    # controls must be a subset of parameters
+    params = [parameters(n); controls(n); globals(n)]
+
+    sys = ODESystem(eqs, t, states(n), params;
+        name=n.name, defaults=defaults(n), controls=controls(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
@@ -124,4 +129,19 @@ function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :d
         prob = ODAEProblem(sys, u0, tspan, pmap)
     end
     return solve(prob; kwargs...)
+end
+
+
+# Custom post-processing of latex display for equations
+function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
+    ltx = latexify(x)
+
+    # _+ becomes ₊
+    ltx = replace(ltx, r"{\\_\+}" => s"_+")
+    # dX₊q(t) becomes dqₓ(t)
+    # ltx = replace(ltx, r"([^d\W]+){\\_\+}(\w+)" => s"\2_{\1}")
+    # \mathrm{...} is removed
+    ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
+
+    print(io, ltx)
 end

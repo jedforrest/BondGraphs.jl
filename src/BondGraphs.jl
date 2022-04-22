@@ -2,7 +2,8 @@ module BondGraphs
 
 import Graphs as g
 import Base: RefValue, eltype, show, in, iterate, ==, getproperty
-import ModelingToolkit: parameters, states, equations # Importing means names can be reused, but may be confusing
+# Importing means names can be reused, but may be confusing later
+import ModelingToolkit: parameters, states, equations, controls
 
 using StaticArrays
 using ModelingToolkit
@@ -12,20 +13,21 @@ using OrderedCollections
 using Setfield
 using Catalyst
 using RecipesBase, GraphRecipes
+using Latexify
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 SourceSensor, Port, Bond, BondGraph, BondGraphNode,
 
 type, name, freeports, numports, weights, vertex, set_vertex!,
-parameters, states, defaults, constitutive_relations,
-get_parameter, set_parameter!, get_initial_value, set_initial_value!,
+parameters, globals, states, controls, constitutive_relations,
+get_default, set_default!,
 
 srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
 
 add_node!, remove_node!, connect!, disconnect!, 
 swap!, insert_node!, merge_nodes!, simplify_junctions!, expose,
 
-simulate, addlibrary!
+simulate, addlibrary!, description
 
 # Component libraries
 include("libraries/biochemical.jl")

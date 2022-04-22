@@ -1,32 +1,34 @@
-authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
 name = "BondGraphs"
 uuid = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
+authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
 version = "0.1.0"
-
-[compat]
-Catalyst = "10"
-DifferentialEquations = "7"
-GraphRecipes = "0.5"
-Graphs = "1"
-ModelingToolkit = "8.5"
-OrderedCollections = "1"
-RecipesBase = "1"
-Setfield = "0.8"
-StaticArrays = "1"
-SymbolicUtils = "0.19"
-julia = "1"
 
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
+
+[compat]
+Catalyst = "10"
+DifferentialEquations = "7"
+GraphRecipes = "0.5"
+Graphs = "1"
+Latexify = "0.15"
+ModelingToolkit = "8"
+OrderedCollections = "1"
+RecipesBase = "1"
+Setfield = "0.8"
+StaticArrays = "1"
+SymbolicUtils = "0.19"
+julia = "1"
 
 [extras]
 CPUSummary = "2a0fbf3d-bb9c-48f3-b0a9-814d99fd7ab9"
