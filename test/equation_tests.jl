@@ -198,7 +198,7 @@ end
 @testset "RLC circuit" begin
     bg = RLC()
     eqs = constitutive_relations(bg)
-    @test_broken length(eqs) == 2
+    @test length(eqs) == 2
 
     sys = ODESystem(bg)
     (C, L, R) = sys.ps
@@ -206,7 +206,7 @@ end
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
-    @test_broken isequal(simplify(eqs[1].rhs - e1.rhs), 0)
+    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
