@@ -80,7 +80,7 @@ end
     connect!(bg, bgn1, bgn2)
 
     eqs = constitutive_relations(bg)
-    @test_broken length(eqs) == 2
+    @test length(eqs) == 2
 
     sys = ODESystem(bg)
     (R, C, L) = sys.ps
@@ -89,7 +89,7 @@ end
     e2 = D(pL) ~ qC / C
 
     @test isequal(eqs[1].lhs, e1.lhs)
-    @test_broken isequal(simplify(eqs[1].rhs - e1.rhs), 0)
+    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
     @test isequal(eqs[2].lhs, e2.lhs)
     @test isequal(eqs[2].rhs, e2.rhs)
 end

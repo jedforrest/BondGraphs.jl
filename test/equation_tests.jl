@@ -16,6 +16,9 @@ function RLC()
     return bg
 end
 
+# cannot use standard notation "var in array" for MTK vars
+var_in(var, array) = any(iszero.(var .- array))
+
 @testset "Equations" begin
     c = Component(:C)
     @parameters C
@@ -35,15 +38,17 @@ end
 @testset "Parameters" begin
     tf = Component(:TF)
     @parameters n
-    @test iszero(parameters(tf) .- [n])
+    @test var_in(n, parameters(tf))
 
     Ce = Component(:Ce)
     @parameters K
-    @test iszero(parameters(Ce) .- [K])
+    @test var_in(K, parameters(Ce))
 
     bg = RLC()
     @parameters C L R
-    @test iszero(parameters(bg) .- [C, L, R])
+    for var in [C, L, R]
+        @test var_in(var, parameters(bg))
+    end
 end
 
 @testset "Globals" begin
@@ -51,8 +56,8 @@ end
     c = Component(:C)
     @parameters R T
 
-    @test iszero(globals(re) .- [T, R])
-    # re_globals = globals(re)
+    @test var_in(T, globals(re))
+    @test var_in(R, globals(re))
     @test globals(c) == Num[]
 end
 
@@ -69,7 +74,8 @@ end
 
     bg = RLC()
     @variables q(t) p(t)
-    @test iszero(states(bg) - [q, p])
+    @test var_in(q, states(bg))
+    @test var_in(p, states(bg))
 end
 
 @testset "Controls" begin
@@ -103,12 +109,12 @@ end
     cr2 = D(p) ~ q / C
 
     @test isequal(cr_bg[1].lhs, cr1.lhs)
-    @test_broken isequal(simplify(cr_bg[1].rhs - cr1.rhs), 0)
+    @test isequal(simplify(cr_bg[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bg[2], cr2)
 
     cr_bgn = constitutive_relations(BondGraphNode(bg))
     @test isequal(cr_bgn[1].lhs, cr1.lhs)
-    @test_broken isequal(simplify(cr_bgn[1].rhs - cr1.rhs), 0)
+    @test isequal(simplify(cr_bgn[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bgn[2], cr2)
 end
 
@@ -164,7 +170,7 @@ end
 
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
-    @test_broken length(eqs) == 1
+    @test length(eqs) == 1
 
     (C, R) = sys.ps
     x = sys.states[1]
@@ -172,7 +178,7 @@ end
     e2 = D(x) ~ -x / C / R
 
     @test isequal(e1.lhs, e2.lhs)
-    @test_broken isequal(expand(e1.rhs), e2.rhs)
+    @test isequal(expand(e1.rhs), e2.rhs)
 end
 
 @testset "RL circuit" begin
