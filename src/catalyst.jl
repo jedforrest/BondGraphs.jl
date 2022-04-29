@@ -11,7 +11,7 @@ function BondGraph(rs::ReactionSystem; chemostats=[])
             continue
         end
 
-        Re = Component(:Re, Symbol("R$reaction_num"), numports=2)
+        Re = Component(:Re, Symbol("R$reaction_num"))
         add_node!(bg, Re)
         _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats)
         _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats)
@@ -41,29 +41,37 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
     if length(species) > 1
         one_junction = EqualFlow()
         add_node!(bg, one_junction)
-
+    
         for (i, spcs) in enumerate(species_names)
             comp = spcs in chemostats ? Component(:Se, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
             add_node!(bg, comp)
             connect!(bg, comp, one_junction)
-
-            if stoich[i] != 1
-                tf = Component(:TF, Symbol("$(stoich[i])"), numports=2)
+    
+            n = stoich[i]
+            if n != 1
+                tf = Component(:TF, Symbol("TF$n"))
+                set_default!(tf, :n, n)
                 insert_node!(bg, (comp, one_junction), tf)
             end
         end
-
+    
         connect!(bg, one_junction, Re)
     else
         spcs = species_names[1]
-        comp = spcs in chemostats ? Component(:Se,  Symbol(spcs)) : Component(:Ce,  Symbol(spcs))
+        comp = spcs in chemostats ? Component(:Se, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
         add_node!(bg, comp)
         connect!(bg, comp, Re)
-
-        if stoich[1] != 1
-            tf = Component(:TF, Symbol("$(stoich[1])"), numports=2)
+    
+        n = stoich[1]
+        if n != 1
+            tf = Component(:TF, Symbol("TF$n"))
+            set_default!(tf, :n, n)
             insert_node!(bg, (comp, Re), tf)
         end
+        # if stoich[1] != 1
+        #     tf = Component(:TF, Symbol("$(stoich[1])"), numports=2)
+        #     insert_node!(bg, (comp, Re), tf)
+        # end
     end
 end
 

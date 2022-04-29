@@ -8,7 +8,7 @@
     @test bg_rn.name == :ABC
     @test nv(bg_rn) == 5
     @test ne(bg_rn) == 4
-    
+
     @test any(n -> n.name == :R1, bg_rn.nodes)
     @test any(n -> n isa EqualFlow && name(n) == Symbol("1"), bg_rn.nodes)
 
@@ -49,7 +49,7 @@ end
 
     @test nv(bg_rn) == 8
     @test ne(bg_rn) == 7
-    
+
     tfs = getnodes(bg_rn, :TF)
     @test length(tfs) == 3
     @test repr.(tfs) == ["TF:3", "TF:2", "TF:5"]
@@ -67,7 +67,7 @@ end
         (1, 1), P9 <--> P10 + H
         (1, 1), P10 <--> P1 + Pi
     end
-    
+
     chemostats = ["MgATP", "MgADP", "Pi", "H", "Cai", "Casr"]
     bg_rn = BondGraph(rn; chemostats)
 
