@@ -16,109 +16,117 @@ D = Differential(t)
 
 @variables E[1:2](t) F[1:2](t)
 
-# Chemical species (:Ce)
-@parameters K #R T
+# Chemical species (Ce)
+@parameters K
 @variables q(t)
-Ce_dict = Dict(
-    :description => """
+Ce_tuple = (
+    description="""
     Chemical species
     e = R*T*log(K*q)
     dq/dt = f
-    K: Biochemical Constant; exp(mu_0/RT)/V [1.0],
-    R: Universal Gas Constant [8.314],
-    T: Temperature [310]
-    q: Molar quantity [0.0]
+    K Biochemical Constant; exp(mu_0/RT)/V [1.0],
+    R Universal Gas Constant [8.314],
+    T Temperature [310]
+    q Molar quantity [0.0]
     """,
-    :numports => 1,
-    :parameters => Dict(
-        K => 1.0
+    numports=1,
+    variables=(
+        parameters=(
+            K = 1.0
+        ),
+        globals=(
+            R=_R,
+            T=_T
+        ),
+        states=(
+            q = 0.0
+        )
     ),
-    :globals => Dict(
-        R => _R,
-        T => _T
-    ),
-    :states => Dict(
-        q => 0.0
-    ),
-    :equations => [
+    equations=[
         0 ~ R * T * log(K * q) - E[1],
         D(q) ~ F[1]
     ],
 )
 
-# Normalised chemical species (:ce)
+# Normalised chemical species (ce)
 @parameters K
 @variables q(t)
-ce_dict = Dict(
-    :description => """
+ce_tuple = (
+    description="""
     Chemical species (normalised)
     e = log(K*q)
     dq/dt = f
-    K: Biochemical Constant; exp(mu_0/RT)/V [1.0],
-    q: Molar quantity [0.0]
+    K Biochemical Constant; exp(mu_0/RT)/V [1.0],
+    q Molar quantity [0.0]
     """,
-    :numports => 1,
-    :parameters => Dict(
-        K => 1.0
+    numports=1,
+    variables=(
+        parameters=(
+            K = 1.0
+        ),
+        states=(
+            q = 0.0
+        ),
     ),
-    :states => Dict(
-        q => 0.0
-    ),
-    :equations => [
+    equations=[
         0 ~ log(K * q) - E[1],
         D(q) ~ F[1]
     ],
 )
 
-# Chemical reaction (:Re)
-@parameters r #R T
-Re_dict = Dict(
-    :description => """
+# Chemical reaction (Re)
+@parameters r
+Re_tuple = (
+    description="""
     Biochemical reaction
     f₁ + f₂ = 0
     f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
-    r: Reaction rate [1.0]
-    R: Universal Gas Constant [8.314],
-    T: Temperature [310]
+    r Reaction rate [1.0]
+    R Universal Gas Constant [8.314],
+    T Temperature [310]
     """,
-    :numports => 2,
-    :parameters => Dict(
-        r => 1.0
+    numports=2,
+    variables=(
+        parameters=(
+            r = 1.0
+        ),
+        globals=(
+            R=_R,
+            T=_T
+        ),
     ),
-    :globals => Dict(
-        R => _R,
-        T => _T
-    ),
-    :equations => [
+    equations=[
         0 ~ F[1] + F[2],
         0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
     ],
 )
 
-# Normalised chemical reaction (:re)
+# Normalised chemical reaction (re)
 @parameters r
-re_dict = Dict(
-    :description => """
+re_tuple = (
+    description="""
     Biochemical reaction (normalised)
     f₁ + f₂ = 0
     f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
-    r: Reaction rate [1.0]
+    r Reaction rate [1.0]
     """,
-    :numports => 2,
-    :parameters => Dict(
-        r => 1.0
+    numports=2,
+    variables=(
+        parameters=(
+            r = 1.0
+        ),
     ),
-    :equations => [
+    equations=[
         0 ~ F[1] + F[2],
         0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
     ],
 )
 
 const biochemical_library = Dict(
-    :Ce => Ce_dict,
-    :ce => ce_dict,
-    :Re => Re_dict,
-    :re => re_dict
+    :Ce => Ce_tuple,
+    :ce => ce_tuple,
+    :Re => Re_tuple,
+    :re => re_tuple
 )
 
 end
