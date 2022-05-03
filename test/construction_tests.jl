@@ -1,4 +1,4 @@
-function RCI(name = :RCI)
+function RCI(name=:RCI)
     model = BondGraph(name)
     C = Component(:C)
     R = Component(:R)
@@ -13,6 +13,32 @@ function RCI(name = :RCI)
     connect!(model, zero_law, SS)
 
     model
+end
+
+@testset "Creating Components" begin
+    C = Component(:C)
+    @test type(C) == :C
+    @test name(C) == :C
+
+    R = Component(:R, "newR")
+    @test type(R) == :R
+    @test name(R) == :newR
+
+    I = Component(:I; L=5)
+    @test I.L == 5
+
+    C2 = Component(:C; q=2)
+    @test C2.q == 2
+end
+
+@testset "Creating Junctions" begin
+    EqE_1 = EqualEffort(name="foo")
+    EqE_2 = EqualEffort()
+    EqF = EqualFlow()
+
+    @test name(EqE_1) == :foo
+    @test name(EqE_2) == :EqE2
+    @test name(EqF) == :EqF1
 end
 
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
@@ -101,7 +127,7 @@ end
     B = Component(:C, :B)
     C = Component(:C, :C)
     D = Component(:C, :D)
-    Re = Component(:Re, :Reaction, numports = 2)
+    Re = Component(:Re, :Reaction, numports=2)
     J_AB = EqualFlow()
     J_CD = EqualFlow()
 
@@ -115,13 +141,13 @@ end
     @test freeports(J_AB) == [false, false]
 
     # Connecting junctions to specific ports in Re
-    connect!(model, Re, J_CD, srcportindex = 2)
+    connect!(model, Re, J_CD, srcportindex=2)
     @test freeports(Re) == [true, false]
 
     # connecting to a full port should fail
-    @test_throws ErrorException connect!(model, J_AB, Re, dstportindex = 2)
+    @test_throws ErrorException connect!(model, J_AB, Re, dstportindex=2)
 
-    connect!(model, J_AB, Re, dstportindex = 1)
+    connect!(model, J_AB, Re, dstportindex=1)
     @test freeports(Re) == [false, false]
 
     @test nv(model) == 7
@@ -147,7 +173,7 @@ end
     bondc0 = getbonds(bg, c, J0)[1]
     bondr0 = getbonds(bg, r, J0)[1]
 
-    tf = Component(:TF, numports = 2)
+    tf = Component(:TF, numports=2)
     insert_node!(bg, bondc0, tf)
     insert_node!(bg, bondr0, EqualFlow())
 
@@ -168,7 +194,7 @@ end
     merge_nodes!(bg, C, newC)
 
     R = getnodes(bg, "R")[1]
-    merge_nodes!(bg, R, newR; junction = EqualFlow())
+    merge_nodes!(bg, R, newR; junction=EqualFlow())
 
     @test isempty(getnodes(bg, "newC"))
     @test length(getnodes(bg, "1")) == 1
@@ -181,21 +207,21 @@ end
     bg = RCI()
     C, R, I, SS, J0 = bg.nodes
 
-    J0_new_1 = EqualEffort(; name = :new0_1)
-    J0_new_2 = EqualEffort(; name = :new0_2)
+    J0_new_1 = EqualEffort(; name=:new0_1)
+    J0_new_2 = EqualEffort(; name=:new0_2)
     insert_node!(bg, (C, J0), J0_new_1)
     insert_node!(bg, (R, J0), J0_new_2)
     connect!(bg, J0_new_1, J0_new_2)
 
-    J1_new_1 = EqualFlow(; name = :new1_1)
-    J1_new_2 = EqualFlow(; name = :new1_2)
+    J1_new_1 = EqualFlow(; name=:new1_1)
+    J1_new_2 = EqualFlow(; name=:new1_2)
     add_node!(bg, J1_new_1)
     connect!(bg, J0, J1_new_1)
     insert_node!(bg, (SS, J0), J1_new_2)
 
     # Removing junction redundancies
     @test length(getnodes(bg, EqualFlow)) == 2
-    simplify_junctions!(bg, squash_identical = false)
+    simplify_junctions!(bg, squash_identical=false)
     @test length(getnodes(bg, EqualFlow)) == 0
     @test nv(bg) == 7
     @test ne(bg) == 7
@@ -234,20 +260,3 @@ end
     add_node!(bg1, C2)
     @test main.BG3.BG2.BG1.C == [C, C2]
 end
-
-# @testset "Expose component" begin
-
-# end
-
-# @testset "Nested BondGraphs" begin
-#     bg_1 = RCI("RCI_1")
-#     bg_2 = RCI("RCI_2")
-#     bgn_1 = BondGraphNode(bg_1)
-#     bgn_2 = BondGraphNode(bg_2)
-
-#     bg_main = BondGraph("BG_Main")
-
-#     #add_node!(bg_main, [bgn_1, bgn_2])
-#     #connect!(bg_main, bgn_1, bgn_2)
-
-# end

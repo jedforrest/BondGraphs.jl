@@ -27,8 +27,10 @@ R_dict = Dict(
     R: Resistance [1.0]
     """,
     :numports => 1,
-    :parameters => Dict(
-        R => 1.0
+    :variables => Dict(
+        :parameters => Dict(
+            R => 1.0
+        ),
     ),
     :equations => [0 ~ E[1] - R * F[1]]
 )
@@ -45,11 +47,13 @@ C_dict = Dict(
     q: Generalised position [0.0]
     """,
     :numports => 1,
-    :parameters => Dict(
-        C => 1.0
-    ),
-    :states => Dict(
-        q => 0.0
+    :variables => Dict(
+        :parameters => Dict(
+            C => 1.0
+        ),
+        :states => Dict(
+            q => 0.0
+        ),
     ),
     :equations => [
         0 ~ q / C - E[1],
@@ -69,11 +73,13 @@ I_dict = Dict(
     p: Generalised momentum [0.0]
     """,
     :numports => 1,
-    :parameters => Dict(
-        L => 1.0
-    ),
-    :states => Dict(
-        p => 0.0
+    :variables => Dict(
+        :parameters => Dict(
+            L => 1.0
+        ),
+        :states => Dict(
+            p => 0.0
+        ),
     ),
     :equations => [
         0 ~ p / L - F[1],
@@ -90,8 +96,10 @@ Se_dict = Dict(
     eₛ: Effort (source) [1.0]
     """,
     :numports => 1,
-    :controls => Dict(
-        es => (t -> 1.0)
+    :variables => Dict(
+        :controls => Dict(
+            es => (t -> 1.0)
+        ),
     ),
     :equations => [0 ~ es - E[1]],
 )
@@ -105,8 +113,10 @@ Sf_dict = Dict(
     fₛ: Flow (source) [1.0]
     """,
     :numports => 1,
-    :controls => Dict(
-        fs => (t -> 1.0)
+    :variables => Dict(
+        :controls => Dict(
+            fs => (t -> 1.0)
+        ),
     ),
     :equations => [0 ~ fs + F[1]],
 )
@@ -121,8 +131,10 @@ TF_dict = Dict(
     n = Winding ratio [1.0]
     """,
     :numports => 2,
-    :parameters => Dict(
-        n => 1.0
+    :variables => Dict(
+        :parameters => Dict(
+            n => 1.0
+        ),
     ),
     :equations => [
         0 ~ E[2] - n * E[1],

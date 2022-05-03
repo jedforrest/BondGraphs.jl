@@ -7,7 +7,8 @@ exponent_rules = [
     @acrule(exp(~x + ~y) => exp(~x) * exp(~y)),
     @acrule(exp(~x * ~y) => exp(~y)^~x),
     @acrule(log(~x) + log(~y) => log(~x * ~y)),
-    @rule(log((~x)^(~a)) => ~a * log(~x))
+    # @rule(log((~x)^(~a)) => ~a * log(~x)),
+    @rule(exp(~a * log(~x)) => (~x)^(~a))
 ]
 rw_exp = RestartedChain(exponent_rules)
 rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
@@ -133,6 +134,7 @@ end
 
 
 # Custom post-processing of latex display for equations
+# TODO: may remove
 function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
     ltx = latexify(x)
 

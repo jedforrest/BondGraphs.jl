@@ -6,29 +6,36 @@ struct Component{N} <: AbstractNode
     name::Symbol
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
-    parameters::Dict{Num,Number}
-    globals::Dict{Num,Number}
-    states::Dict{Num,Number}
-    controls::Dict{Num,Function}
+    variables::Dict{Symbol,Dict{Num,Any}}
     equations::Vector{Equation}
-    function Component{N}(t, n, v, p, g, x, c, eq) where {N}
-        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(v), p, g, x, c, eq)
+    function Component{N}(t, n, vx, vars, eq) where {N}
+        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(vx), vars, eq)
     end
 end
 
 function Component(type, name=type; vertex::Int=0, library=BondGraphs.DEFAULT_LIBRARY,
-    comp_dict = _set_comp_def(library, type),
-    numports::Int = _set_comp_def(comp_dict, :numports, 1),
-    parameters = _set_comp_def(comp_dict, :parameters),
-    globals = _set_comp_def(comp_dict, :globals),
-    states = _set_comp_def(comp_dict, :states),
-    controls = _set_comp_def(comp_dict, :controls),
-    equations = _set_comp_def(comp_dict, :equations, Equation[]))
+    comp_dict=_get_comp_default(library, type),
+    numports::Int=_get_comp_default(comp_dict, :numports, 1),
+    vars=_get_comp_default(comp_dict, :variables),
+    equations=_get_comp_default(comp_dict, :equations, Equation[]),
+    kwargs...)
 
-    Component{numports}(type, name, vertex, copy(parameters), copy(globals), copy(states), copy(controls), equations)
+    # add default empty dicts to variables dict
+    vars_empty = Dict(:parameters=>Dict(), :globals=>Dict(), :states=>Dict(), :controls=>Dict())
+    vars = deepcopy(merge(vars_empty, vars))
+
+    # Actual construction of the component
+    comp = Component{numports}(type, name, vertex, vars, equations)
+
+    # kwargs are used to set default variable values
+    for (k,v) in kwargs
+        setproperty!(comp, k, v)
+    end
+
+    comp
 end
 
-_set_comp_def(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
+_get_comp_default(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
 
 # Source-sensor
 struct SourceSensor <: AbstractNode
@@ -94,65 +101,70 @@ vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Parameters
-parameters(n::AbstractNode) = collect(keys(n.parameters))
-parameters(::Junction) = Num[]
-parameters(::SourceSensor) = Num[]
+parameters(::AbstractNode) = ()
+parameters(n::Component) = n.variables[:parameters]
 
 # Globals
-globals(n::AbstractNode) = collect(keys(n.globals))
-globals(::Junction) = Num[]
-globals(::SourceSensor) = Num[]
+globals(::AbstractNode) = ()
+globals(n::Component) = n.variables[:globals]
 
 # State variables
-states(n::AbstractNode) = collect(keys(n.states))
-states(::Junction) = Num[]
-states(::SourceSensor) = Num[]
+states(::AbstractNode) = ()
+states(n::Component) = n.variables[:states]
 
 # Control variables
-controls(n::AbstractNode) = collect(keys(n.controls))
-controls(::Junction) = Num[]
-controls(::SourceSensor) = Num[]
+controls(::AbstractNode) = ()
+controls(n::Component) = n.variables[:controls]
 
 # Equations
-equations(n::AbstractNode) = n.equations
-equations(::Junction) = Equation[]
-equations(::SourceSensor) = Equation[]
+equations(::AbstractNode) = Equation[]
+equations(n::Component) = n.equations
 
 # Defaults
-defaults(n::AbstractNode) = merge(n.parameters, n.globals, n.states, n.controls)
-defaults(::Junction) = Dict{Num,Any}()
-defaults(::SourceSensor) = Dict{Num,Any}()
+# defaults(n::AbstractNode) = merge(n.variables.parameters, n.variables.globals,
+#     n.variables.states, n.variables.controls)
+# defaults(::Junction) = Dict{Num,Any}()
+# defaults(::SourceSensor) = Dict{Num,Any}()
 
-function get_default(n::AbstractNode, var)
-    default_dict, _var = _find_var(n, var)
-    default_dict[_var]
-end
-function set_default!(n::AbstractNode, var, val)
-    default_dict, _var = _find_var(n, var)
-    if default_dict isa Dict{Num,Function} && val isa Number
-        # control var constant replace by constant function
-        default_dict[_var] = (t -> val)
-    else
-        default_dict[_var] = val
-    end
+# Variables
+all_variables(::AbstractNode) = ()
+function all_variables(n::Component)
+    # use getfield here so that this can be used by getproperty
+    merge(values(getfield(n, :variables))...)
 end
 
-function _find_var(n::AbstractNode, var)
-    # Try both parameters and state/control vars
-    p, = @parameters $var
-    _, x = @variables t, $var(t)
-    if string(p) in string.(parameters(n))
-        return n.parameters, p
-    elseif string(p) in string.(globals(n))
-        return n.globals, GlobalScope(p)
-    elseif string(x) in string.(states(n))
-        return n.states, x
-    elseif string(x) in string.(controls(n))
-        return n.controls, x
-    else
-        error("Component does not have variable $var")
-    end
-end
+# function get_default(n::AbstractNode, var)
+#     default_dict, _var = _find_var(n, var)
+#     isnothing(_var) && error("Could not find '$var' in node $n")
+#     default_dict[_var]
+# end
+# function set_default!(n::AbstractNode, var, val)
+#     default_dict, _var = _find_var(n, var)
+#     isnothing(_var) && error("Could not find '$var' in node $n")
+#     if default_dict isa Dict{Num,Function} && val isa Number
+#         # control var constant replace by constant function
+#         default_dict[_var] = (t -> val)
+#     else
+#         default_dict[_var] = val
+#     end
+# end
+
+# function _find_var(n::AbstractNode, var)
+#     # Try both parameters and state/control vars
+#     p, = @parameters $var
+#     _, x = @variables t, $var(t)
+#     if string(p) in string.(parameters(n))
+#         return n.parameters, p
+#     elseif string(p) in string.(globals(n))
+#         return n.globals, GlobalScope(p)
+#     elseif string(x) in string.(states(n))
+#         return n.states, x
+#     elseif string(x) in string.(controls(n))
+#         return n.controls, x
+#     else
+#         return nothing, nothing
+#     end
+# end
 
 # BASE FUNCTIONS
 # This definition will need to expand when equations etc. are added
@@ -160,3 +172,31 @@ end
 
 show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")
 show(io::IO, node::Junction) = print(io, "$(node.name)")
+
+# Easier referencing systems using a.b notation
+function getproperty(n::Component, sym::Symbol)
+    p, = @parameters $sym
+    _, x = @variables t, $sym(t)
+    all_vars = all_variables(n)
+    if p in keys(all_vars)
+        return all_vars[p]
+    elseif x in keys(all_vars)
+        return all_vars[x]
+    else
+        getfield(n, sym)
+    end
+end
+
+function setproperty!(n::Component, sym::Symbol, val)
+    p, = @parameters $sym
+    _, x = @variables t, $sym(t)
+
+    for (_, vars) in getfield(n, :variables)
+        if p in keys(vars)
+            return vars[p] = val
+        elseif x in keys(vars)
+            return vars[x] = val
+        end
+    end
+    setfield!(n, sym, val)
+end

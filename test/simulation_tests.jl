@@ -1,36 +1,34 @@
-@testset "Set parameters" begin
+@testset "Setting variables" begin
+    c = Component(:C)
     re = Component(:Re)
 
-    @test get_default(re, :r) == 1.0
-    @test get_default(re, :R) == 8.314
-    @test get_default(re, :T) == 310.0
+    # getting
+    @test c.C == 1 && c.q == 0
+    @test re.r == 1 && re.R ≈ 8.314 && re.T == 310
 
-    set_default!(re, :T, 200.0)
-    @test get_default(re, :T) == 200.0
+    # setting
+    c.C = 2
+    re.T = 200
+    @test c.C == 2
+    @test re.T == 200
 end
 
 @testset "Setting non-numeric control variables" begin
     f(t) = sin(2t) # forcing function
 
     sf = Component(:Sf)
-    @test get_default(sf, :fs)(1) ≈ 1
+    @test sf.fs(1) ≈ 1
 
-    set_default!(sf, :fs, f)
-    @test get_default(sf, :fs) == f
-    @test get_default(sf, :fs)(1) ≈ f(1)
+    sf.fs = f
+    @test sf.fs == f
+    @test sf.fs(1) ≈ f(1)
 end
 
 @testset "Incompatible variables fail" begin
     re = Component(:Re)
     c = Component(:C)
-    @test_throws ErrorException set_default!(re, :s, 1.0)
-    @test_throws ErrorException set_default!(c, :p, 2.0)
-end
-
-@testset "Set initial conditions" begin
-    c = Component(:C)
-    set_default!(c, :q, 2.0)
-    @test get_default(c, :q) == 2.0
+    @test_throws ErrorException re.s = 1
+    @test_throws ErrorException c.p = 2
 end
 
 @testset "Simulate RC circuit" begin
@@ -44,6 +42,9 @@ end
     set_default!(r, :R, 2.0)
     set_default!(c, :C, 1.0)
     set_default!(c, :q, 10.0)
+    r.R = 2
+    c.C = 1
+    c.q = 10
 
     f(x, a, τ) = a * exp(-x / τ)
 

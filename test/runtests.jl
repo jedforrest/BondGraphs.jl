@@ -1,10 +1,10 @@
 using Test
 using Revise
-using BondGraphs
 using Graphs
 using ModelingToolkit
 using Catalyst
 using RecipesBase
+using BondGraphs
 
 @testset "BondGraphs.jl" begin
     @testset "Graph functions" begin include("graphfunctions_tests.jl") end

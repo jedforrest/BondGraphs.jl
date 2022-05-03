@@ -17,7 +17,7 @@ D = Differential(t)
 @variables E[1:2](t) F[1:2](t)
 
 # Chemical species (:Ce)
-@parameters K #R T
+@parameters K
 @variables q(t)
 Ce_dict = Dict(
     :description => """
@@ -30,15 +30,17 @@ Ce_dict = Dict(
     q: Molar quantity [0.0]
     """,
     :numports => 1,
-    :parameters => Dict(
-        K => 1.0
-    ),
-    :globals => Dict(
-        R => _R,
-        T => _T
-    ),
-    :states => Dict(
-        q => 0.0
+    :variables => Dict(
+        :parameters => Dict(
+            K => 1.0
+        ),
+        :globals => Dict(
+            R => _R,
+            T => _T
+        ),
+        :states => Dict(
+            q => 0.0
+        ),
     ),
     :equations => [
         0 ~ R * T * log(K * q) - E[1],
@@ -58,11 +60,13 @@ ce_dict = Dict(
     q: Molar quantity [0.0]
     """,
     :numports => 1,
-    :parameters => Dict(
-        K => 1.0
-    ),
-    :states => Dict(
-        q => 0.0
+    :variables => Dict(
+        :parameters => Dict(
+            K => 1.0
+        ),
+        :states => Dict(
+            q => 0.0
+        ),
     ),
     :equations => [
         0 ~ log(K * q) - E[1],
@@ -71,7 +75,7 @@ ce_dict = Dict(
 )
 
 # Chemical reaction (:Re)
-@parameters r #R T
+@parameters r
 Re_dict = Dict(
     :description => """
     Biochemical reaction
@@ -82,12 +86,14 @@ Re_dict = Dict(
     T: Temperature [310]
     """,
     :numports => 2,
-    :parameters => Dict(
-        r => 1.0
-    ),
-    :globals => Dict(
-        R => _R,
-        T => _T
+    :variables => Dict(
+        :parameters => Dict(
+            r => 1.0
+        ),
+        :globals => Dict(
+            R => _R,
+            T => _T
+        ),
     ),
     :equations => [
         0 ~ F[1] + F[2],
@@ -105,8 +111,10 @@ re_dict = Dict(
     r: Reaction rate [1.0]
     """,
     :numports => 2,
-    :parameters => Dict(
-        r => 1.0
+    :variables => Dict(
+        :parameters => Dict(
+            r => 1.0
+        ),
     ),
     :equations => [
         0 ~ F[1] + F[2],
