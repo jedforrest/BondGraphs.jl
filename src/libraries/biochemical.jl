@@ -20,14 +20,14 @@ D = Differential(t)
 @parameters K
 @variables q(t)
 Ce_dict = Dict(
-    :description => """
+    :description=>"""
     Chemical species
     e = R*T*log(K*q)
     dq/dt = f
-    K: Biochemical Constant; exp(mu_0/RT)/V [1.0],
-    R: Universal Gas Constant [8.314],
-    T: Temperature [310]
-    q: Molar quantity [0.0]
+    K Biochemical Constant; exp(mu_0/RT)/V [1.0],
+    R Universal Gas Constant [8.314],
+    T Temperature [310]
+    q Molar quantity [0.0]
     """,
     :numports => 1,
     :variables => Dict(
@@ -42,22 +42,22 @@ Ce_dict = Dict(
             q => 0.0
         ),
     ),
-    :equations => [
+    :equations=>[
         0 ~ R * T * log(K * q) - E[1],
         D(q) ~ F[1]
     ],
 )
 
-# Normalised chemical species (:ce)
+# Normalised chemical species (ce)
 @parameters K
 @variables q(t)
 ce_dict = Dict(
-    :description => """
+    :description=>"""
     Chemical species (normalised)
     e = log(K*q)
     dq/dt = f
-    K: Biochemical Constant; exp(mu_0/RT)/V [1.0],
-    q: Molar quantity [0.0]
+    K Biochemical Constant; exp(mu_0/RT)/V [1.0],
+    q Molar quantity [0.0]
     """,
     :numports => 1,
     :variables => Dict(
@@ -81,9 +81,9 @@ Re_dict = Dict(
     Biochemical reaction
     f₁ + f₂ = 0
     f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
-    r: Reaction rate [1.0]
-    R: Universal Gas Constant [8.314],
-    T: Temperature [310]
+    r Reaction rate [1.0]
+    R Universal Gas Constant [8.314],
+    T Temperature [310]
     """,
     :numports => 2,
     :variables => Dict(
@@ -95,20 +95,20 @@ Re_dict = Dict(
             T => _T
         ),
     ),
-    :equations => [
+    :equations=>[
         0 ~ F[1] + F[2],
         0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
     ],
 )
 
-# Normalised chemical reaction (:re)
+# Normalised chemical reaction (re)
 @parameters r
 re_dict = Dict(
-    :description => """
+    :description=>"""
     Biochemical reaction (normalised)
     f₁ + f₂ = 0
     f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
-    r: Reaction rate [1.0]
+    r Reaction rate [1.0]
     """,
     :numports => 2,
     :variables => Dict(
@@ -116,7 +116,7 @@ re_dict = Dict(
             r => 1.0
         ),
     ),
-    :equations => [
+    :equations=>[
         0 ~ F[1] + F[2],
         0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
     ],
