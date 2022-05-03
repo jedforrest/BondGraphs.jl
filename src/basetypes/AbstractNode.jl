@@ -1,19 +1,26 @@
+# Keeps track of the number of nodes created - used for autonaming nodes
+const COUNTER = Ref(1)
+autoname(str) = "$(str)$(COUNTER[])"
+
 abstract type AbstractNode end
 
 # COMPONENT
 struct Component{N} <: AbstractNode
-    type::Symbol
-    name::Symbol
+    type::AbstractString
+    name::AbstractString
     freeports::MVector{N,Bool}
     vertex::RefValue{Int}
     variables::Dict{Symbol,Dict{Num,Any}}
     equations::Vector{Equation}
     function Component{N}(t, n, vx, vars, eq) where {N}
-        new(Symbol(t), Symbol(n), ones(MVector{N,Bool}), Ref(vx), vars, eq)
+        COUNTER[] += 1
+        new(string(t), string(n), ones(MVector{N,Bool}), Ref(vx), vars, eq)
     end
 end
 
-function Component(type, name=type; vertex::Int=0, library=BondGraphs.DEFAULT_LIBRARY,
+function Component(type, name=autoname(type);
+    vertex::Int=0,
+    library=BondGraphs.DEFAULT_LIBRARY,
     comp_dict=_get_comp_default(library, type),
     numports::Int=_get_comp_default(comp_dict, :numports, 1),
     vars=_get_comp_default(comp_dict, :variables),
@@ -21,14 +28,14 @@ function Component(type, name=type; vertex::Int=0, library=BondGraphs.DEFAULT_LI
     kwargs...)
 
     # add default empty dicts to variables dict
-    vars_empty = Dict(:parameters=>Dict(), :globals=>Dict(), :states=>Dict(), :controls=>Dict())
+    vars_empty = Dict(:parameters => Dict(), :globals => Dict(), :states => Dict(), :controls => Dict())
     vars = deepcopy(merge(vars_empty, vars))
 
     # Actual construction of the component
     comp = Component{numports}(type, name, vertex, vars, equations)
 
     # kwargs are used to set default variable values
-    for (k,v) in kwargs
+    for (k, v) in kwargs
         setproperty!(comp, k, v)
     end
 
@@ -39,10 +46,13 @@ _get_comp_default(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
 
 # Source-sensor
 struct SourceSensor <: AbstractNode
-    name::Symbol
+    name::AbstractString
     freeports::MVector{1,Bool}
     vertex::RefValue{Int}
-    SourceSensor(; name=:SS, v::Int=0) = new(Symbol(name), ones(MVector{1,Bool}), Ref(v))
+    function SourceSensor(; name=autoname("SS"), v::Int=0)
+        COUNTER[] += 1
+        new(string(name), ones(MVector{1,Bool}), Ref(v))
+    end
 end
 
 
@@ -50,19 +60,25 @@ end
 abstract type Junction <: AbstractNode end
 
 struct EqualEffort <: Junction
-    name::Symbol
+    name::AbstractString
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualEffort(; name=Symbol("0"), v::Int=0) = new(Symbol(name), [true], [0], Ref(v))
+    function EqualEffort(; name=autoname("0_"), v::Int=0)
+        COUNTER[] += 1
+        new(string(name), [true], [0], Ref(v))
+    end
 end
 
 struct EqualFlow <: Junction
-    name::Symbol
+    name::AbstractString
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    EqualFlow(; name=Symbol("1"), v::Int=0) = new(Symbol(name), [true], [0], Ref(v))
+    function EqualFlow(; name=autoname("1_"), v::Int=0)
+        COUNTER[] += 1
+        new(string(name), [true], [0], Ref(v))
+    end
 end
 
 
@@ -120,12 +136,6 @@ controls(n::Component) = n.variables[:controls]
 equations(::AbstractNode) = Equation[]
 equations(n::Component) = n.equations
 
-# Defaults
-# defaults(n::AbstractNode) = merge(n.variables.parameters, n.variables.globals,
-#     n.variables.states, n.variables.controls)
-# defaults(::Junction) = Dict{Num,Any}()
-# defaults(::SourceSensor) = Dict{Num,Any}()
-
 # Variables
 all_variables(::AbstractNode) = ()
 function all_variables(n::Component)
@@ -133,45 +143,13 @@ function all_variables(n::Component)
     merge(values(getfield(n, :variables))...)
 end
 
-# function get_default(n::AbstractNode, var)
-#     default_dict, _var = _find_var(n, var)
-#     isnothing(_var) && error("Could not find '$var' in node $n")
-#     default_dict[_var]
-# end
-# function set_default!(n::AbstractNode, var, val)
-#     default_dict, _var = _find_var(n, var)
-#     isnothing(_var) && error("Could not find '$var' in node $n")
-#     if default_dict isa Dict{Num,Function} && val isa Number
-#         # control var constant replace by constant function
-#         default_dict[_var] = (t -> val)
-#     else
-#         default_dict[_var] = val
-#     end
-# end
-
-# function _find_var(n::AbstractNode, var)
-#     # Try both parameters and state/control vars
-#     p, = @parameters $var
-#     _, x = @variables t, $var(t)
-#     if string(p) in string.(parameters(n))
-#         return n.parameters, p
-#     elseif string(p) in string.(globals(n))
-#         return n.globals, GlobalScope(p)
-#     elseif string(x) in string.(states(n))
-#         return n.states, x
-#     elseif string(x) in string.(controls(n))
-#         return n.controls, x
-#     else
-#         return nothing, nothing
-#     end
-# end
-
 # BASE FUNCTIONS
 # This definition will need to expand when equations etc. are added
 ==(n1::AbstractNode, n2::AbstractNode) = type(n1) == type(n2) && n1.name == n2.name
 
 show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")
-show(io::IO, node::Junction) = print(io, "$(node.name)")
+show(io::IO, ::EqualEffort) = print(io, "0")
+show(io::IO, ::EqualFlow) = print(io, "1")
 
 # Easier referencing systems using a.b notation
 function getproperty(n::Component, sym::Symbol)

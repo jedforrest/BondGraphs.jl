@@ -17,7 +17,9 @@ function RLC()
 end
 
 # cannot use standard notation "var in array" for MTK vars
-var_in(var, array) = any(iszero.(var .- array))
+# var_in(var, array) = any(iszero.(var .- array))
+var_in(var, array) = any(iszero.(var .- keys(array)))
+# var_in(var, array) = var in keys(array)
 
 @testset "Equations" begin
     c = Component(:C)
@@ -58,7 +60,7 @@ end
 
     @test var_in(T, globals(re))
     @test var_in(R, globals(re))
-    @test globals(c) == Num[]
+    @test globals(c) == Dict()
 end
 
 @testset "State variables" begin
@@ -67,10 +69,10 @@ end
 
     @variables q(t)
     c = Component(:C)
-    @test isequal(states(c), [q])
+    @test var_in(q, states(c))
 
     ce = Component(:ce)
-    @test isequal(states(ce), [q])
+    @test var_in(q, states(ce))
 
     bg = RLC()
     @variables q(t) p(t)
@@ -84,13 +86,16 @@ end
     c = Component(:C)
     @parameters fs(t) es(t)
 
-    @test isequal(controls(se), [es])
-    @test isequal(controls(sf), [fs])
-    @test isequal(controls(c), Num[])
+    # @test isequal(controls(se), [es])
+    # @test isequal(controls(sf), [fs])
+    # @test isequal(controls(c), Num[])
+    @test var_in(es, controls(se))
+    @test var_in(fs, controls(sf))
+    @test controls(c) == Dict()
 
     bg = RLC()
     add_node!(bg, [se, sf])
-    @test isequal(controls(bg), [es, fs])
+    @test var_in(es, controls(bg)) && var_in(fs, controls(bg))
 end
 
 @testset "Constitutive relations" begin
@@ -267,4 +272,3 @@ end
     @test isequal(eqs[3].rhs, e3.rhs)
     @test isequal(eqs[4].rhs, e4.rhs)
 end
-

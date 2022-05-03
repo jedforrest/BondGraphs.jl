@@ -78,8 +78,10 @@ function ModelingToolkit.ODESystem(n::AbstractNode)
     # controls must be a subset of parameters
     params = [parameters(n); controls(n); globals(n)]
 
+    #TODO get keys from these dicts
+
     sys = ODESystem(eqs, t, states(n), params;
-        name=n.name, defaults=defaults(n), controls=controls(n))
+        name=n.name, defaults=all_variables(n), controls=controls(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)

@@ -16,29 +16,31 @@ function RCI(name=:RCI)
 end
 
 @testset "Creating Components" begin
+    BondGraphs.COUNTER[] = 1
     C = Component(:C)
-    @test type(C) == :C
-    @test name(C) == :C
+    C2 = Component(:C; q=2)
+    @test type(C) == "C"
+    @test name(C) == "C1"
+    @test name(C2) == "C2"
 
     R = Component(:R, "newR")
-    @test type(R) == :R
-    @test name(R) == :newR
+    @test type(R) == "R"
+    @test name(R) == "newR"
 
     I = Component(:I; L=5)
     @test I.L == 5
-
-    C2 = Component(:C; q=2)
     @test C2.q == 2
 end
 
 @testset "Creating Junctions" begin
+    BondGraphs.COUNTER[] = 1
     EqE_1 = EqualEffort(name="foo")
     EqE_2 = EqualEffort()
     EqF = EqualFlow()
 
-    @test name(EqE_1) == :foo
-    @test name(EqE_2) == :EqE2
-    @test name(EqF) == :EqF1
+    @test name(EqE_1) == "foo"
+    @test name(EqE_2) == "0_2"
+    @test name(EqF) == "1_3"
 end
 
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
@@ -96,21 +98,22 @@ end
 end
 
 @testset "Construction Failure" begin
+    BondGraphs.COUNTER[] = 1
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
     zero_law = EqualEffort()
 
     add_node!(model, [R, C, zero_law])
-    @test_logs (:warn, "R:R already in model") add_node!(model, R)
-    @test_logs (:warn, "0 already in model") add_node!(model, zero_law)
+    @test_logs (:warn, "Node 'R2' already in model") add_node!(model, R)
+    @test_logs (:warn, "Node '0_3' already in model") add_node!(model, zero_law)
 
     bond = connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
     one_law = EqualFlow()
-    @test_logs (:warn, "1 not in model") remove_node!(model, one_law)
+    @test_logs (:warn, "Node '1_4' not in model") remove_node!(model, one_law)
 
     tf = Component(:TF)
     add_node!(model, tf)
@@ -157,12 +160,12 @@ end
 @testset "Standard components" begin
     tf = Component(:TF, :n)
     @test tf isa Component{2}
-    @test tf.type == :TF
+    @test tf.type == "TF"
     @test numports(tf) == 2
 
     r = Component(:R)
     @test r isa Component{1}
-    @test r.type == :R
+    @test r.type == "R"
 end
 
 @testset "Inserting Nodes" begin
@@ -197,8 +200,8 @@ end
     merge_nodes!(bg, R, newR; junction=EqualFlow())
 
     @test isempty(getnodes(bg, "newC"))
-    @test length(getnodes(bg, "1")) == 1
-    @test length(getnodes(bg, "0")) == 2
+    @test length(getnodes(bg, EqualFlow)) == 1
+    @test length(getnodes(bg, EqualEffort)) == 2
     @test nv(bg) == 7
     @test ne(bg) == 7
 end
@@ -234,18 +237,18 @@ end
 end
 
 @testset "BondGraphNodes" begin
-    C = Component(:C)
-    bg1 = BondGraph(:BG1)
-    bg2 = BondGraph(:BG2)
-    bg3 = BondGraph(:BG3)
-    main = BondGraph(:Main)
+    C = Component(:C, "C")
+    bg1 = BondGraph("first")
+    bg2 = BondGraph("second")
+    bg3 = BondGraph("third")
+    main = BondGraph("Main")
 
     bgn1 = BondGraphNode(bg1)
     bgn2 = BondGraphNode(bg2)
     bgn3 = BondGraphNode(bg3)
 
     @test bgn1.bondgraph === bg1
-    @test bgn1.type === :BG
+    @test bgn1.type === "BG"
     @test bgn1.name === bg1.name
     @test freeports(bgn1) == Bool[]
 
@@ -254,9 +257,9 @@ end
     add_node!(bg3, bgn2)
     add_node!(main, bgn3)
 
-    @test main.BG3.BG2.BG1.C === C
+    @test main.third.second.first.C === C
 
-    C2 = Component(:C) # Same name
+    C2 = Component(:C, "C") # Same name
     add_node!(bg1, C2)
-    @test main.BG3.BG2.BG1.C == [C, C2]
+    @test main.third.second.first.C == [C, C2]
 end

@@ -1,3 +1,9 @@
+@testset "Node Counter" begin
+    str = "foo"
+    COUNTER[] = 1
+    @test autoname(str) == "foo_1"
+end
+
 @testset "Library Functions" begin
     # Standard component
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :C)
@@ -27,7 +33,7 @@ end
         (1, 1), C <--> E + P
     end
     bg = BondGraph(rn; chemostats=["S", "P"])
-    
+
     rec = RecipesBase.apply_recipe(Dict{Symbol, Any}(), bg)
     attributes = getfield(rec[1], 1)
 
