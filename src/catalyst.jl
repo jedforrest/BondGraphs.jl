@@ -1,3 +1,5 @@
+#TODO: include reaction rates in forming the bondgraph
+
 # Convert a ReactionSystem type into a BondGraph type
 function BondGraph(rs::ReactionSystem; chemostats=[])
     bg = BondGraph(rs.name)
@@ -50,7 +52,7 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
 
             n = stoich[i]
             if n != 1
-                tf = Component(:TF, "TF$n"; n)
+                tf = Component(:TF, "tf$(comp.name)"; n)
                 insert_node!(bg, (comp, one_junction), tf)
             end
         end
@@ -64,7 +66,7 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
 
         n = stoich[1]
         if n != 1
-            tf = Component(:TF, "TF$n"; n)
+            tf = Component(:TF, "tf$(comp.name)"; n)
             insert_node!(bg, (comp, Re), tf)
         end
     end

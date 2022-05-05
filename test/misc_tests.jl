@@ -36,10 +36,10 @@ end
     @test attributes[:nodeshape] == :rect
 end
 
-@testset "Latexify" begin
-    bg = RLC()
-    eq = equations(bg)
-    ltx = repr("text/latex", eq)
+# @testset "Latexify" begin
+#     bg = RLC()
+#     eq = equations(bg)
+#     ltx = repr("text/latex", eq)
 
-    @test ltx == "\\begin{align}\n\\frac{dC_{+}q(t)}{dt} =& C_{+p1_{+}F}\\left( t \\right) \\\\\n\\frac{dI_{+}p(t)}{dt} =& R_{+p1_{+}E}\\left( t \\right)\n\\end{align}\n"
-end
+#     @test ltx == "\\begin{align}\n\\frac{dC_{+}q(t)}{dt} =& C_{+p1_{+}F}\\left( t \\right) \\\\\n\\frac{dI_{+}p(t)}{dt} =& R_{+p1_{+}E}\\left( t \\right)\n\\end{align}\n"
+# end

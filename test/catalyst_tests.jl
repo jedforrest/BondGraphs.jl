@@ -52,7 +52,7 @@ end
 
     tfs = getnodes(bg_rn, "TF")
     @test length(tfs) == 3
-    @test repr.(tfs) == ["TF:TF3", "TF:TF2", "TF:TF5"]
+    @test repr.(tfs) == ["TF:tfA", "TF:tfB", "TF:tfC"]
 end
 
 @testset "SERCA" begin

@@ -1,14 +1,16 @@
 @variables t
 
 # New simplification rules
+#TODO: enable threaded simplifier option
+#TODO: create tests for rule rewriting
 exponent_rules = [
     @rule(exp(log(~x)) => ~x),
     @rule(log(exp(~x)) => ~x),
     @acrule(exp(~x + ~y) => exp(~x) * exp(~y)),
     @acrule(exp(~x * ~y) => exp(~y)^~x),
     @acrule(log(~x) + log(~y) => log(~x * ~y)),
-    # @rule(log((~x)^(~a)) => ~a * log(~x)),
-    @rule(exp(~a * log(~x)) => (~x)^(~a))
+    @acrule(log((~x)^(~a)) => ~a * log(~x)),
+    @acrule(~a * exp(~b * log(~x)) => (~a) * (~x)^(~b)),
 ]
 rw_exp = RestartedChain(exponent_rules)
 rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
@@ -45,7 +47,9 @@ function constitutive_relations(n::EqualFlow)
     return vcat(effort_constraint, flow_constraints)
 end
 function constitutive_relations(m::BondGraph)
-    return simplify.(full_equations(ODESystem(m)); expand = true, rewriter = rewriter)
+    cr = simplify.(full_equations(ODESystem(m)); expand=true, rewriter=rewriter)
+    # TODO: for some reason, must be simplified twice to work
+    simplify.(cr; rewriter=rewriter)
 end
 function constitutive_relations(bgn::BondGraphNode)
     return constitutive_relations(bgn.bondgraph)
@@ -53,11 +57,11 @@ end
 
 @connector function MTKPort(; name)
     vars = @variables E(t) F(t) [connect = Flow]
-    ODESystem(Equation[], t, vars, []; name = name)
+    ODESystem(Equation[], t, vars, []; name=name)
 end
 
-function get_connection_eq(b::Bond,subsystems)
-    (s,d) = b
+function get_connection_eq(b::Bond, subsystems)
+    (s, d) = b
     src_port = getproperty(subsystems[s.node], Symbol("p$(s.index)"))
     dst_port = getproperty(subsystems[d.node], Symbol("p$(d.index)"))
     connect(src_port, dst_port)
@@ -85,20 +89,20 @@ function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
         name=Symbol(name), defaults=all_variables(n), controls=_ctrls)
     return compose(sys, ps...)
 end
-function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
+function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
     (subsystems, connections) = get_subsys_and_connections(m)
     compose_bg_model(subsystems, connections, m.name, simplify_eqs)
 end
-function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_eqs = false)
+function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_eqs=false)
     N = numports(bgn)
-    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
+    ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
 
     (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
     es = [subsystems[c].p1.E for c in exposed(bgn)]
     fs = [subsystems[c].p1.F for c in exposed(bgn)]
     port_eqs = [
-        [0 ~ p.E - E for (E,p) in zip(es,ps)];
-        [0 ~ p.F + F for (F,p) in zip(fs,ps)]
+        [0 ~ p.E - E for (E, p) in zip(es, ps)]
+        [0 ~ p.F + F for (F, p) in zip(fs, ps)]
     ]
     eqs = [connections; port_eqs]
     sys = compose_bg_model(subsystems, eqs, name, simplify_eqs)
@@ -115,11 +119,18 @@ function get_subsys_and_connections(bg::BondGraph)
 end
 
 function compose_bg_model(subsystems, eqs, name, simplify_eqs)
-    @named _model = ODESystem(eqs, t; name = Symbol(name))
+    @named _model = ODESystem(eqs, t; name=Symbol(name))
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
         return structural_simplify(model)
+        # model = structural_simplify(model)
+        # # TODO: for some reason, must be simplified twice to work
+        # simple_eqs = simplify.(full_equations(model); expand=true, rewriter=rewriter)
+        # simple_eqs = simplify.(simple_eqs; rewriter=rewriter)
+
+        # return ODESystem(simple_eqs, t, collect(model.states), collect(model.ps);
+        #     name=Symbol(name), defaults=model.defaults, controls=collect(model.ctrls))
     else
         return model
     end
@@ -142,7 +153,7 @@ function create_unique_names(nodes)
     newnames
 end
 
-function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :default, kwargs...)
+function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:default, kwargs...)
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
     if probtype == :ODE || flag_ODE

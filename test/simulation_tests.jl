@@ -86,7 +86,7 @@ end
 end
 
 @testset "π-filter" begin
-    Se = Component(:Se, :Pin; es=t->1)
+    Se = Component(:Se, :Pin; es=t -> 1)
 
     Pa = EqualEffort(name=:Pa)
     fa = EqualFlow(name=:fa)
@@ -187,7 +187,7 @@ end
     u0 = [1]
 
     # Case 1: constant forcing funciton
-    Sf.fs = t->3
+    Sf.fs = t -> 3
     ODESystem(model)
     constitutive_relations(model)
     sol = simulate(model, tspan; u0)
@@ -207,12 +207,25 @@ end
 
     bg_abc = BondGraph(abc)
 
-    sys = ODESystem(bg_abc)
-    eqs = constitutive_relations(bg_abc)
-
     tspan = (0.0, 3.0)
     u0 = [1, 2, 3]
     sol = simulate(bg_abc, tspan; u0)
 
     @test isapprox(sol[end], [1.23606, 2.23606, 2.76393], atol=1e-5)
 end
+
+# @testset "Stoichiometry Simulation" begin
+#     a2b2c = @reaction_network A2B2C begin
+#         1, A + 2B --> 2C
+#     end
+#     bg_a2b2c = BondGraph(a2b2c)
+#     eqs = equations(bg_a2b2c)
+
+#     # equations should cancel out all "exp"s and "log"s
+#     @test !any(contains(str, "log") for str in string.(eqs))
+
+#     tspan = (0.0, 1.0)
+#     u0 = [2, 1, 1]
+#     sol = simulate(bg_a2b2c, tspan; u0)
+#     @test_broken isapprox(sol[end], [0.29798, 4.40404, -2.40404], atol=1e-5)
+# end

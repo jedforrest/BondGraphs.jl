@@ -122,6 +122,8 @@ re_dict = Dict(
     ],
 )
 
+# TODO: add biochemical equivalents of Se and Sf
+
 const biochemical_library = Dict(
     :Ce => Ce_dict,
     :ce => ce_dict,

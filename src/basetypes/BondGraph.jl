@@ -16,6 +16,7 @@ nodes(bg::BondGraph) = bg.nodes
 bonds(bg::BondGraph) = bg.bonds
 
 # AbstractNode properties
+#TODO these are not unique, need to create nested (or flattened) dictionary structure
 parameters(bg::BondGraph) = Dict(p for c in components(bg) for p in parameters(c))
 
 globals(bg::BondGraph) = Dict(g for c in components(bg) for g in globals(c))
@@ -31,6 +32,8 @@ function equations(bg::BondGraph; simplify_eqs=true)
     sys = ODESystem(bg; simplify_eqs=simplify_eqs)
     return equations(sys)
 end
+
+# TODO: add function for substituting in parameter values into equations
 
 # Filtering
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
