@@ -23,8 +23,8 @@ end
     bg = BondGraph()
 
     @test add_vertex!(bg, c)
-    b = add_edge!(bg, c, j0)
 
+    b = add_edge!(bg, c, j0)
     @test src(b) == vertex(c)
     @test dst(b) == vertex(j0)
 
@@ -61,7 +61,6 @@ end
 end
 
 @testset "Printing" begin
-    BondGraphs.COUNTER[] = 1
     C = Component(:C)
     SS = Component(:SS, "Source")
     J0 = EqualEffort(name="J")
@@ -72,11 +71,11 @@ end
     bgn = BondGraphNode(bg)
 
     # repr returns the output of the 'show' function
-    @test repr(C) == "C:C1"
+    @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
-    @test repr(b1) == "Bond C:C1 ⇀ 0"
+    @test repr(b1) == "Bond C:C ⇀ 0"
     @test repr(b2) == "Bond 0 ⇀ SS:Source"
-    @test repr(port) == "Port C:C1 (1)"
+    @test repr(port) == "Port C:C (1)"
     @test repr(bg) == "BondGraph newbg (0 Nodes, 0 Bonds)"
     @test repr(bgn) == "BG:newbg"
 

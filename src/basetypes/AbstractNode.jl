@@ -1,7 +1,3 @@
-# Keeps track of the number of nodes created - used for autonaming nodes
-const COUNTER = Ref(1)
-autoname(str) = "$(str)$(COUNTER[])"
-
 abstract type AbstractNode end
 
 # COMPONENT
@@ -13,12 +9,11 @@ struct Component{N} <: AbstractNode
     variables::Dict{Symbol,Dict{Num,Any}}
     equations::Vector{Equation}
     function Component{N}(t, n, vx, vars, eq) where {N}
-        COUNTER[] += 1
         new(string(t), string(n), ones(MVector{N,Bool}), Ref(vx), vars, eq)
     end
 end
 
-function Component(type, name=autoname(type);
+function Component(type, name=type;
     vertex::Int=0,
     library=BondGraphs.DEFAULT_LIBRARY,
     comp_dict=_get_comp_default(library, type),
@@ -49,8 +44,7 @@ struct SourceSensor <: AbstractNode
     name::AbstractString
     freeports::MVector{1,Bool}
     vertex::RefValue{Int}
-    function SourceSensor(; name=autoname("SS"), v::Int=0)
-        COUNTER[] += 1
+    function SourceSensor(; name="SS", v::Int=0)
         new(string(name), ones(MVector{1,Bool}), Ref(v))
     end
 end
@@ -64,8 +58,7 @@ struct EqualEffort <: Junction
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    function EqualEffort(; name=autoname("0_"), v::Int=0)
-        COUNTER[] += 1
+    function EqualEffort(; name="zero", v::Int=0)
         new(string(name), [true], [0], Ref(v))
     end
 end
@@ -75,8 +68,7 @@ struct EqualFlow <: Junction
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    function EqualFlow(; name=autoname("1_"), v::Int=0)
-        COUNTER[] += 1
+    function EqualFlow(; name="one", v::Int=0)
         new(string(name), [true], [0], Ref(v))
     end
 end
@@ -86,7 +78,7 @@ end
 # Type
 type(n::AbstractNode) = n.type
 type(j::Junction) = typeof(j)
-type(::SourceSensor) = :SS
+type(::SourceSensor) = "SS"
 
 # Name
 name(n::AbstractNode) = n.name
@@ -156,6 +148,7 @@ function getproperty(n::Component, sym::Symbol)
     p, = @parameters $sym
     _, x = @variables t, $sym(t)
     all_vars = all_variables(n)
+
     if p in keys(all_vars)
         return all_vars[p]
     elseif x in keys(all_vars)

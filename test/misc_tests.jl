@@ -1,9 +1,3 @@
-@testset "Node Counter" begin
-    str = "foo"
-    COUNTER[] = 1
-    @test autoname(str) == "foo_1"
-end
-
 @testset "Library Functions" begin
     # Standard component
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :C)
@@ -22,7 +16,7 @@ end
 end
 
 @testset "Graph Node Colour Selection" begin
-    nodes = [Component(:C), Component(:Re), Component(:SS), EqualFlow()]
+    nodes = [Component(:C), Component(:Re), SourceSensor(), EqualFlow()]
     @test BondGraphs.nodecolours(nodes) == [1, 2, 3, :lightgray]
 end
 
@@ -38,7 +32,7 @@ end
     attributes = getfield(rec[1], 1)
 
     @test attributes[:curves] == false
-    @test attributes[:title] == :MM_reversible
+    @test attributes[:title] == "MM_reversible"
     @test attributes[:nodeshape] == :rect
 end
 

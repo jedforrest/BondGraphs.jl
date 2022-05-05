@@ -63,32 +63,33 @@ function get_connection_eq(b::Bond,subsystems)
     connect(src_port, dst_port)
 end
 
-function ModelingToolkit.ODESystem(n::AbstractNode)
+function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
     N = numports(n)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
 
     @variables E[1:N](t) F[1:N](t)
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
-    u_sub_rules = Dict(u => n.controls[u](t) for u in controls(n))
+    u_sub_rules = Dict(u => controls(n)[u](t) for u in keys(controls(n)))
 
     sub_rules = merge(e_sub_rules, f_sub_rules, u_sub_rules)
     eqs = Equation[substitute(eq, sub_rules) for eq in constitutive_relations(n)]
 
-    # controls must be a subset of parameters
-    params = [parameters(n); controls(n); globals(n)]
+    # mtk vars are stored as keys
+    _params = collect(keys(parameters(n)))
+    _ctrls = collect(keys(controls(n)))
+    _globals = collect(keys(globals(n)))
+    _states = collect(keys(states(n)))
 
-    #TODO get keys from these dicts
-
-    sys = ODESystem(eqs, t, states(n), params;
-        name=n.name, defaults=all_variables(n), controls=controls(n))
+    sys = ODESystem(eqs, t, _states, [_params; _ctrls; _globals];
+        name=Symbol(name), defaults=all_variables(n), controls=_ctrls)
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
     (subsystems, connections) = get_subsys_and_connections(m)
     compose_bg_model(subsystems, connections, m.name, simplify_eqs)
 end
-function ModelingToolkit.ODESystem(bgn::BondGraphNode; simplify_eqs = false)
+function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_eqs = false)
     N = numports(bgn)
     ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
 
@@ -100,20 +101,21 @@ function ModelingToolkit.ODESystem(bgn::BondGraphNode; simplify_eqs = false)
         [0 ~ p.F + F for (F,p) in zip(fs,ps)]
     ]
     eqs = [connections; port_eqs]
-    sys = compose_bg_model(subsystems, eqs, bgn.name, simplify_eqs)
+    sys = compose_bg_model(subsystems, eqs, name, simplify_eqs)
     compose(sys, ps...)
 end
 
 function get_subsys_and_connections(bg::BondGraph)
+    uniquenames = create_unique_names(bg.nodes)
     # Collect constitutive relations from components
-    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(bg))
+    subsystems = OrderedDict(n => ODESystem(n; name=uniquenames[n]) for n in nodes(bg))
     # Add constraints from bonds
-    connections = [get_connection_eq(b,subsystems) for b in bonds(bg)]
+    connections = [get_connection_eq(b, subsystems) for b in bonds(bg)]
     return subsystems, connections
 end
 
 function compose_bg_model(subsystems, eqs, name, simplify_eqs)
-    @named _model = ODESystem(eqs, t; name = name)
+    @named _model = ODESystem(eqs, t; name = Symbol(name))
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
@@ -121,6 +123,23 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
     else
         return model
     end
+end
+
+function create_unique_names(nodes)
+    nodenames = name.(nodes)
+    newnames = Dict()
+    for n in nodes
+        _name = name(n)
+        common_named_nodes = nodes[findall(==(_name), nodenames)]
+        if length(common_named_nodes) > 1
+            for (i, _n) in enumerate(common_named_nodes)
+                newnames[_n] = _n.name * "$i"
+            end
+        else
+            newnames[n] = n.name
+        end
+    end
+    newnames
 end
 
 function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :default, kwargs...)
@@ -133,7 +152,6 @@ function simulate(m::BondGraph, tspan; u0 = [], pmap = [], probtype::Symbol = :d
     end
     return solve(prob; kwargs...)
 end
-
 
 # Custom post-processing of latex display for equations
 # TODO: may remove

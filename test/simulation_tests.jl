@@ -32,19 +32,12 @@ end
 end
 
 @testset "Simulate RC circuit" begin
-    r = Component(:R)
-    c = Component(:C)
+    r = Component(:R; R=2)
+    c = Component(:C; C=1, q=10)
     bg = BondGraph(:RC)
 
     add_node!(bg, [c, r])
     connect!(bg, r, c)
-
-    set_default!(r, :R, 2.0)
-    set_default!(c, :C, 1.0)
-    set_default!(c, :q, 10.0)
-    r.R = 2
-    c.C = 1
-    c.q = 10
 
     f(x, a, τ) = a * exp(-x / τ)
 
@@ -66,9 +59,15 @@ end
 end
 
 @testset "Equivalent resistance (DAE)" begin
-    r1 = Component(:R, :r1)
-    r2 = Component(:R, :r2)
-    c = Component(:C)
+    R1 = 1.0
+    R2 = 2.0
+    Req = R1 + R2
+    C = 3.0
+    τ = Req * C
+
+    r1 = Component(:R, :r1; R=R1)
+    r2 = Component(:R, :r2; R=R2)
+    c = Component(:C; C=C, q=10)
     kcl = EqualFlow(name=:kcl)
     bg = BondGraph(:RRC)
 
@@ -76,17 +75,6 @@ end
     connect!(bg, c, kcl)
     connect!(bg, kcl, r1)
     connect!(bg, kcl, r2)
-
-    R1 = 1.0
-    R2 = 2.0
-    Req = R1 + R2
-    C = 3.0
-    τ = Req * C
-
-    set_default!(r1, :R, R1)
-    set_default!(r2, :R, R2)
-    set_default!(c, :C, C)
-    set_default!(c, :q, 10.0)
 
     f(x, a, τ) = a * exp(-x / τ)
 
@@ -98,34 +86,23 @@ end
 end
 
 @testset "π-filter" begin
-    Se = Component(:Se, :Pin)
-    set_default!(Se, :es, 1)
+    Se = Component(:Se, :Pin; es=t->1)
 
     Pa = EqualEffort(name=:Pa)
     fa = EqualFlow(name=:fa)
-    ca = Component(:C, :Ca)
-    set_default!(ca, :C, 1)
-    set_default!(ca, :q, 1)
-    rpa = Component(:R, :Rpa)
-    set_default!(rpa, :R, 1)
+    ca = Component(:C, :Ca; C=1, q=1)
+    rpa = Component(:R, :Rpa; R=1)
 
     Pb = EqualEffort(name=:Pb)
     fb = EqualFlow(name=:fb)
-    cb = Component(:C, :Cb)
-    set_default!(cb, :C, 1)
-    set_default!(cb, :q, 2)
-    rpb = Component(:R, :Rpb)
-    set_default!(rpb, :R, 1)
+    cb = Component(:C, :Cb; C=1, q=2)
+    rpb = Component(:R, :Rpb; R=1)
 
     fs = EqualFlow(name=:fs)
-    l = Component(:I, :L)
-    set_default!(l, :L, 1)
-    set_default!(l, :p, 1)
-    r = Component(:R, :Rs)
-    set_default!(r, :R, 1)
+    l = Component(:I, :L; L=1, p=1)
+    r = Component(:R, :Rs; R=1)
 
-    rl = Component(:R, :RL)
-    set_default!(rl, :R, 1)
+    rl = Component(:R, :RL; R=1)
 
     bg = BondGraph(:π_filter)
     add_node!(bg, [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl])
@@ -152,14 +129,9 @@ end
 end
 
 @testset "Simulate modular BG" begin
-    r = Component(:R)
-    set_default!(r, :R, 1)
-    l = Component(:I)
-    set_default!(l, :L, 1)
-    set_default!(l, :p, 1)
-    c = Component(:C)
-    set_default!(c, :C, 1)
-    set_default!(c, :q, 1)
+    r = Component(:R; R=1)
+    l = Component(:I; L=1, p=1)
+    c = Component(:C; C=1, q=1)
     kvl = EqualEffort(name=:kvl)
     SS1 = SourceSensor(name=:SS1)
     SS2 = SourceSensor(name=:SS2)
@@ -180,8 +152,6 @@ end
     add_node!(bg, [bgn1, bgn2])
     connect!(bg, bgn1, bgn2)
 
-    constitutive_relations(bg)
-
     tspan = (0, 10.0)
     sol = simulate(bg, tspan)
 
@@ -199,15 +169,13 @@ end
 
 @testset "Driven Filter Circuit" begin
     model = BondGraph("RC")
-    C = Component(:C)
-    R = Component(:R)
+    C = Component(:C; C=1)
+    R = Component(:R; R=1)
     zero_law = EqualEffort()
     C, R, zero_law
     add_node!(model, [C, R, zero_law])
     connect!(model, R, zero_law)
     connect!(model, C, zero_law)
-    set_default!(C, :C, 1.0)
-    set_default!(R, :R, 1.0)
 
     # Source of flow in the model
     Sf = Component(:Sf)
@@ -219,7 +187,7 @@ end
     u0 = [1]
 
     # Case 1: constant forcing funciton
-    set_default!(Sf, :fs, 3)
+    Sf.fs = t->3
     ODESystem(model)
     constitutive_relations(model)
     sol = simulate(model, tspan; u0)
@@ -227,19 +195,9 @@ end
 
     # Case 2: regular forcing function
     f(t) = sin(2t)
-    set_default!(Sf, :fs, f)
+    Sf.fs = f
     sol = simulate(model, tspan; u0)
     @test isapprox(sol[end], [0.23625], atol=1e-5)
-
-    # @register_symbolic needs to be called at the top level
-    # Therefore this test fails, despite the code working in REPL
-
-    # Case 3: arbitrary forcing function
-    # g(t) = t % 1 <= 0.5 ? 2 : 0
-    # @register_symbolic g(t)
-    # set_default!(Sf, :fs, g)
-    # sol = simulate(model, tspan; u0)
-    # @test isapprox(sol[end], [-0.70709], atol=1e-5)
 end
 
 @testset "Simple Biochemical Simulation" begin

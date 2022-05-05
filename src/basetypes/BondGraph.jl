@@ -38,7 +38,6 @@ junctions(bg::BondGraph) = filter(x -> x isa Junction, bg.nodes)
 
 getnodes(bg::BondGraph, T::DataType) = filter(x -> x isa T, bg.nodes)
 getnodes(bg::BondGraph, t::AbstractString) = filter(x -> type(x) == t, bg.nodes)
-getnodes(bg::BondGraph, n) = filter(x -> name(x) == string(n), bg.nodes)
 
 getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
 getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)

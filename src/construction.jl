@@ -4,7 +4,6 @@ function add_node!(bg::BondGraph, nodes)
     end
 end
 
-#TODO add autonaming functionality here instead of at top level
 function add_node!(bg::BondGraph, node::AbstractNode)
     g.add_vertex!(bg, node) || @warn "Node '$(name(node))' already in model"
 end

@@ -86,9 +86,6 @@ end
     c = Component(:C)
     @parameters fs(t) es(t)
 
-    # @test isequal(controls(se), [es])
-    # @test isequal(controls(sf), [fs])
-    # @test isequal(controls(c), Num[])
     @test var_in(es, controls(se))
     @test var_in(fs, controls(sf))
     @test controls(c) == Dict()
@@ -266,7 +263,6 @@ end
     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
-    # equations are not simplifying with exp/log rules
     @test isequal(eqs[1].rhs, e1.rhs)
     @test isequal(eqs[2].rhs, e2.rhs)
     @test isequal(eqs[3].rhs, e3.rhs)

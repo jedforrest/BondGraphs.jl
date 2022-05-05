@@ -16,7 +16,7 @@ function nodecolours(nodes)
     for n in nodes
         type_n = type(n)
         # colour i is the i-th default plotting colour
-        c = if type_n in [:Se, :Sf, :SS]
+        c = if type_n in ["Se", "Sf", "SS"]
             3
         elseif n isa Component{1}
             1
@@ -24,6 +24,8 @@ function nodecolours(nodes)
             2
         elseif n isa Junction
             :lightgray
+        else
+            :white # blank
         end
         push!(colours, c)
     end

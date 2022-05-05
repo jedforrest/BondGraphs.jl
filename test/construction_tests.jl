@@ -16,31 +16,31 @@ function RCI(name=:RCI)
 end
 
 @testset "Creating Components" begin
-    BondGraphs.COUNTER[] = 1
     C = Component(:C)
-    C2 = Component(:C; q=2)
     @test type(C) == "C"
-    @test name(C) == "C1"
-    @test name(C2) == "C2"
+    @test name(C) == "C"
 
     R = Component(:R, "newR")
-    @test type(R) == "R"
     @test name(R) == "newR"
 
     I = Component(:I; L=5)
     @test I.L == 5
+
+    C2 = Component(:C; q=2)
     @test C2.q == 2
+
+    SS = SourceSensor()
+    @test type(SS) == "SS"
 end
 
 @testset "Creating Junctions" begin
-    BondGraphs.COUNTER[] = 1
-    EqE_1 = EqualEffort(name="foo")
-    EqE_2 = EqualEffort()
+    EqE_1 = EqualEffort()
+    EqE_2 = EqualEffort(name="foo")
     EqF = EqualFlow()
 
-    @test name(EqE_1) == "foo"
-    @test name(EqE_2) == "0_2"
-    @test name(EqF) == "1_3"
+    @test name(EqE_1) == "zero"
+    @test name(EqE_2) == "foo"
+    @test name(EqF) == "one"
 end
 
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
@@ -98,22 +98,21 @@ end
 end
 
 @testset "Construction Failure" begin
-    BondGraphs.COUNTER[] = 1
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
     zero_law = EqualEffort()
 
     add_node!(model, [R, C, zero_law])
-    @test_logs (:warn, "Node 'R2' already in model") add_node!(model, R)
-    @test_logs (:warn, "Node '0_3' already in model") add_node!(model, zero_law)
+    @test_logs (:warn, "Node 'R' already in model") add_node!(model, R)
+    @test_logs (:warn, "Node 'zero' already in model") add_node!(model, zero_law)
 
     bond = connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
     one_law = EqualFlow()
-    @test_logs (:warn, "Node '1_4' not in model") remove_node!(model, one_law)
+    @test_logs (:warn, "Node 'one' not in model") remove_node!(model, one_law)
 
     tf = Component(:TF)
     add_node!(model, tf)
@@ -187,16 +186,15 @@ end
 
 @testset "Merging components" begin
     bg = RCI()
+    C = bg.C
+    R = bg.R
 
     newC = Component(:C, :newC)
     newR = Component(:R, :newR)
     add_node!(bg, [newC, newR])
     connect!(bg, newC, newR)
 
-    C = getnodes(bg, "C")[1]
     merge_nodes!(bg, C, newC)
-
-    R = getnodes(bg, "R")[1]
     merge_nodes!(bg, R, newR; junction=EqualFlow())
 
     @test isempty(getnodes(bg, "newC"))
