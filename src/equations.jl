@@ -46,10 +46,15 @@ function constitutive_relations(n::EqualFlow)
     flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
     return vcat(effort_constraint, flow_constraints)
 end
-function constitutive_relations(m::BondGraph)
-    cr = simplify.(full_equations(ODESystem(m)); expand=true, rewriter=rewriter)
+function constitutive_relations(bg::BondGraph; sub_defaults=false)
+    cr = simplify.(full_equations(ODESystem(bg)); expand=true, rewriter)
     # TODO: for some reason, must be simplified twice to work
-    simplify.(cr; rewriter=rewriter)
+    cr = simplify.(cr; rewriter=rewriter)
+    if sub_defaults
+        return _sub_defaults(cr, all_variables(bg))
+    else
+        return cr
+    end
 end
 function constitutive_relations(bgn::BondGraphNode)
     return constitutive_relations(bgn.bondgraph)
@@ -58,6 +63,21 @@ end
 @connector function MTKPort(; name)
     vars = @variables E(t) F(t) [connect = Flow]
     ODESystem(Equation[], t, vars, []; name=name)
+end
+
+function _sub_defaults(eqs, defaults)
+    for (comp, var_dict) in defaults
+        cname = name(comp)
+        # This is sort of a hack to match BG vars to MTK vars
+        function mtkvar(cname, var)
+            name = Symbol("$(cname)₊$var")
+            v, = @variables $name
+            return v
+        end
+        namespaced_var_dict = Dict(mtkvar(cname, k) => v for (k, v) in var_dict)
+        eqs = [substitute(eq, namespaced_var_dict) for eq in eqs]
+    end
+    simplify.(eqs; rewriter)
 end
 
 function get_connection_eq(b::Bond, subsystems)
@@ -157,11 +177,11 @@ function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:default
     sys = ODESystem(m)
     flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
     if probtype == :ODE || flag_ODE
-        prob = ODEProblem(sys, u0, tspan, pmap)
+        prob = ODEProblem(sys, u0, tspan, pmap; kwargs...)
     else
-        prob = ODAEProblem(sys, u0, tspan, pmap)
+        prob = ODAEProblem(sys, u0, tspan, pmap; kwargs...)
     end
-    return solve(prob; kwargs...)
+    return solve(prob)
 end
 
 # Custom post-processing of latex display for equations
