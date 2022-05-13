@@ -16,16 +16,19 @@ nodes(bg::BondGraph) = bg.nodes
 bonds(bg::BondGraph) = bg.bonds
 
 # AbstractNode properties
-#TODO these are not unique, need to create nested (or flattened) dictionary structure
-parameters(bg::BondGraph) = Dict(p for c in components(bg) for p in parameters(c))
+function _nested_bg_variables(bg::BondGraph, var_function::Function)
+    Dict(comp => Dict(var for var in var_function(comp)) for comp in components(bg))
+end
 
-globals(bg::BondGraph) = Dict(g for c in components(bg) for g in globals(c))
+parameters(bg::BondGraph) = _nested_bg_variables(bg, parameters)
 
-states(bg::BondGraph) = Dict(x for c in components(bg) for x in states(c))
+globals(bg::BondGraph) = _nested_bg_variables(bg, globals)
 
-controls(bg::BondGraph) = Dict(u for c in components(bg) for u in controls(c))
+states(bg::BondGraph) = _nested_bg_variables(bg, states)
 
-all_variables(bg::BondGraph) = Dict(v for c in components(bg) for v in all_variables(c))
+controls(bg::BondGraph) = _nested_bg_variables(bg, controls)
+
+all_variables(bg::BondGraph) = _nested_bg_variables(bg, all_variables)
 
 function equations(bg::BondGraph; simplify_eqs=true)
     isempty(bg.nodes) && return Equation[]
