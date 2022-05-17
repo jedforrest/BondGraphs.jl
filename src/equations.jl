@@ -110,6 +110,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
     return compose(sys, ps...)
 end
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
+    # TODO check for disconnected ports/nodes
     (subsystems, connections) = get_subsys_and_connections(m)
     compose_bg_model(subsystems, connections, m.name, simplify_eqs)
 end
@@ -185,7 +186,7 @@ function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:default
 end
 
 # Custom post-processing of latex display for equations
-# TODO: may remove
+# TODO: move inside cr functions
 function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
     ltx = latexify(x)
 

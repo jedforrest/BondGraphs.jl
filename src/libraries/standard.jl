@@ -139,7 +139,7 @@ TF_dict = Dict(
     ),
     :equations=>[
         0 ~ E[2] - n * E[1],
-        0 ~ F[1] - n * F[2]
+        0 ~ F[1] + n * F[2]
     ],
 )
 
