@@ -73,8 +73,8 @@ end
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
-    @test repr(b1) == "Bond C:C ⇀ 0"
-    @test repr(b2) == "Bond 0 ⇀ SS:Source"
+    @test repr(b1) == "Bond C:C ⇀ J"
+    @test repr(b2) == "Bond J ⇀ SS:Source"
     @test repr(port) == "Port C:C (1)"
     @test repr(bg) == "BondGraph newbg (0 Nodes, 0 Bonds)"
     @test repr(bgn) == "BG:newbg"

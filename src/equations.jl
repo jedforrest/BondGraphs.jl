@@ -131,9 +131,8 @@ function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_
 end
 
 function get_subsys_and_connections(bg::BondGraph)
-    uniquenames = create_unique_names(bg.nodes)
     # Collect constitutive relations from components
-    subsystems = OrderedDict(n => ODESystem(n; name=uniquenames[n]) for n in nodes(bg))
+    subsystems = OrderedDict(n => ODESystem(n) for n in nodes(bg))
     # Add constraints from bonds
     connections = [get_connection_eq(b, subsystems) for b in bonds(bg)]
     return subsystems, connections
@@ -155,23 +154,6 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
     else
         return model
     end
-end
-
-function create_unique_names(nodes)
-    nodenames = name.(nodes)
-    newnames = Dict()
-    for n in nodes
-        _name = name(n)
-        common_named_nodes = nodes[findall(==(_name), nodenames)]
-        if length(common_named_nodes) > 1
-            for (i, _n) in enumerate(common_named_nodes)
-                newnames[_n] = _n.name * "$i"
-            end
-        else
-            newnames[n] = n.name
-        end
-    end
-    newnames
 end
 
 function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:default, kwargs...)

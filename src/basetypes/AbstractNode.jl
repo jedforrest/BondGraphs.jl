@@ -58,7 +58,7 @@ struct EqualEffort <: Junction
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    function EqualEffort(; name="zero", v::Int=0)
+    function EqualEffort(; name="𝟎", v::Int=0)
         new(string(name), [true], [0], Ref(v))
     end
 end
@@ -68,7 +68,7 @@ struct EqualFlow <: Junction
     freeports::Vector{Bool}
     weights::Vector{Int}
     vertex::RefValue{Int}
-    function EqualFlow(; name="one", v::Int=0)
+    function EqualFlow(; name="𝟏", v::Int=0)
         new(string(name), [true], [0], Ref(v))
     end
 end
@@ -82,6 +82,7 @@ type(::SourceSensor) = "SS"
 
 # Name
 name(n::AbstractNode) = n.name
+name(n::Junction) = vertex(n) == 0 ? n.name : "$(n.name)_$(vertex(n))"
 
 # Ports
 freeports(n::AbstractNode) = n.freeports
@@ -137,11 +138,10 @@ end
 
 # BASE FUNCTIONS
 # This definition will need to expand when equations etc. are added
-==(n1::AbstractNode, n2::AbstractNode) = type(n1) == type(n2) && n1.name == n2.name
+==(n1::AbstractNode, n2::AbstractNode) = type(n1) == type(n2) && name(n1) == name(n2)
 
-show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(node.name)")
-show(io::IO, ::EqualEffort) = print(io, "0")
-show(io::IO, ::EqualFlow) = print(io, "1")
+show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(name(node))")
+show(io::IO, node::Junction) = print(io, name(node))
 
 # Easier referencing systems using a.b notation
 function getproperty(n::Component, sym::Symbol)

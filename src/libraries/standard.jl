@@ -110,7 +110,7 @@ Se_dict = Dict(
 Sf_dict = Dict(
     :description => """
       Flow Source
-      f = fₛ
+      f = -fₛ
       fₛ: Flow (source) [1.0]
       """,
     :numports => 1,
@@ -128,8 +128,8 @@ TF_dict = Dict(
     :description=>"""
     Linear Transformer
     e₂ = n*e₁
-    f₁ = n*f₂
-    n = Winding ratio [1.0]
+    f₁ = -n*f₂
+    n: Winding ratio [1.0]
     """,
     :numports => 2,
     :variables => Dict(

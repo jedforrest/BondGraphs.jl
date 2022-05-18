@@ -223,7 +223,21 @@ end
     @test isapprox(sol[end], [0.61969, 0.76062], atol=1e-5)
 end
 
-# end
+@testset "Reversible Michaelis-Menten" begin
+    rn_mm = @reaction_network MM_reversible begin
+        (1, 1), E + S <--> C
+        (1, 1), C <--> E + P
+    end
+    bg_mm = BondGraph(rn_mm; chemostats=["S", "P"])
+
+    bg_mm.S.xs = t -> 2
+
+    tspan = (0., 3.)
+    u0 = [1,2]
+    sol = simulate(bg_mm, tspan; u0)
+
+    @test isapprox(sol[end], [1.2, 1.8], atol=1e-5)
+end
 
 # @testset "SERCA Simulation" begin
 #     rn_serca = @reaction_network SERCA begin

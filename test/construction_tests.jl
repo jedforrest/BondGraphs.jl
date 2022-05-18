@@ -38,9 +38,9 @@ end
     EqE_2 = EqualEffort(name="foo")
     EqF = EqualFlow()
 
-    @test name(EqE_1) == "zero"
+    @test name(EqE_1) == "𝟎"
     @test name(EqE_2) == "foo"
-    @test name(EqF) == "one"
+    @test name(EqF) == "𝟏"
 end
 
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
@@ -105,14 +105,14 @@ end
 
     add_node!(model, [R, C, zero_law])
     @test_logs (:warn, "Node 'R' already in model") add_node!(model, R)
-    @test_logs (:warn, "Node 'zero' already in model") add_node!(model, zero_law)
+    @test_logs (:warn, "Node '𝟎_3' already in model") add_node!(model, zero_law)
 
     bond = connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, R, zero_law)
     @test_throws ErrorException connect!(model, C, R)
 
     one_law = EqualFlow()
-    @test_logs (:warn, "Node 'one' not in model") remove_node!(model, one_law)
+    @test_logs (:warn, "Node '𝟏' not in model") remove_node!(model, one_law)
 
     tf = Component(:TF)
     add_node!(model, tf)

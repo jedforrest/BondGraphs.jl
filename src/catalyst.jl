@@ -46,7 +46,7 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
         add_node!(bg, one_junction)
 
         for (i, spcs) in enumerate(species_names)
-            comp = spcs in chemostats ? Component(:Se, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
+            comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
             add_node!(bg, comp)
             connect!(bg, comp, one_junction)
 
@@ -60,7 +60,7 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
         connect!(bg, one_junction, Re)
     else
         spcs = species_names[1]
-        comp = spcs in chemostats ? Component(:Se, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
+        comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
         add_node!(bg, comp)
         connect!(bg, comp, Re)
 

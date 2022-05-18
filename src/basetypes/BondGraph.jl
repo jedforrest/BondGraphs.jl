@@ -17,7 +17,7 @@ bonds(bg::BondGraph) = bg.bonds
 
 # AbstractNode properties
 function _nested_bg_variables(bg::BondGraph, var_function::Function)
-    Dict(comp => Dict(var for var in var_function(comp)) for comp in components(bg))
+    OrderedDict(comp => Dict(var for var in var_function(comp)) for comp in components(bg))
 end
 
 parameters(bg::BondGraph) = _nested_bg_variables(bg, parameters)

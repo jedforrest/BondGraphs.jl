@@ -20,15 +20,15 @@ D = Differential(t)
 @parameters K
 @variables q(t)
 Ce_dict = Dict(
-    :description=>"""
-    Chemical species
-    e = R*T*log(K*q)
-    dq/dt = f
-    K Biochemical Constant; exp(mu_0/RT)/V [1.0],
-    R Universal Gas Constant [8.314],
-    T Temperature [310]
-    q Molar quantity [0.0]
-    """,
+    :description => """
+      Chemical species
+      e = R*T*log(K*q)
+      dq/dt = f
+      K: Biochemical Constant; exp(μ₀/RT)/V [1.0],
+      R: Universal Gas Constant [8.314],
+      T: Temperature [310]
+      q: Molar quantity [0.0]
+      """,
     :numports => 1,
     :variables => Dict(
         :parameters => Dict(
@@ -42,7 +42,7 @@ Ce_dict = Dict(
             q => 0.0
         ),
     ),
-    :equations=>[
+    :equations => [
         0 ~ R * T * log(K * q) - E[1],
         D(q) ~ F[1]
     ],
@@ -52,13 +52,13 @@ Ce_dict = Dict(
 @parameters K
 @variables q(t)
 ce_dict = Dict(
-    :description=>"""
-    Chemical species (normalised)
-    e = log(K*q)
-    dq/dt = f
-    K Biochemical Constant; exp(mu_0/RT)/V [1.0],
-    q Molar quantity [0.0]
-    """,
+    :description => """
+      Chemical species (normalised)
+      e = log(K*q)
+      dq/dt = f
+      K: Biochemical Constant; exp(μ₀/RT)/V [1.0],
+      q: Molar quantity [0.0]
+      """,
     :numports => 1,
     :variables => Dict(
         :parameters => Dict(
@@ -81,9 +81,9 @@ Re_dict = Dict(
     Biochemical reaction
     f₁ + f₂ = 0
     f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
-    r Reaction rate [1.0]
-    R Universal Gas Constant [8.314],
-    T Temperature [310]
+    r: Reaction rate [1.0]
+    R: Universal Gas Constant [8.314],
+    T: Temperature [310]
     """,
     :numports => 2,
     :variables => Dict(
@@ -95,7 +95,7 @@ Re_dict = Dict(
             T => _T
         ),
     ),
-    :equations=>[
+    :equations => [
         0 ~ F[1] + F[2],
         0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
     ],
@@ -104,31 +104,60 @@ Re_dict = Dict(
 # Normalised chemical reaction (re)
 @parameters r
 re_dict = Dict(
-    :description=>"""
-    Biochemical reaction (normalised)
-    f₁ + f₂ = 0
-    f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
-    r Reaction rate [1.0]
-    """,
+    :description => """
+      Biochemical reaction (normalised)
+      f₁ + f₂ = 0
+      f₁ = r * [exp(e₁/RT) - exp(e₂/RT)]
+      r: Reaction rate [1.0]
+      """,
     :numports => 2,
     :variables => Dict(
         :parameters => Dict(
             r => 1.0
         ),
     ),
-    :equations=>[
+    :equations => [
         0 ~ F[1] + F[2],
         0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
     ],
 )
 
-# TODO: add biochemical equivalents of Se and Sf
+# Source of (chemical) effort (:SCe)
+@parameters K
+@parameters xs(t)
+SCe_dict = Dict(
+    :description => """
+      Source of chemical potential energy
+      e = R*T*log(K*xₛ)
+      xₛ: Concentration (source) [1.0]
+      K: Biochemical Constant; exp(μ₀/RT)/V [1.0],
+      R: Universal Gas Constant [8.314],
+      T: Temperature [310]
+      """,
+    :numports => 1,
+    :variables => Dict(
+        :parameters => Dict(
+            K => 1.0
+        ),
+        :globals => Dict(
+            R => _R,
+            T => _T
+        ),
+        :controls => Dict(
+            xs => (t -> 1.0)
+        ),
+    ),
+    :equations => [
+        0 ~ R * T * log(K * xs) - E[1],
+    ],
+)
 
 const biochemical_library = Dict(
     :Ce => Ce_dict,
     :ce => ce_dict,
     :Re => Re_dict,
-    :re => re_dict
+    :re => re_dict,
+    :SCe => SCe_dict
 )
 
 end

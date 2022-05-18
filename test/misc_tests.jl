@@ -15,9 +15,18 @@
     delete!(BondGraphs.DEFAULT_LIBRARY, :A)
 end
 
-@testset "Graph Node Colour Selection" begin
-    nodes = [Component(:C), Component(:Re), SourceSensor(), EqualFlow()]
-    @test BondGraphs.nodecolours(nodes) == [1, 2, 3, :lightgray]
+@testset "Graph Attributes" begin
+    nodes = [
+        Component(:C),
+        Component(:Re, "R1"),
+        SourceSensor(),
+        EqualFlow(),
+        EqualEffort(),
+        BondGraphNode(BondGraph("testBG"))
+    ]
+
+    @test BondGraphs.nodecolours(nodes) == [1, 2, 3, :lightgray, :lightgray, :white]
+    @test BondGraphs.nodenames(nodes) == ["C:C", "Re:R1", "SS:SS", "1", "0", "BG:testBG"]
 end
 
 @testset "Plotting" begin
