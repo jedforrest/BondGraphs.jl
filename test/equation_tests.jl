@@ -17,9 +17,7 @@ function RLC()
 end
 
 # cannot use standard notation "var in array" for MTK vars
-# var_in(var, array) = any(iszero.(var .- array))
-var_in(var, array) = any(iszero.(var .- keys(array)))
-# var_in(var, array) = var in keys(array)
+var_in(var, dict) = any(iszero.(var .- keys(dict)))
 
 @testset "Equations" begin
     c = Component(:C)
@@ -48,8 +46,9 @@ end
 
     bg = RLC()
     @parameters C L R
-    for var in [C, L, R]
-        @test var_in(var, parameters(bg))
+    all_params = merge(values(parameters(bg))...)
+    for var in [C L R]
+        @test var_in(var, all_params)
     end
 end
 
@@ -76,8 +75,9 @@ end
 
     bg = RLC()
     @variables q(t) p(t)
-    @test var_in(q, states(bg))
-    @test var_in(p, states(bg))
+    all_states = merge(values(states(bg))...)
+    @test var_in(q, all_states)
+    @test var_in(p, all_states)
 end
 
 @testset "Controls" begin
@@ -92,7 +92,8 @@ end
 
     bg = RLC()
     add_node!(bg, [se, sf])
-    @test var_in(es, controls(bg)) && var_in(fs, controls(bg))
+    all_controls = merge(values(controls(bg))...)
+    @test var_in(es, all_controls) && var_in(fs, all_controls)
 end
 
 @testset "Constitutive relations" begin

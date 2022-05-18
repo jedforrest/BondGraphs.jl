@@ -214,18 +214,32 @@ end
     @test isapprox(sol[end], [1.23606, 2.23606, 2.76393], atol=1e-5)
 end
 
-# @testset "Stoichiometry Simulation" begin
-#     a2b2c = @reaction_network A2B2C begin
-#         1, A + 2B --> 2C
+@testset "Stoichiometry Simulation" begin
+    rn = @reaction_network A2B begin
+        1, A --> 2B
+    end
+    bg = BondGraph(rn)
+    sol = simulate(bg, (0.0, 1.0); u0=[1, 0])
+    @test isapprox(sol[end], [0.61969, 0.76062], atol=1e-5)
+end
+
+# end
+
+# @testset "SERCA Simulation" begin
+#     rn_serca = @reaction_network SERCA begin
+#         (1, 1), P1 + MgATP <--> P2
+#         (1, 1), P2 + H <--> P2a
+#         (1, 1), P2 + 2Cai <--> P4
+#         (1, 1), P4 <--> P5 + 2H
+#         (1, 1), P5 <--> P6 + MgADP
+#         (1, 1), P6 <--> P8 + 2Casr
+#         (1, 1), P8 + 2H <--> P9
+#         (1, 1), P9 <--> P10 + H
+#         (1, 1), P10 <--> P1 + Pi
 #     end
-#     bg_a2b2c = BondGraph(a2b2c)
-#     eqs = equations(bg_a2b2c)
 
-#     # equations should cancel out all "exp"s and "log"s
-#     @test !any(contains(str, "log") for str in string.(eqs))
+#     chemostats = ["MgATP", "MgADP", "Pi", "H", "Cai", "Casr"]
+#     bg_serca = BondGraph(rn_serca; chemostats)
 
-#     tspan = (0.0, 1.0)
-#     u0 = [2, 1, 1]
-#     sol = simulate(bg_a2b2c, tspan; u0)
-#     @test_broken isapprox(sol[end], [0.29798, 4.40404, -2.40404], atol=1e-5)
+#     ODESystem(bg_serca)
 # end
