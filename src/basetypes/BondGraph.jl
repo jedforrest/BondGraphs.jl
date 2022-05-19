@@ -42,8 +42,9 @@ end
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
 junctions(bg::BondGraph) = filter(x -> x isa Junction, bg.nodes)
 
-getnodes(bg::BondGraph, T::DataType) = filter(x -> x isa T, bg.nodes)
-getnodes(bg::BondGraph, t::AbstractString) = filter(x -> type(x) == t, bg.nodes)
+getnodes(bg::BondGraph, T::DataType) = filter(n -> n isa T, bg.nodes)
+getnodes(bg::BondGraph, t::AbstractString) = filter(n -> "$(type(n)):$(name(n))" == t, bg.nodes)
+getnodes(bg::BondGraph, ts::Vector{T} where T <: AbstractString) = vcat((getnodes(bg, t) for t in ts)...)
 
 getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
 getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)

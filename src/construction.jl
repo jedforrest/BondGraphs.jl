@@ -4,6 +4,8 @@ function add_node!(bg::BondGraph, nodes)
     end
 end
 
+# TODO add better checking for valid/invalid nodes
+# e.g. no duplicate names
 function add_node!(bg::BondGraph, node::AbstractNode)
     g.add_vertex!(bg, node) || @warn "Node '$(name(node))' already in model"
 end

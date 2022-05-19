@@ -238,22 +238,3 @@ end
 
     @test isapprox(sol[end], [1.2, 1.8], atol=1e-5)
 end
-
-# @testset "SERCA Simulation" begin
-#     rn_serca = @reaction_network SERCA begin
-#         (1, 1), P1 + MgATP <--> P2
-#         (1, 1), P2 + H <--> P2a
-#         (1, 1), P2 + 2Cai <--> P4
-#         (1, 1), P4 <--> P5 + 2H
-#         (1, 1), P5 <--> P6 + MgADP
-#         (1, 1), P6 <--> P8 + 2Casr
-#         (1, 1), P8 + 2H <--> P9
-#         (1, 1), P9 <--> P10 + H
-#         (1, 1), P10 <--> P1 + Pi
-#     end
-
-#     chemostats = ["MgATP", "MgADP", "Pi", "H", "Cai", "Casr"]
-#     bg_serca = BondGraph(rn_serca; chemostats)
-
-#     ODESystem(bg_serca)
-# end

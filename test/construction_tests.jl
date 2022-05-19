@@ -194,10 +194,11 @@ end
     add_node!(bg, [newC, newR])
     connect!(bg, newC, newR)
 
+    @test !isempty(getnodes(bg, "C:newC"))
     merge_nodes!(bg, C, newC)
-    merge_nodes!(bg, R, newR; junction=EqualFlow())
+    @test isempty(getnodes(bg, "C:newC"))
 
-    @test isempty(getnodes(bg, "newC"))
+    merge_nodes!(bg, R, newR; junction=EqualFlow())
     @test length(getnodes(bg, EqualFlow)) == 1
     @test length(getnodes(bg, EqualEffort)) == 2
     @test nv(bg) == 7

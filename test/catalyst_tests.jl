@@ -12,9 +12,9 @@
     @test any(n -> n.name == "R1", bg_rn.nodes)
     @test length(getnodes(bg_rn, EqualFlow)) == 1
 
-    @test length(getnodes(bg_rn, "Ce")) == 3
+    @test length(getnodes(bg_rn, ["Ce:A", "Ce:B", "Ce:C"])) == 3
     @test length(getnodes(bg_rn, EqualFlow)) == 1
-    @test length(getnodes(bg_rn, "Re")) == 1
+    @test length(getnodes(bg_rn, "Re:R1")) == 1
 
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
 end
@@ -31,11 +31,11 @@ end
     @test nv(bg_rn) == 10
     @test ne(bg_rn) == 10
 
-    @test length(getnodes(bg_rn, "Ce")) == 2
-    @test length(getnodes(bg_rn, "SCe")) == 2
+    @test length(getnodes(bg_rn, ["Ce:E", "Ce:C"])) == 2
+    @test length(getnodes(bg_rn, ["SCe:S", "SCe:P"])) == 2
     @test length(getnodes(bg_rn, EqualEffort)) == 2
     @test length(getnodes(bg_rn, EqualFlow)) == 2
-    @test length(getnodes(bg_rn, "Re")) == 2
+    @test length(getnodes(bg_rn, ["Re:R1", "Re:R2"])) == 2
 
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
@@ -50,9 +50,9 @@ end
     @test nv(bg_rn) == 8
     @test ne(bg_rn) == 7
 
-    tfs = getnodes(bg_rn, "TF")
+    tfs = filter(n -> type(n) == "TF", bg_rn.nodes)
     @test length(tfs) == 3
-    @test repr.(tfs) == ["TF:tfA", "TF:tfB", "TF:tfC"]
+    @test repr.(tfs) == ["TF:tf1", "TF:tf2", "TF:tf3"]
 end
 
 @testset "SERCA" begin

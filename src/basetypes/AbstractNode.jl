@@ -144,6 +144,7 @@ show(io::IO, node::AbstractNode) = print(io, "$(type(node)):$(name(node))")
 show(io::IO, node::Junction) = print(io, name(node))
 
 # Easier referencing systems using a.b notation
+# TODO: rearrange so that getfield() is checked first with isdefined()
 function getproperty(n::Component, sym::Symbol)
     p, = @parameters $sym
     _, x = @variables t, $sym(t)

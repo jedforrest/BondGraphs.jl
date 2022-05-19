@@ -69,6 +69,7 @@ function _sub_defaults(eqs, defaults)
     for (comp, var_dict) in defaults
         cname = name(comp)
         # This is sort of a hack to match BG vars to MTK vars
+        # Does not include time-dependent variables
         function mtkvar(cname, var)
             name = Symbol("$(cname)₊$var")
             v, = @variables $name

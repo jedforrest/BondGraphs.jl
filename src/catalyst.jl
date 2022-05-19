@@ -4,21 +4,23 @@
 function BondGraph(rs::ReactionSystem; chemostats=[])
     bg = BondGraph(rs.name)
 
+    re_num = Ref(1)
+    tf_num = Ref(1)
+
     # Create disjoint reaction bondgraphs for each reaction in network
     all_reactions = reactions(rs)
-    reaction_num = 1
     for (i, reaction) in enumerate(all_reactions)
         if i > 1 && _is_reverse_off_previous(reaction, all_reactions[i-1])
             # Skip the second reaction
             continue
         end
 
-        Re = Component(:Re, Symbol("R$reaction_num"))
+        Re = Component(:Re, Symbol("R$(re_num[])"))
         add_node!(bg, Re)
-        _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats)
-        _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats)
+        _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats, tf_num)
+        _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats, tf_num)
 
-        reaction_num += 1
+        re_num[] += 1
     end
 
     # Combine common species across reactions
@@ -38,7 +40,7 @@ end
 # then together they form a bi-directional reaction pair.
 _is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
 
-function _half_equation!(bg, species, stoich, Re, chemostats)
+function _half_equation!(bg, species, stoich, Re, chemostats, tf_num)
     species_names = _stringify_species.(species)
 
     if length(species) > 1
@@ -51,10 +53,7 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
             connect!(bg, comp, one_junction)
 
             n = stoich[i]
-            if n != 1
-                tf = Component(:TF, "tf$(comp.name)"; n)
-                insert_node!(bg, (comp, one_junction), tf)
-            end
+            n != 1 && _insert_tf!(bg, comp, one_junction, n, tf_num)
         end
 
         connect!(bg, one_junction, Re)
@@ -65,12 +64,15 @@ function _half_equation!(bg, species, stoich, Re, chemostats)
         connect!(bg, comp, Re)
 
         n = stoich[1]
-        if n != 1
-            tf = Component(:TF, "tf$(comp.name)"; n)
-            insert_node!(bg, (comp, Re), tf)
-        end
+        n != 1 && _insert_tf!(bg, comp, Re, n, tf_num)
     end
 end
 
 # removes "(t)" from the end of the species name
 _stringify_species(species) = string(species)[1:end-3]
+
+function _insert_tf!(bg, node1, node2, n, tf_num)
+    tf = Component(:TF, "tf$(tf_num[])"; n)
+    insert_node!(bg, (node1, node2), tf)
+    tf_num[] += 1
+end
