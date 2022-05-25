@@ -159,6 +159,7 @@ function getproperty(n::Component, sym::Symbol)
     end
 end
 
+# TODO: this can overrite global variables unintentionally by creating a new local copy
 function setproperty!(n::Component, sym::Symbol, val)
     p, = @parameters $sym
     _, x = @variables t, $sym(t)

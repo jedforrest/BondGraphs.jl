@@ -121,7 +121,7 @@ end
     connect!(bg, Pb, rl)
 
     tspan = (0, 100.0)
-    sol = simulate(bg, tspan)
+    sol = simulate(bg, tspan; solver=Rosenbrock23())
     @test sol[1] == [1, 2, 1]
     @test isapprox(sol[end][1], 1.0, atol=1e-5)
     @test isapprox(sol[end][2], 0.5, atol=1e-5)

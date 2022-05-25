@@ -6,12 +6,18 @@
     # Non-existent component
     @test !haskey(BondGraphs.DEFAULT_LIBRARY, :A)
 
-    lib = Dict(:A => Dict())
+    A = Dict(
+        :description => "Some description",
+        :numports => 5,
+    )
+
+    lib = Dict(:A => A)
     addlibrary!(lib)
     # Component now exists
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :A)
+    @test numports(Component(:A)) == 5
 
-    # Delete fake component for later tests
+    # Delete fake components for later tests
     delete!(BondGraphs.DEFAULT_LIBRARY, :A)
 end
 
