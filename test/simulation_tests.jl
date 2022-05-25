@@ -232,9 +232,105 @@ end
 
     bg_mm.S.xs = t -> 2
 
-    tspan = (0., 3.)
-    u0 = [1,2]
-    sol = simulate(bg_mm, tspan; u0)
+    sol = simulate(bg_mm, (0.0, 3.0); u0=[1, 2])
 
     @test isapprox(sol[end], [1.2, 1.8], atol=1e-5)
+end
+
+@testset "SERCA (stiff equations)" begin
+    rn_serca = @reaction_network SERCA begin
+        (1, 1), P1 + MgATP <--> P2
+        (1, 1), P2 + H <--> P2a
+        (1, 1), P2 + 2Cai <--> P4
+        (1, 1), P4 <--> P5 + 2H
+        (1, 1), P5 <--> P6 + MgADP
+        (1, 1), P6 <--> P8 + 2Casr
+        (1, 1), P8 + 2H <--> P9
+        (1, 1), P9 <--> P10 + H
+        (1, 1), P10 <--> P1 + Pi
+    end
+
+    chemostats = ["MgATP", "MgADP", "Pi", "H", "Cai", "Casr"]
+    bg_serca = BondGraph(rn_serca; chemostats)
+
+
+    reaction_rates = [
+        :R1 => 0.00053004,
+        :R2 => 8326784.0537,
+        :R3 => 1567.7476,
+        :R4 => 1567.7476,
+        :R5 => 3063.4006,
+        :R6 => 130852.3839,
+        :R7 => 11612934.8748,
+        :R8 => 11612934.8748,
+        :R9 => 0.049926
+    ]
+    for (reaction, rate) in reaction_rates
+        getproperty(bg_serca, reaction).r = rate
+    end
+
+    species_affinities = [
+        :P1 => 5263.6085,
+        :P2 => 3803.6518,
+        :P2a => 3110.4445,
+        :P4 => 16520516.1239,
+        :P5 => 0.82914,
+        :P6 => 993148.433,
+        :P8 => 37.7379,
+        :P9 => 2230.2717,
+        :P10 => 410.6048,
+        :Cai => 1.9058,
+        :Casr => 31.764,
+        :MgATP => 244.3021,
+        :MgADP => 5.8126e-7,
+        :Pi => 0.014921,
+        :H => 1862.5406
+    ]
+    for (species, affinity) in species_affinities
+        getproperty(bg_serca, species).K = affinity
+    end
+
+    chemostat_amounts = [
+        :Cai => t -> 0.0057,
+        :Casr => t -> (0.05 + 0.01t)*2.28,
+        :H => t -> 0.004028,
+        :MgADP => t -> 1.3794,
+        :MgATP => t -> 3.8,
+        :Pi => t -> 570
+    ]
+    for (chemostat, amount) in chemostat_amounts
+        getproperty(bg_serca, chemostat).xs = amount
+    end
+
+    initial_conditions = [
+        :P1 => 0.000483061870385487,
+        :P2 => 0.0574915174273067,
+        :P2a => 0.527445119834607,
+        :P4 => 1.51818391164022e-09,
+        :P5 => 0.000521923287622898,
+        :P6 => 7.80721128535043e-05,
+        :P8 => 0.156693953834181,
+        :P9 => 0.149232225342376,
+        :P10 => 0.108044124948978
+    ]
+    for (species, ic) in initial_conditions
+        getproperty(bg_serca, species).q = ic
+    end
+
+    tspan = (0., 200.)
+    sol = simulate(bg_serca, tspan; solver=Rosenbrock23())
+
+    # calculated using the same code, verified by plot from BGT tutorial
+    real_solution = [
+        4.4404656222265794e-5,
+        0.09777422826977565,
+        0.8970112784324162,
+        2.6596475539704174e-9,
+        0.0009426424413096248,
+        0.001015195974904865,
+        0.001212098675876874,
+        0.0011543788312157496,
+        0.0008357702283899367,
+    ]
+    @test isapprox(sol[end], real_solution, atol=1e-5)
 end

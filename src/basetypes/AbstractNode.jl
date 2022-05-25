@@ -110,19 +110,19 @@ vertex(n::AbstractNode) = n.vertex[]
 set_vertex!(n::AbstractNode, v::Int) = n.vertex[] = v
 
 # Parameters
-parameters(::AbstractNode) = ()
+parameters(::AbstractNode) = Dict()
 parameters(n::Component) = n.variables[:parameters]
 
 # Globals
-globals(::AbstractNode) = ()
+globals(::AbstractNode) = Dict()
 globals(n::Component) = n.variables[:globals]
 
 # State variables
-states(::AbstractNode) = ()
+states(::AbstractNode) = Dict()
 states(n::Component) = n.variables[:states]
 
 # Control variables
-controls(::AbstractNode) = ()
+controls(::AbstractNode) = Dict()
 controls(n::Component) = n.variables[:controls]
 
 # Equations

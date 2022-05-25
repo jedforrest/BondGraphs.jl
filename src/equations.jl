@@ -145,7 +145,6 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
 
     if simplify_eqs
         return structural_simplify(model)
-        # model = structural_simplify(model)
         # # TODO: for some reason, must be simplified twice to work
         # simple_eqs = simplify.(full_equations(model); expand=true, rewriter=rewriter)
         # simple_eqs = simplify.(simple_eqs; rewriter=rewriter)
@@ -157,15 +156,15 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
     end
 end
 
-function simulate(m::BondGraph, tspan; u0=[], pmap=[], probtype::Symbol=:default, kwargs...)
-    sys = ODESystem(m)
+function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), kwargs...)
+    sys = ODESystem(bg)
     flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
-    if probtype == :ODE || flag_ODE
+    if flag_ODE
         prob = ODEProblem(sys, u0, tspan, pmap; kwargs...)
     else
         prob = ODAEProblem(sys, u0, tspan, pmap; kwargs...)
     end
-    return solve(prob)
+    return solve(prob, solver)
 end
 
 # Custom post-processing of latex display for equations

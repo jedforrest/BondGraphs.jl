@@ -18,7 +18,7 @@ D = Differential(t)
 
 # Chemical species (:Ce)
 @parameters K
-@variables q(t)
+@variables q(t) #[bounds = (0, Inf)]
 Ce_dict = Dict(
     :description => """
       Chemical species
@@ -50,7 +50,7 @@ Ce_dict = Dict(
 
 # Normalised chemical species (ce)
 @parameters K
-@variables q(t)
+@variables q(t) #[bounds = (0, Inf)]
 ce_dict = Dict(
     :description => """
       Chemical species (normalised)
@@ -124,7 +124,7 @@ re_dict = Dict(
 
 # Source of (chemical) effort (:SCe)
 @parameters K
-@parameters xs(t)
+@parameters xs(t) #[bounds = (0, Inf)]
 SCe_dict = Dict(
     :description => """
       Source of chemical potential energy
