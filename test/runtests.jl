@@ -1,6 +1,7 @@
 using Test
 using Graphs
 using ModelingToolkit
+using DifferentialEquations
 using Catalyst
 using RecipesBase
 using BondGraphs
