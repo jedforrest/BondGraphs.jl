@@ -22,7 +22,7 @@ var_in(var, dict) = any(iszero.(var .- keys(dict)))
 @testset "Equations" begin
     c = Component(:C)
     @parameters C
-    @variables E[1](t) F[1](t) q(t)
+    @variables E[1](t) F[1](t) q(t) C₊q(t)
     cr = [
         0 ~ q / C - E[1],
         D(q) ~ F[1]
@@ -33,6 +33,11 @@ var_in(var, dict) = any(iszero.(var .- keys(dict)))
 
     j = EqualEffort()
     @test isequal(equations(j), Equation[])
+
+    bg = BondGraph()
+    @test equations(bg) == Equation[]
+    add_node!(bg, c)
+    @test equations(bg) == [D(C₊q) ~ -0.0] # Equation produces -ve zero
 end
 
 @testset "Parameters" begin
@@ -60,6 +65,12 @@ end
     @test var_in(T, globals(re))
     @test var_in(R, globals(re))
     @test globals(c) == Dict()
+
+    bg = BondGraph()
+    add_node!(bg, re)
+    all_globals = merge(values(globals(bg))...)
+    @test var_in(T, all_globals)
+    @test var_in(R, all_globals)
 end
 
 @testset "State variables" begin
@@ -100,6 +111,16 @@ end
     @test var_in(es, all_controls) && var_in(fs, all_controls)
 end
 
+@testset "All variables" begin
+    bg = RLC()
+    re = Component(:Re)
+    add_node!(bg, re)
+
+    for (comp, var_dict) in all_variables(bg)
+        @test all_variables(comp) == var_dict
+    end
+end
+
 @testset "Constitutive relations" begin
     eqE = EqualEffort()
     eqF = EqualFlow()
@@ -115,14 +136,24 @@ end
     cr1 = D(q) ~ -(q / C) / R + (-p) / L
     cr2 = D(p) ~ q / C
 
+    # Constitutive relations
     @test isequal(cr_bg[1].lhs, cr1.lhs)
     @test isequal(simplify(cr_bg[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bg[2], cr2)
 
+    # BondGraphNode CR
     cr_bgn = constitutive_relations(BondGraphNode(bg))
     @test isequal(cr_bgn[1].lhs, cr1.lhs)
     @test isequal(simplify(cr_bgn[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bgn[2], cr2)
+
+    # CR with sub_defaults=true
+    subbed_eqs = [
+        D(q) ~ -q - p,
+        D(p) ~ q
+    ]
+    @test BondGraphs._sub_defaults([cr1, cr2], all_variables(bg)) == subbed_eqs
+    @test constitutive_relations(bg; sub_defaults=true) == subbed_eqs
 end
 
 @testset "0-junction equations" begin
