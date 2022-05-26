@@ -158,13 +158,16 @@ end
 
 function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), kwargs...)
     sys = ODESystem(bg)
+
+    # Check if problem is an ODE or DAE
     flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
-    if flag_ODE
-        prob = ODEProblem(sys, u0, tspan, pmap; kwargs...)
-    else
-        prob = ODAEProblem(sys, u0, tspan, pmap; kwargs...)
-    end
-    return solve(prob, solver)
+    ODEProblemType = flag_ODE ? ODEProblem : ODAEProblem
+
+    # If bg has control variables, need to allow union type for parameters
+    use_union = has_controls(bg)
+
+    prob = ODEProblemType(sys, u0, tspan, pmap; use_union, kwargs...)
+    return solve(prob, solver; kwargshandle=KeywordArgSilent)
 end
 
 # Custom post-processing of latex display for equations

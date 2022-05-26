@@ -91,7 +91,11 @@ end
     @test controls(c) == Dict()
 
     bg = RLC()
+    @test !has_controls(bg)
+
     add_node!(bg, [se, sf])
+    @test has_controls(bg)
+
     all_controls = merge(values(controls(bg))...)
     @test var_in(es, all_controls) && var_in(fs, all_controls)
 end

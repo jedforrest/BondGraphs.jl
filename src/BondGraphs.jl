@@ -20,6 +20,7 @@ SourceSensor, Port, Bond, BondGraph, BondGraphNode,
 
 type, name, id, freeports, numports, weights, vertex, set_vertex!,
 parameters, globals, states, controls, all_variables, constitutive_relations,
+has_controls,
 
 srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
 

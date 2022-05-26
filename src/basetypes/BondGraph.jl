@@ -36,7 +36,7 @@ function equations(bg::BondGraph; simplify_eqs=true)
     return equations(sys)
 end
 
-# TODO: add function for substituting in parameter values into equations
+has_controls(bg::BondGraph) = any(.!isempty.(controls.(nodes(bg))))
 
 # Filtering
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
