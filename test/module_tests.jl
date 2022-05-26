@@ -1,6 +1,11 @@
 @parameters t
 D = Differential(t)
 
+function find_subsys(sys, s)
+    subsys = ModelingToolkit.get_systems(sys)
+    return filter(x -> nameof(x) == s, subsys)[1]
+end
+
 @testset "SS component system" begin
     SS = SourceSensor(name=:SS)
 
@@ -15,11 +20,6 @@ D = Differential(t)
     @test length(sys.systems) == 1
     @test sys.p1.E isa Num
     @test sys.p1.F isa Num
-end
-
-function find_subsys(sys, s)
-    subsys = ModelingToolkit.get_systems(sys)
-    return filter(x -> nameof(x) == s, subsys)[1]
 end
 
 @testset "Expose models" begin

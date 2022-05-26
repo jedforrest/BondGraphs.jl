@@ -17,12 +17,12 @@ function RLC()
 end
 
 # cannot use standard notation "var in array" for MTK vars
-var_in(var, array) = any(iszero.(var .- array))
+var_in(var, dict) = any(iszero.(var .- keys(dict)))
 
 @testset "Equations" begin
     c = Component(:C)
     @parameters C
-    @variables E[1](t) F[1](t) q(t)
+    @variables E[1](t) F[1](t) q(t) C₊q(t)
     cr = [
         0 ~ q / C - E[1],
         D(q) ~ F[1]
@@ -33,6 +33,11 @@ var_in(var, array) = any(iszero.(var .- array))
 
     j = EqualEffort()
     @test isequal(equations(j), Equation[])
+
+    bg = BondGraph()
+    @test equations(bg) == Equation[]
+    add_node!(bg, c)
+    @test equations(bg) == [D(C₊q) ~ -0.0] # Equation produces -ve zero
 end
 
 @testset "Parameters" begin
@@ -46,8 +51,9 @@ end
 
     bg = RLC()
     @parameters C L R
-    for var in [C, L, R]
-        @test var_in(var, parameters(bg))
+    all_params = merge(values(parameters(bg))...)
+    for var in [C L R]
+        @test var_in(var, all_params)
     end
 end
 
@@ -58,7 +64,13 @@ end
 
     @test var_in(T, globals(re))
     @test var_in(R, globals(re))
-    @test globals(c) == Num[]
+    @test globals(c) == Dict()
+
+    bg = BondGraph()
+    add_node!(bg, re)
+    all_globals = merge(values(globals(bg))...)
+    @test var_in(T, all_globals)
+    @test var_in(R, all_globals)
 end
 
 @testset "State variables" begin
@@ -67,15 +79,16 @@ end
 
     @variables q(t)
     c = Component(:C)
-    @test isequal(states(c), [q])
+    @test var_in(q, states(c))
 
     ce = Component(:ce)
-    @test isequal(states(ce), [q])
+    @test var_in(q, states(ce))
 
     bg = RLC()
     @variables q(t) p(t)
-    @test var_in(q, states(bg))
-    @test var_in(p, states(bg))
+    all_states = merge(values(states(bg))...)
+    @test var_in(q, all_states)
+    @test var_in(p, all_states)
 end
 
 @testset "Controls" begin
@@ -84,13 +97,28 @@ end
     c = Component(:C)
     @parameters fs(t) es(t)
 
-    @test isequal(controls(se), [es])
-    @test isequal(controls(sf), [fs])
-    @test isequal(controls(c), Num[])
+    @test var_in(es, controls(se))
+    @test var_in(fs, controls(sf))
+    @test controls(c) == Dict()
 
     bg = RLC()
+    @test !has_controls(bg)
+
     add_node!(bg, [se, sf])
-    @test isequal(controls(bg), [es, fs])
+    @test has_controls(bg)
+
+    all_controls = merge(values(controls(bg))...)
+    @test var_in(es, all_controls) && var_in(fs, all_controls)
+end
+
+@testset "All variables" begin
+    bg = RLC()
+    re = Component(:Re)
+    add_node!(bg, re)
+
+    for (comp, var_dict) in all_variables(bg)
+        @test all_variables(comp) == var_dict
+    end
 end
 
 @testset "Constitutive relations" begin
@@ -108,14 +136,24 @@ end
     cr1 = D(q) ~ -(q / C) / R + (-p) / L
     cr2 = D(p) ~ q / C
 
+    # Constitutive relations
     @test isequal(cr_bg[1].lhs, cr1.lhs)
     @test isequal(simplify(cr_bg[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bg[2], cr2)
 
+    # BondGraphNode CR
     cr_bgn = constitutive_relations(BondGraphNode(bg))
     @test isequal(cr_bgn[1].lhs, cr1.lhs)
     @test isequal(simplify(cr_bgn[1].rhs - cr1.rhs), 0)
     @test isequal(cr_bgn[2], cr2)
+
+    # CR with sub_defaults=true
+    subbed_eqs = [
+        D(q) ~ -q - p,
+        D(p) ~ q
+    ]
+    @test BondGraphs._sub_defaults([cr1, cr2], all_variables(bg)) == subbed_eqs
+    @test constitutive_relations(bg; sub_defaults=true) == subbed_eqs
 end
 
 @testset "0-junction equations" begin
@@ -261,10 +299,8 @@ end
     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
-    # equations are not simplifying with exp/log rules
     @test isequal(eqs[1].rhs, e1.rhs)
     @test isequal(eqs[2].rhs, e2.rhs)
     @test isequal(eqs[3].rhs, e3.rhs)
     @test isequal(eqs[4].rhs, e4.rhs)
 end
-

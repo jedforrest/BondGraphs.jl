@@ -1,7 +1,7 @@
 module BondGraphs
 
 import Graphs as g
-import Base: RefValue, eltype, show, in, iterate, ==, getproperty
+import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!
 # Importing means names can be reused, but may be confusing later
 import ModelingToolkit: parameters, states, equations, controls
 
@@ -18,13 +18,13 @@ using Latexify
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 SourceSensor, Port, Bond, BondGraph, BondGraphNode,
 
-type, name, freeports, numports, weights, vertex, set_vertex!,
-parameters, globals, states, controls, constitutive_relations,
-get_default, set_default!,
+type, name, id, freeports, numports, weights, vertex, set_vertex!,
+parameters, globals, states, controls, all_variables, constitutive_relations,
+has_controls,
 
 srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
 
-add_node!, remove_node!, connect!, disconnect!, 
+add_node!, remove_node!, connect!, disconnect!,
 swap!, insert_node!, merge_nodes!, simplify_junctions!, expose,
 
 simulate, addlibrary!, description
@@ -43,7 +43,7 @@ include("basetypes/BondGraph.jl")
 include("graphfunctions.jl")
 include("construction.jl")
 include("equations.jl")
-include("conversion.jl")
+include("catalyst.jl")
 include("plotrecipes.jl")
 
 end

@@ -2,7 +2,7 @@
     # Default attributes
     nodecolor --> nodecolours(bg.nodes)
     title --> bg.name
-    names --> bg.nodes
+    names --> nodenames(bg.nodes)
 
     # Forced attributes
     curves := false
@@ -12,11 +12,9 @@
 end
 
 function nodecolours(nodes)
-    colours = []
-    for n in nodes
-        type_n = type(n)
-        # colour i is the i-th default plotting colour
-        c = if type_n in [:Se, :Sf, :SS]
+    # colour integer i is the i-th default plotting colour
+    [
+        (if type(n) in ["Se", "Sf", "SS", "SCe"] # Source node types
             3
         elseif n isa Component{1}
             1
@@ -24,8 +22,22 @@ function nodecolours(nodes)
             2
         elseif n isa Junction
             :lightgray
-        end
-        push!(colours, c)
-    end
-    colours
+        else
+            :white # blank
+        end)
+        for n in nodes
+    ]
+end
+
+function nodenames(nodes)
+    [
+        (if n isa EqualEffort
+            "0"
+        elseif n isa EqualFlow
+            "1"
+        else
+            "$(type(n)):$(name(n))"
+        end)
+        for n in nodes
+    ]
 end

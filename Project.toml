@@ -1,7 +1,7 @@
 name = "BondGraphs"
 uuid = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
 authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
@@ -15,6 +15,7 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
+libblastrampoline_jll = "8e850b90-86db-534c-a0d3-1478176c7d93"
 
 [compat]
 Catalyst = "10"
@@ -22,7 +23,7 @@ DifferentialEquations = "7"
 GraphRecipes = "0.5"
 Graphs = "1"
 Latexify = "0.15"
-ModelingToolkit = "8.7"
+ModelingToolkit = "8"
 OrderedCollections = "1"
 RecipesBase = "1"
 Setfield = "0.8, 1"

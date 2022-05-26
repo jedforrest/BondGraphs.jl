@@ -4,8 +4,10 @@ function add_node!(bg::BondGraph, nodes)
     end
 end
 
+# TODO add better checking for valid/invalid nodes
+# e.g. no duplicate names
 function add_node!(bg::BondGraph, node::AbstractNode)
-    g.add_vertex!(bg, node) || @warn "$node already in model"
+    g.add_vertex!(bg, node) || @warn "Node '$(name(node))' already in model"
 end
 
 
@@ -16,7 +18,7 @@ function remove_node!(bg::BondGraph, nodes)
 end
 
 function remove_node!(bg::BondGraph, node::AbstractNode)
-    g.rem_vertex!(bg, node) || @warn "$node not in model"
+    g.rem_vertex!(bg, node) || @warn "Node '$(name(node))' not in model"
     for bond in filter(bond -> node in bond, bg.bonds)
         g.rem_edge!(bg, srcnode(bond), dstnode(bond))
     end
@@ -37,12 +39,12 @@ function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     return g.rem_edge!(bg, node1, node2)
 end
 
-# TODO 
+# TODO
 # Flip bond function
 
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     _check_port_number(oldnode,newnode)
-    
+
     # may be a redundant check
     if !g.has_vertex(bg, newnode)
         add_node!(bg, newnode)
@@ -51,7 +53,7 @@ function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     srcnodes = g.inneighbors(bg, oldnode)
     dstnodes = g.outneighbors(bg, oldnode)
     remove_node!(bg, oldnode)
-    
+
     for src in srcnodes
         connect!(bg, src, newnode)
     end
@@ -60,14 +62,14 @@ function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     end
 end
 
-_check_port_number(oldnode::AbstractNode, newnode::AbstractNode) = 
+_check_port_number(oldnode::AbstractNode, newnode::AbstractNode) =
     numports(newnode) >= numports(oldnode) || error("New node must have a greater or equal number of ports to the old node")
 _check_port_number(oldnode::AbstractNode, newnode::Junction) = true
 
 
 # TODO implement according to https://bondgraphtools.readthedocs.io/en/latest/api.html#BondGraphTools.expose
 # function expose!()
-    
+
 # end
 
 

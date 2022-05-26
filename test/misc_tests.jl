@@ -6,18 +6,33 @@
     # Non-existent component
     @test !haskey(BondGraphs.DEFAULT_LIBRARY, :A)
 
-    lib = Dict(:A => Dict())
+    A = Dict(
+        :description => "Some description",
+        :numports => 5,
+    )
+
+    lib = Dict(:A => A)
     addlibrary!(lib)
     # Component now exists
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :A)
+    @test numports(Component(:A)) == 5
 
-    # Delete fake component for later tests
+    # Delete fake components for later tests
     delete!(BondGraphs.DEFAULT_LIBRARY, :A)
 end
 
-@testset "Graph Node Colour Selection" begin
-    nodes = [Component(:C), Component(:Re), Component(:SS), EqualFlow()]
-    @test BondGraphs.nodecolours(nodes) == [1, 2, 3, :lightgray]
+@testset "Graph Attributes" begin
+    nodes = [
+        Component(:C),
+        Component(:Re, "R1"),
+        SourceSensor(),
+        EqualFlow(),
+        EqualEffort(),
+        BondGraphNode(BondGraph("testBG"))
+    ]
+
+    @test BondGraphs.nodecolours(nodes) == [1, 2, 3, :lightgray, :lightgray, :white]
+    @test BondGraphs.nodenames(nodes) == ["C:C", "Re:R1", "SS:SS", "1", "0", "BG:testBG"]
 end
 
 @testset "Plotting" begin
@@ -27,19 +42,19 @@ end
         (1, 1), C <--> E + P
     end
     bg = BondGraph(rn; chemostats=["S", "P"])
-    
+
     rec = RecipesBase.apply_recipe(Dict{Symbol, Any}(), bg)
     attributes = getfield(rec[1], 1)
 
     @test attributes[:curves] == false
-    @test attributes[:title] == :MM_reversible
+    @test attributes[:title] == "MM_reversible"
     @test attributes[:nodeshape] == :rect
 end
 
-@testset "Latexify" begin
-    bg = RLC()
-    eq = equations(bg)
-    ltx = repr("text/latex", eq)
+# @testset "Latexify" begin
+#     bg = RLC()
+#     eq = equations(bg)
+#     ltx = repr("text/latex", eq)
 
-    @test ltx == "\\begin{align}\n\\frac{dC_{+}q(t)}{dt} =& C_{+p1_{+}F}\\left( t \\right) \\\\\n\\frac{dI_{+}p(t)}{dt} =& R_{+p1_{+}E}\\left( t \\right)\n\\end{align}\n"
-end
+#     @test ltx == "\\begin{align}\n\\frac{dC_{+}q(t)}{dt} =& C_{+p1_{+}F}\\left( t \\right) \\\\\n\\frac{dI_{+}p(t)}{dt} =& R_{+p1_{+}E}\\left( t \\right)\n\\end{align}\n"
+# end

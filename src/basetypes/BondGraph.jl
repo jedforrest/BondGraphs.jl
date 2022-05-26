@@ -1,55 +1,64 @@
 # BONDGRAPH
 struct BondGraph <: g.AbstractGraph{Int64}
-    type::Symbol
-    name::Symbol
+    name::AbstractString
     nodes::Vector{T} where {T<:AbstractNode}
     bonds::Vector{Bond}
 end
-BondGraph(name = :BG) = BondGraph(:BG, Symbol(name), AbstractNode[], Bond[])
+function BondGraph(name="BG")
+    BondGraph(string(name), AbstractNode[], Bond[])
+end
 
 # PROPERTIES
-type(bg::BondGraph) = bg.type
-
 name(bg::BondGraph) = bg.name
 
 nodes(bg::BondGraph) = bg.nodes
 
 bonds(bg::BondGraph) = bg.bonds
 
-# AbstractNode properties 
-parameters(bg::BondGraph) = [p for c in components(bg) for p in parameters(c)]
+# AbstractNode properties
+function _nested_bg_variables(bg::BondGraph, var_function::Function)
+    OrderedDict(comp => Dict(var for var in var_function(comp)) for comp in components(bg))
+end
 
-states(bg::BondGraph) = [x for c in components(bg) for x in states(c)]
+parameters(bg::BondGraph) = _nested_bg_variables(bg, parameters)
 
-controls(bg::BondGraph) = [u for c in components(bg) for u in controls(c)]
+globals(bg::BondGraph) = _nested_bg_variables(bg, globals)
 
-function equations(bg::BondGraph; simplify_eqs = true)
+states(bg::BondGraph) = _nested_bg_variables(bg, states)
+
+controls(bg::BondGraph) = _nested_bg_variables(bg, controls)
+
+all_variables(bg::BondGraph) = _nested_bg_variables(bg, all_variables)
+
+function equations(bg::BondGraph; simplify_eqs=true)
     isempty(bg.nodes) && return Equation[]
-    sys = ODESystem(bg; simplify_eqs = simplify_eqs)
+    sys = ODESystem(bg; simplify_eqs=simplify_eqs)
     return equations(sys)
 end
+
+has_controls(bg::BondGraph) = any(.!isempty.(controls.(nodes(bg))))
 
 # Filtering
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
 junctions(bg::BondGraph) = filter(x -> x isa Junction, bg.nodes)
 
-getnodes(bg::BondGraph, T::DataType) = filter(x -> x isa T, bg.nodes)
-getnodes(bg::BondGraph, t::Symbol) = filter(x -> type(x) == t, bg.nodes)
-getnodes(bg::BondGraph, n) = filter(x -> name(x) == Symbol(n), bg.nodes)
+getnodes(bg::BondGraph, T::DataType) = filter(n -> n isa T, bg.nodes)
+getnodes(bg::BondGraph, t::AbstractString) = filter(n -> "$(type(n)):$(name(n))" == t, bg.nodes)
+getnodes(bg::BondGraph, ts::Vector{T} where T <: AbstractString) = vcat((getnodes(bg, t) for t in ts)...)
 
 getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
 getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
 
 
 # Base functions
-show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.type):$(bg.name) ($(g.nv(bg)) Nodes, $(g.ne(bg)) Bonds)")
+show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.name) ($(g.nv(bg)) Nodes, $(g.ne(bg)) Bonds)")
 
 # Easier referencing systems using a.b notation
 function getproperty(bg::BondGraph, sym::Symbol)
     # Calling getfield explicitly avoids using "a.b" and causing a StackOverflowError
     allnodes = getfield(bg, :nodes)
     names = [getfield(n, :name) for n in allnodes]
-    symnodes = allnodes[names.==sym]
+    symnodes = allnodes[names.==string(sym)]
     if isempty(symnodes)
         return getfield(bg, sym)
     elseif length(symnodes) == 1
@@ -63,19 +72,19 @@ end
 # BONDGRAPH NODE
 struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
-    type::Symbol
-    name::Symbol
+    type::AbstractString
+    name::AbstractString
     exposed::Vector{SourceSensor}
     freeports::Vector{Bool}
     vertex::RefValue{Int}
 end
-function BondGraphNode(bg::BondGraph, name = name(bg); vertex::Int = 0, deepcopy = false)
+function BondGraphNode(bg::BondGraph, name=name(bg); vertex::Int=0, deepcopy=false)
     _bg = deepcopy ? deepcopy(bg) : bg
 
     exposed_ports = getnodes(_bg, SourceSensor)
     freeports = fill(true, length(exposed_ports))
 
-    BondGraphNode(_bg, :BG, Symbol(name), exposed_ports, freeports, Ref(vertex))
+    BondGraphNode(_bg, "BG", string(name), exposed_ports, freeports, Ref(vertex))
 end
 
 # Easier referencing systems using a.b notation

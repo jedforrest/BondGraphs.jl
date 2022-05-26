@@ -1,7 +1,6 @@
 @testset "BondGraph Properties" begin
     bg = BondGraph("newBG")
-    @test type(bg) == :BG
-    @test name(bg) == :newBG
+    @test name(bg) == "newBG"
     @test isempty(vertices(bg))
 
     @test eltype(BondGraph) == AbstractNode
@@ -17,55 +16,54 @@
 end
 
 @testset "Adding and removing elements" begin
-    c = Component(:C, :C1)
-    r = Component(:R, :C1, numports = 1)
-    j = EqualEffort()
+    c = Component(:C)
+    r = Component(:R)
+    j0 = EqualEffort()
 
     bg = BondGraph()
 
     @test add_vertex!(bg, c)
-    b = add_edge!(bg, c, j)
 
+    b = add_edge!(bg, c, j0)
     @test src(b) == vertex(c)
-    @test dst(b) == vertex(j)
+    @test dst(b) == vertex(j0)
 
     add_vertex!(bg, r)
-    add_vertex!(bg, j)
+    add_vertex!(bg, j0)
 
     @test ne(bg) == 1
-    @test has_edge(bg, vertex(c), vertex(j))
+    @test has_edge(bg, vertex(c), vertex(j0))
     @test !has_edge(bg, vertex(c), vertex(r))
 
     @test nv(bg) == 3
-    @test has_vertex(bg, j)
+    @test has_vertex(bg, j0)
     @test has_vertex(bg, 3)
     @test !has_vertex(bg, 0)
 
     @test components(bg) == [c, r]
-    @test junctions(bg) == [j]
+    @test junctions(bg) == [j0]
 
     @test inneighbors(bg, vertex(c)) == []
     @test outneighbors(bg, vertex(c)) == [3]
 
-    @test rem_edge!(bg, c, j) == b
+    @test rem_edge!(bg, c, j0) == b
     @test ne(bg) == 0
     @test rem_vertex!(bg, r)
     @test nv(bg) == 2
 end
 
 @testset "BondGraphNode" begin
-    bg = BondGraph(:RCI)
+    bg = BondGraph("RCI")
     bgn = BondGraphNode(bg)
 
-    @test bgn.type == :BG
-    @test bgn.name == :RCI
+    @test bgn.name == "RCI"
     @test bgn.freeports == Bool[]
 end
 
 @testset "Printing" begin
     C = Component(:C)
-    SS = Component(:SS, :Source)
-    J0 = EqualEffort(name = :J)
+    SS = Component(:SS, "Source")
+    J0 = EqualEffort(name="J")
     b1 = Bond(C, J0)
     b2 = Bond(J0, SS)
     port = b1.srcport
@@ -78,7 +76,7 @@ end
     @test repr(b1) == "Bond C:C ⇀ J"
     @test repr(b2) == "Bond J ⇀ SS:Source"
     @test repr(port) == "Port C:C (1)"
-    @test repr(bg) == "BondGraph BG:newbg (0 Nodes, 0 Bonds)"
+    @test repr(bg) == "BondGraph newbg (0 Nodes, 0 Bonds)"
     @test repr(bgn) == "BG:newbg"
 
     add_vertex!(bg, C)
@@ -86,7 +84,7 @@ end
     add_vertex!(bg, J0)
     add_edge!(bg, C, J0)
     add_edge!(bg, J0, SS)
-    @test repr(bg) == "BondGraph BG:newbg (3 Nodes, 2 Bonds)"
+    @test repr(bg) == "BondGraph newbg (3 Nodes, 2 Bonds)"
 end
 
 @testset "Graphs.jl Extra Functions" begin
