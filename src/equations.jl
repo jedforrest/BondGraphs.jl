@@ -88,6 +88,7 @@ function get_connection_eq(b::Bond, subsystems)
     connect(src_port, dst_port)
 end
 
+# AbstractNode
 function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
     N = numports(n)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
@@ -110,11 +111,16 @@ function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
         name=Symbol(name), defaults=all_variables(n), controls=_ctrls)
     return compose(sys, ps...)
 end
+
+# BondGraph
 function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
     # TODO check for disconnected ports/nodes
     (subsystems, connections) = get_subsys_and_connections(m)
-    compose_bg_model(subsystems, connections, m.name, simplify_eqs)
+    sys = compose_bg_model(subsystems, connections, m.name, simplify_eqs)
+    structural_simplify(sys)
 end
+
+# BondGraphNode
 function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_eqs=false)
     N = numports(bgn)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
@@ -144,27 +150,28 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
-        return structural_simplify(model)
-        # # TODO: for some reason, must be simplified twice to work
-        # simple_eqs = simplify.(full_equations(model); expand=true, rewriter=rewriter)
-        # simple_eqs = simplify.(simple_eqs; rewriter=rewriter)
-
-        # return ODESystem(simple_eqs, t, collect(model.states), collect(model.ps);
-        #     name=Symbol(name), defaults=model.defaults, controls=collect(model.ctrls))
+        # NOTE: this breaks for DAEs
+        # Something to do with missing variables from the variable map
+        model = structural_simplify(model)
+        neweqs = full_equations(model; simplify=true)
+        neweqs = simplify.(neweqs; expand=true, rewriter=rewriter)
+        @set! model.eqs = neweqs
+        @set! model.substitutions = nothing
+        return model
     else
         return model
     end
 end
 
-function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), kwargs...)
-    sys = ODESystem(bg)
-
-    # Check if problem is an ODE or DAE
-    flag_ODE = !any([isequal(eq.lhs, 0) for eq in ModelingToolkit.equations(sys)])
-    ODEProblemType = flag_ODE ? ODEProblem : ODAEProblem
+function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), flag_ODE=true, kwargs...)
+    # DAEs break custom model simplification, so skip this step in ODESystem
+    sys = ODESystem(bg; simplify_eqs=flag_ODE)
 
     # If bg has control variables, need to allow union type for parameters
     use_union = has_controls(bg)
+
+    # Check if problem is an ODE or DAE
+    ODEProblemType = flag_ODE ? ODEProblem : ODAEProblem
 
     prob = ODEProblemType(sys, u0, tspan, pmap; use_union, kwargs...)
     return solve(prob, solver; kwargshandle=KeywordArgSilent)

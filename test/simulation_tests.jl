@@ -79,7 +79,7 @@ end
     f(x, a, τ) = a * exp(-x / τ)
 
     tspan = (0.0, 10.0)
-    sol = simulate(bg, tspan)
+    sol = simulate(bg, tspan; flag_ODE=false) # Model is a DAE
     for t in [0.5, 1.0, 5.0, 10.0]
         @test isapprox(sol(t)[1], f(t, 10, τ), atol=1e-5)
     end
@@ -121,7 +121,7 @@ end
     connect!(bg, Pb, rl)
 
     tspan = (0, 100.0)
-    sol = simulate(bg, tspan; solver=Rosenbrock23())
+    sol = simulate(bg, tspan; solver=Rosenbrock23(), flag_ODE=false) # Model is a DAE
     @test sol[1] == [1, 2, 1]
     @test isapprox(sol[end][1], 1.0, atol=1e-5)
     @test isapprox(sol[end][2], 0.5, atol=1e-5)
@@ -205,13 +205,14 @@ end
         1, A + B --> C
     end
 
-    bg_abc = BondGraph(abc)
-
-    tspan = (0.0, 3.0)
-    u0 = [1, 2, 3]
-    sol = simulate(bg_abc, tspan; u0)
-
+    sol = simulate(bg_abc, (0.0, 3.0); u0=[1, 2, 3])
     @test isapprox(sol[end], [1.23606, 2.23606, 2.76393], atol=1e-5)
+
+    # Concentrations (u0) cannot be -ve in reality
+    # This is testing whether simplification worked to remove all log(x)
+    sol = simulate(bg_abc, (0.0, 3.0); u0=[-1, 2, 3])
+    @test isapprox(sol[end], [0.44949, 3.44949, 1.55051], atol=1e-5)
+
 end
 
 @testset "Stoichiometry Simulation" begin
