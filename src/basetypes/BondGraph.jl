@@ -32,7 +32,7 @@ all_variables(bg::BondGraph) = _nested_bg_variables(bg, all_variables)
 
 function equations(bg::BondGraph; simplify_eqs=true)
     isempty(bg.nodes) && return Equation[]
-    sys = ODESystem(bg; simplify_eqs=simplify_eqs)
+    sys = ODESystem(bg; simplify_eqs)
     return equations(sys)
 end
 
