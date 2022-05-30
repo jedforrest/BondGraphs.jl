@@ -201,9 +201,10 @@ end
 end
 
 @testset "Simple Biochemical Simulation" begin
-    abc = @reaction_network ABC begin
+    rn_abc = @reaction_network ABC begin
         1, A + B --> C
     end
+    bg_abc = BondGraph(rn_abc)
 
     sol = simulate(bg_abc, (0.0, 3.0); u0=[1, 2, 3])
     @test isapprox(sol[end], [1.23606, 2.23606, 2.76393], atol=1e-5)
