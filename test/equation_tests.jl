@@ -19,10 +19,13 @@ end
 # cannot use standard notation "var in array" for MTK vars
 var_in(var, dict) = any(iszero.(var .- keys(dict)))
 
+# sort equations in lex order to make testing equations easier
+sorted_eqs(sys) = sort(equations(sys), by=string)
+
 @testset "Equations" begin
     c = Component(:C)
     @parameters C
-    @variables E[1](t) F[1](t) q(t) C₊q(t)
+    @variables E(t)[1] F(t)[1] q(t) C₊q(t)
     cr = [
         0 ~ q / C - E[1],
         D(q) ~ F[1]
@@ -95,7 +98,7 @@ end
     se = Component(:Se)
     sf = Component(:Sf)
     c = Component(:C)
-    @parameters fs(t) es(t)
+    @parameters fs es
 
     @test var_in(es, controls(se))
     @test var_in(fs, controls(sf))
@@ -168,7 +171,7 @@ end
 
     @test numports(zero_law) == 2
 
-    @variables E[1:2](t) F[1:2](t)
+    @variables E(t)[1:2] F(t)[1:2]
     @test isequal(constitutive_relations(zero_law), [
         0 ~ F[1] + F[2],
         0 ~ E[1] - E[2]
@@ -191,7 +194,7 @@ end
     @test length(j.weights) == 3
     @test j.weights == [1, -1, -1]
 
-    @variables E[1:3](t) F[1:3](t)
+    @variables E(t)[1:3] F(t)[1:3]
     @test isequal(constitutive_relations(j), [
         0 ~ E[1] - E[2] - E[3],
         0 ~ F[1] + F[2],
@@ -258,10 +261,10 @@ end
     connect!(bg, A, re; dstportindex=1)
     connect!(bg, re, B; srcportindex=2)
     sys = ODESystem(bg)
-    eqs = constitutive_relations(bg)
+    eqs = sorted_eqs(sys)
 
-    (xA, xB) = sys.states
-    (KA, KB, r) = sys.ps
+    @nonamespace xA, xB = sys.A₊q, sys.B₊q
+    @nonamespace KA, KB, r = sys.A₊K, sys.B₊K, sys.r₊r
     e1 = D(xA) ~ -r * (KA * xA - KB * xB)
     e2 = D(xB) ~ r * (KA * xA - KB * xB)
 
@@ -290,10 +293,10 @@ end
     connect!(bg, re2, C_D; srcportindex=2)
 
     sys = ODESystem(bg)
-    eqs = constitutive_relations(bg)
+    eqs = sorted_eqs(sys)
 
-    (xA, xB, xC, xD) = sys.states
-    (KA, KB, KC, KD, r1, r2) = sys.ps
+    @nonamespace xA, xB, xC, xD = sys.A₊q, sys.B₊q, sys.C₊q, sys.D₊q
+    @nonamespace KA, KB, KC, KD, r1, r2 = sys.A₊K, sys.B₊K, sys.C₊K, sys.D₊K, sys.r1₊r, sys.r2₊r
     e1 = D(xA) ~ -r1 * (KA * xA - KB * xB * KC * xC)
     e2 = D(xB) ~ r1 * (KA * xA - KB * xB * KC * xC)
     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)

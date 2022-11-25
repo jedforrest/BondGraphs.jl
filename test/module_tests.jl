@@ -114,10 +114,10 @@ end
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
 
-    (xA, xB) = sys.states
+    (xB, xA) = sys.states
     (KA, KB, r) = sys.ps
-    e1 = D(xA) ~ -r * (KA * xA - KB * xB)
-    e2 = D(xB) ~ r * (KA * xA - KB * xB)
+    e1 = D(xB) ~ r * (KA * xA - KB * xB)
+    e2 = D(xA) ~ -r * (KA * xA - KB * xB)
 
     @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(eqs[1].rhs, e1.rhs)

@@ -24,7 +24,6 @@ function remove_node!(bg::BondGraph, node::AbstractNode)
     end
 end
 
-
 function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode;
         srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
     srcnode in bg.nodes || error("$srcnode not found in bond graph")
@@ -71,7 +70,6 @@ _check_port_number(oldnode::AbstractNode, newnode::Junction) = true
 # function expose!()
 
 # end
-
 
 # Inserts an AbstractNode between two connected (bonded) nodes
 # The direction of the original bond is preserved by this action

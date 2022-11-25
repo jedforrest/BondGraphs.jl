@@ -11,7 +11,7 @@ g.edges(bg::BondGraph) = bg.bonds
 g.ne(bg::BondGraph) = length(bg.bonds)
 g.has_edge(bg::BondGraph, bond::Bond) =  any(b -> b === bond, bg.bonds) # strong equality
 g.has_edge(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = g.has_edge(bg, vertex(n1), vertex(n2))
-g.has_edge(bg::BondGraph, s::Int, d::Int) = 
+g.has_edge(bg::BondGraph, s::Int, d::Int) =
     any(b -> g.src(b) === s && g.dst(b) === d, bg.bonds)
 
 # vertices
