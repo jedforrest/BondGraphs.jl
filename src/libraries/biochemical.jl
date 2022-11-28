@@ -14,11 +14,11 @@ R, T = GlobalScope(R), GlobalScope(T)
 @parameters t
 D = Differential(t)
 
-@variables E[1:2](t) F[1:2](t)
+@variables E(t)[1:2] F(t)[1:2]
 
 # Chemical species (:Ce)
 @parameters K
-@variables q(t) #[bounds = (0, Inf)]
+@variables q(t)
 Ce_dict = Dict(
     :description => """
       Chemical species
@@ -50,7 +50,7 @@ Ce_dict = Dict(
 
 # Normalised chemical species (ce)
 @parameters K
-@variables q(t) #[bounds = (0, Inf)]
+@variables q(t)
 ce_dict = Dict(
     :description => """
       Chemical species (normalised)
@@ -124,7 +124,7 @@ re_dict = Dict(
 
 # Source of (chemical) effort (:SCe)
 @parameters K
-@parameters xs(t) #[bounds = (0, Inf)]
+@parameters xs
 SCe_dict = Dict(
     :description => """
       Source of chemical potential energy

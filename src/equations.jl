@@ -24,10 +24,10 @@ function constitutive_relations(n::EqualEffort)
     end
 
     N = numports(n)
-    @variables E[1:N](t) F[1:N](t)
+    @variables E(t)[1:N] F(t)[1:N]
 
     flow_constraint = [0 ~ sum(collect(F))]
-    effort_constraints = [0 ~ E[1] - e for e in E[2:end]]
+    effort_constraints = [0 ~ E[1] - e for e in collect(E[2:end])]
     return vcat(flow_constraint, effort_constraints)
 end
 function constitutive_relations(n::EqualFlow)
@@ -36,14 +36,14 @@ function constitutive_relations(n::EqualFlow)
     end
 
     N = numports(n)
-    @variables E[1:N](t) F[1:N](t)
+    @variables E(t)[1:N] F(t)[1:N]
 
     W = weights(n)
     weighted_e = W .* collect(E)
     weighted_f = W .* collect(F)
 
     effort_constraint = [0 ~ sum(weighted_e)]
-    flow_constraints = [0 ~ weighted_f[1] - f for f in weighted_f[2:end]]
+    flow_constraints = [0 ~ weighted_f[1] - f for f in collect(weighted_f[2:end])]
     return vcat(effort_constraint, flow_constraints)
 end
 function constitutive_relations(bg::BondGraph; sub_defaults=false)
@@ -93,7 +93,7 @@ function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
     N = numports(n)
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
 
-    @variables E[1:N](t) F[1:N](t)
+    @variables E(t)[1:N] F(t)[1:N]
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
     f_sub_rules = Dict(F[i] => ps[i].F for i in 1:N)
     u_sub_rules = Dict(u => controls(n)[u](t) for u in keys(controls(n)))

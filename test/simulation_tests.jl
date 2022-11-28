@@ -122,10 +122,15 @@ end
 
     tspan = (0, 100.0)
     sol = simulate(bg, tspan; solver=Rosenbrock23(), flag_ODE=false) # Model is a DAE
-    @test sol[1] == [1, 2, 1]
-    @test isapprox(sol[end][1], 1.0, atol=1e-5)
-    @test isapprox(sol[end][2], 0.5, atol=1e-5)
-    @test isapprox(sol[end][3], 0.5, atol=1e-5)
+
+    # Need sys states to test solution (states may change order)
+    sys = ODESystem(bg, simplify_eqs=false)
+    @nonamespace L, Ca, Cb = sys.L₊p, sys.Ca₊q, sys.Cb₊q
+
+    @test (sol[Ca,1] == 1) && (sol[Cb,1] == 2) && (sol[L,1] == 1)
+    @test isapprox(sol[Ca][end], 1.0, atol=1e-5)
+    @test isapprox(sol[Cb][end], 0.5, atol=1e-5)
+    @test isapprox(sol[L][end], 0.5, atol=1e-5)
 end
 
 @testset "Simulate modular BG" begin
@@ -206,14 +211,21 @@ end
     end
     bg_abc = BondGraph(rn_abc)
 
-    sol = simulate(bg_abc, (0.0, 3.0); u0=[1, 2, 3])
-    @test isapprox(sol[end], [1.23606, 2.23606, 2.76393], atol=1e-5)
+    # Need sys states to test solution (states may change order)
+    sys = ODESystem(bg_abc)
+    @nonamespace A, B, C = sys.A₊q, sys.B₊q, sys.C₊q
 
-    # Concentrations (u0) cannot be -ve in reality
+    sol = simulate(bg_abc, (0.0, 3.0); u0=[A=>1, B=>2, C=>3])
+    @test isapprox(sol[A][end], 1.23606, atol=1e-5)
+    @test isapprox(sol[B][end], 2.23606, atol=1e-5)
+    @test isapprox(sol[C][end], 2.76393, atol=1e-5)
+
+    # Concentrations cannot be -ve in reality (u0 = -1)
     # This is testing whether simplification worked to remove all log(x)
-    sol = simulate(bg_abc, (0.0, 3.0); u0=[-1, 2, 3])
-    @test isapprox(sol[end], [0.44949, 3.44949, 1.55051], atol=1e-5)
-
+    sol = simulate(bg_abc, (0.0, 3.0); u0=[A=>-1, B=>2, C=>3])
+    @test isapprox(sol[A][end], 0.44949, atol=1e-5)
+    @test isapprox(sol[B][end], 3.44949, atol=1e-5)
+    @test isapprox(sol[C][end], 1.55051, atol=1e-5)
 end
 
 @testset "Stoichiometry Simulation" begin
@@ -221,8 +233,13 @@ end
         1, A --> 2B
     end
     bg = BondGraph(rn)
-    sol = simulate(bg, (0.0, 1.0); u0=[1, 0])
-    @test isapprox(sol[end], [0.61969, 0.76062], atol=1e-5)
+
+    sys = ODESystem(bg)
+    @nonamespace A, B = sys.A₊q, sys.B₊q
+
+    sol = simulate(bg, (0.0, 1.0); u0=[A=>1, B=>0])
+    @test isapprox(sol[A][end], 0.61969, atol=1e-5)
+    @test isapprox(sol[B][end], 0.76062, atol=1e-5)
 end
 
 @testset "Reversible Michaelis-Menten" begin
@@ -231,12 +248,14 @@ end
         (1, 1), C <--> E + P
     end
     bg_mm = BondGraph(rn_mm; chemostats=["S", "P"])
-
     bg_mm.S.xs = t -> 2
 
-    sol = simulate(bg_mm, (0.0, 3.0); u0=[1, 2])
+    sys = ODESystem(bg_mm)
+    @nonamespace E, C = sys.E₊q, sys.C₊q
 
-    @test isapprox(sol[end], [1.2, 1.8], atol=1e-5)
+    sol = simulate(bg_mm, (0.0, 3.0); u0=[E=>1, C=>2])
+    @test isapprox(sol[E][end], 1.2, atol=1e-5)
+    @test isapprox(sol[C][end], 1.8, atol=1e-5)
 end
 
 @testset "SERCA (stiff equations)" begin
@@ -322,17 +341,22 @@ end
     tspan = (0., 200.)
     sol = simulate(bg_serca, tspan; solver=Rosenbrock23())
 
-    # calculated using the same code, verified by plot from BGT tutorial
-    real_solution = [
-        4.4404656222265794e-5,
-        0.09777422826977565,
-        0.8970112784324162,
-        2.6596475539704174e-9,
-        0.0009426424413096248,
-        0.001015195974904865,
-        0.001212098675876874,
-        0.0011543788312157496,
-        0.0008357702283899367,
-    ]
-    @test isapprox(sol[end], real_solution, atol=1e-5)
+    # calculated using the same model, verified by plot from BGT tutorial
+    real_solution = Dict(
+        :P1₊q  => 4.4404656222265794e-5,
+        :P2₊q  => 0.09777422826977565,
+        :P2a₊q => 0.8970112784324162,
+        :P4₊q  => 2.6596475539704174e-9,
+        :P5₊q  => 0.0009426424413096248,
+        :P6₊q  => 0.001015195974904865,
+        :P8₊q  => 0.001212098675876874,
+        :P9₊q  => 0.0011543788312157496,
+        :P10₊q => 0.0008357702283899367,
+    )
+
+    sys = ODESystem(bg_serca, simplify_eqs=false)
+    for species in states(sys)
+        real_sol = real_solution[species.f.name]
+        @test isapprox(sol[species][end], real_sol, atol=1e-5)
+    end
 end

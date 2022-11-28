@@ -1,7 +1,7 @@
 using Test
 using Graphs
 using ModelingToolkit
-using DifferentialEquations
+using DifferentialEquations: Rosenbrock23
 using Catalyst
 using RecipesBase
 using BondGraphs

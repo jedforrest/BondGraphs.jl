@@ -17,7 +17,7 @@ export standard_library
 @parameters t
 D = Differential(t)
 
-@variables E[1:2](t) F[1:2](t)
+@variables E(t)[1:2] F(t)[1:2]
 
 # Linear resistance (:R)
 @parameters R
@@ -89,7 +89,7 @@ I_dict = Dict(
 )
 
 # Source of effort (:Se)
-@parameters es(t)
+@parameters es
 Se_dict = Dict(
     :description => """
       Effort Source
@@ -106,7 +106,7 @@ Se_dict = Dict(
 )
 
 # Source of flow (:Sf)
-@parameters fs(t)
+@parameters fs
 Sf_dict = Dict(
     :description => """
       Flow Source
