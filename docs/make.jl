@@ -1,3 +1,3 @@
 using Documenter, BondGraphs
 
-makedocs(sitename="BondGraphs.jl")
+makedocs(sitename="BondGraphs.jl", modules=[BondGraphs])

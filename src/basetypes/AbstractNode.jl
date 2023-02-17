@@ -1,6 +1,10 @@
 abstract type AbstractNode end
 
-# COMPONENT
+"""
+    Component{N} <: AbstractNode
+
+`N`-port bond graph component.
+"""
 struct Component{N} <: AbstractNode
     type::AbstractString
     name::AbstractString
@@ -13,6 +17,13 @@ struct Component{N} <: AbstractNode
     end
 end
 
+"""
+    Component(type, name=type)
+    Component(type, name=type; library=BondGraphs.DEFAULT_LIBRARY, <keyword arguments>)
+
+Construct a Component of a defined (bondgraph) type ∈ {R, C, I, Se, Sf, TF, Ce, Re, SCe}.
+Properties and equations of available componets are defined in `BondGraphs.DEFAULT_LIBRARY`.
+"""
 function Component(type, name=type;
     vertex::Int=0,
     library=BondGraphs.DEFAULT_LIBRARY,
@@ -39,7 +50,11 @@ end
 
 _get_comp_default(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
 
-# Source-sensor
+"""
+    SourceSensor <: AbstractNode
+
+Special component type that acts as a source of both effort and flow
+"""
 struct SourceSensor <: AbstractNode
     name::AbstractString
     freeports::MVector{1,Bool}
@@ -53,6 +68,11 @@ end
 # JUNCTION
 abstract type Junction <: AbstractNode end
 
+"""
+    EqualEffort <: Junction
+
+Efforts are all equal, flows sum to zero (aka 0-junction).
+"""
 struct EqualEffort <: Junction
     name::AbstractString
     freeports::Vector{Bool}
@@ -63,6 +83,11 @@ struct EqualEffort <: Junction
     end
 end
 
+"""
+    EqualFlow <: Junction
+
+Flows are all equal, efforts sum to zero (aka 1-junction).
+"""
 struct EqualFlow <: Junction
     name::AbstractString
     freeports::Vector{Bool}
