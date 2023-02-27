@@ -7,7 +7,7 @@ makedocs(
         "index.md",
         # "background.md",
         "gettingstarted.md",
-        "userguide.md",
+        # "userguide.md",
         "examples.md",
         "API Reference" => "api.md"
     ]

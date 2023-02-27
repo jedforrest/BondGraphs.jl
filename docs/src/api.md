@@ -3,7 +3,14 @@
 ```@index
 ```
 
+## Types
 ```@autodocs
 Modules = [BondGraphs]
-Order = [:type, :function]
+Order = [:type]
+```
+
+## Methods
+```@autodocs
+Modules = [BondGraphs]
+Order = [:function]
 ```
