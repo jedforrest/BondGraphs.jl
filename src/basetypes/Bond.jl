@@ -1,5 +1,4 @@
-# PORT
-struct Port 
+struct Port
     node::AbstractNode
     index::Int
     function Port(node::AbstractNode, index)
@@ -13,7 +12,16 @@ end
 Port(node::AbstractNode) = Port(node, nextfreeport(node))
 
 
-# BOND
+"""
+    Bond(source::AbstractNode, destination::AbstractNode)
+    Bond(source::Port, destination::Port)
+
+Connect two bond graph components (or two ports of two components) with a bond. The bond
+direction is from `source` to `destination`. If the ports are not specified, the bond will
+be created between the next available ports in each component.
+
+In most cases use [`connect!`](@ref) instead.
+"""
 struct Bond <: g.AbstractSimpleEdge{Int}
     srcport::Port
     dstport::Port
@@ -35,4 +43,3 @@ iterate(b::Bond, state) = state ? (b.dstport, false) : nothing
 
 show(io::IO, port::Port) = print(io, "Port $(port.node) ($(port.index))")
 show(io::IO, b::Bond) = print(io, "Bond $(srcnode(b)) ⇀ $(dstnode(b))")
-
