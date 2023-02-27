@@ -10,15 +10,15 @@ need to be in the form of a dictionary, and new components should follow the bel
 
 NOTE: This library is likely to change in the future. Do not rely on this schema too much.
 
-# Library Schema
-description -> written description of the component and definitions
-numports -> the number of ports in the component
-variables ->
-  parameters -> constant parameters, unique for each component instance
-  globals -> global parameters (i.e. no namespace)
-  states -> time-dependent state variables
-  controls -> time-dependent parameters that can accept julia functions
-equations -> symbolic description of the constitutive equations
+## Library Schema
+- description -> written description of the component and definitions
+- numports -> the number of ports in the component
+- variables ->
+  - parameters -> constant parameters, unique for each component instance
+  - globals -> global parameters (i.e. no namespace)
+  - states -> time-dependent state variables
+  - controls -> time-dependent parameters that can accept julia functions
+- equations -> symbolic description of the constitutive equations
 """
 addlibrary!(newlib) = merge!(DEFAULT_LIBRARY, newlib)
 

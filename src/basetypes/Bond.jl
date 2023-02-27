@@ -1,3 +1,15 @@
+"""
+    Port(node::AbstractNode)
+    Port(node::AbstractNode, index::Int)
+
+Create a new Port for `node`. Ports have an index corresponding to the component's variables.
+
+Ports are the `node` elements that are connected by bonds. The port does not technically
+exist until this is called, even though a component has a fixed number of assigned ports
+when created.
+
+WARNING: connecting a bond to the wrong port may assign values to the wrong variables!
+"""
 struct Port
     node::AbstractNode
     index::Int
@@ -20,7 +32,7 @@ Connect two bond graph components (or two ports of two components) with a bond. 
 direction is from `source` to `destination`. If the ports are not specified, the bond will
 be created between the next available ports in each component.
 
-In most cases use [`connect!`](@ref) instead.
+In most cases it is better to use [`connect!`](@ref) instead.
 """
 struct Bond <: g.AbstractSimpleEdge{Int}
     srcport::Port

@@ -38,7 +38,7 @@ end
     connect!(bg::BondGraph, srcnode, dstnode; srcportindex, dstportindex)
 
 Connect two components together in the same bond graph. The bond direction is always from
-`srcnode` to `dstnode`. The port index of `srcnode` and `dstnode` can be optionally be set.
+`srcnode` to `dstnode`. The port index of `srcnode` and `dstnode` can be optionally set.
 """
 function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode;
         srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
