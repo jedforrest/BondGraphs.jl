@@ -1,8 +1,6 @@
 # Getting Started
 This example runs through the basic steps of building and simulating a bond graph model. For a full list of functions refer to the API [Reference](@ref).
 
-## Simple electric circuit
-
 ```@setup simple_circuit
 using BondGraphs
 using Latexify

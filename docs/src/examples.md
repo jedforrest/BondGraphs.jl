@@ -145,7 +145,10 @@ plot(sol, lw=3)
 ## SERCA Pump
 In this example we will demonstrate biochemical bond graph construction on a larger system.
 
-We will model the SERCA reaction network as described in Tran et al. (2009) and Pan et al. (2018).
+We will model the SERCA reaction network as described in Tran et al.[^1] and Pan et al.[^2]
+
+[^1]: Tran et al., _A Thermodynamic Model of the Cardiac Sarcoplasmic/Endoplasmic Ca2+ (SERCA) Pump_ (2009)
+[^2]: Pan et al., _Bond graph modelling of the cardiac action potential: implications for drift and non-unique steady states_ (2018)
 
 ![](assets/SERCA_reaction_network.png)
 
@@ -249,7 +252,9 @@ plot(sol, lw=2, legend=:right)
 ```
 
 ## Electrochemical System - Ion Transport
-A multiphysics bond graph example that combines biochemical reactions with electrical (ion) forces. Taken from Section 8.4 in *Analysing and simulating energy-based models in biology using BondGraphTools* (Cudmore et al., 2021).
+A multiphysics bond graph example that combines biochemical reactions with electrical (ion) forces. This example is taken from Cudmore et al.[^3]
+
+[^3]: Cudmore et al., _Analysing and simulating energy-based models in biology using BondGraphTools_ (2021)
 
 For this example we are modelling three ion pore channels for Na<sup>+</sup>, Cl<sup>-</sup> and K<sup>+</sup>. It is therefore a good idea to define a function that returns an ion pore base model.
 
