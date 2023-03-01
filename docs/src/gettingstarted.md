@@ -5,6 +5,7 @@ This example runs through the basic steps of building and simulating a bond grap
 
 ```@setup simple_circuit
 using BondGraphs
+using Latexify
 ```
 
 Our first example will be a simple electric circuit of a capacitor, resistor, and current supply in parallel. We will first model this circuit without the current supply.
@@ -28,10 +29,10 @@ description(:C)
 Available component types are defined in the `DEFAULT_LIBRARY`.
 
 ```@example simple_circuit
-keys(BondGraphs.DEFAULT_LIBRARY)
+print(keys(BondGraphs.DEFAULT_LIBRARY))
 ```
 
-We next create a resistor 'R'-component and an `EqualEffort` node which represents Kirchoff's Voltage Law.
+We next create a resistor 'R'-component and an `EqualEffort` node which represents Kirchoff's Voltage Law. In bond graph terminology, 0-Junctions are `EqualEffort` nodes, and 1-Junctions are `EqualFlow` nodes.
 
 ```@example simple_circuit
 R = Component(:R)
@@ -51,7 +52,7 @@ Because our bond graph is fundamentally a graph, we can using existing graph met
 
 ```@example simple_circuit
 using Graphs
-adjacency_matrix(model)
+incidence_matrix(model)
 ```
 
 We can also visualise our model structure by plotting it as a graph network using Plots.jl.
@@ -66,7 +67,6 @@ With a bond graph we can automatically generate a series of differential equatio
 
 ```@example simple_circuit
 constitutive_relations(model)
-display("text/latex", ans); nothing # hide
 ```
 
 We will set values for the component parameters in the model. Each component comes with default values. When substituted into our equations, we get the following relation for the capacitor charge `C.q(t)`.
@@ -75,7 +75,6 @@ We will set values for the component parameters in the model. Each component com
 C.C = 1
 R.R = 2
 constitutive_relations(model; sub_defaults=true)
-display("text/latex", ans); nothing # hide
 ```
 
 We can solve this bond graph directly using the in-built `simulate` function.
