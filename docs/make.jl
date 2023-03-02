@@ -11,3 +11,7 @@ makedocs(
         "API Reference" => "api.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/jedforrest/BondGraphs.jl.git",
+)
