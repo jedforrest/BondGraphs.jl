@@ -16,7 +16,13 @@ rw_exp = RestartedChain(exponent_rules)
 rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
 rewriter = Postwalk(rw_chain)
 
-# Constitutive relations
+"""
+    constitutive_relations(n::AbstractNode)
+
+Return the constitutive relations (equations) for node `n`.
+
+If `n` is a Junction, the flow and effort constraints are generated from its connections.
+"""
 constitutive_relations(n::AbstractNode) = equations(n)
 function constitutive_relations(n::EqualEffort)
     if all(freeports(n)) # all ports are empty
@@ -46,6 +52,20 @@ function constitutive_relations(n::EqualFlow)
     flow_constraints = [0 ~ weighted_f[1] - f for f in collect(weighted_f[2:end])]
     return vcat(effort_constraint, flow_constraints)
 end
+
+"""
+    constitutive_relations(bg::BondGraph; sub_defaults=false)
+
+Generate the constitutive relations (equations) for bond graph `bg`.
+
+The equations are symbolically derived from the equations of all the nodes and bonds in the
+bond graph. If `sub_defaults` is true, the default parameter values for each component are
+subbed into the equations.
+
+NOTE: This creates a ModelingToolkit.ODESystem of the bond graph and returns only the
+equations. If you want to numerically solve the bond graph equations, either use
+[`simulate`](@ref) or create an ODESystem directly.
+"""
 function constitutive_relations(bg::BondGraph; sub_defaults=false)
     cr = simplify.(full_equations(ODESystem(bg)); expand=true, rewriter)
     # TODO: for some reason, must be simplified twice to work
@@ -163,6 +183,14 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
     end
 end
 
+
+"""
+    simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), flag_ODE=true, kwargs...)
+
+Simulate the bond graph model.
+
+The keyword arguments are the same as for `ODEProblem` and `solve` in DifferentialEquations.
+"""
 function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), flag_ODE=true, kwargs...)
     # DAEs break custom model simplification, so skip this step in ODESystem
     sys = ODESystem(bg; simplify_eqs=flag_ODE)
@@ -187,7 +215,7 @@ function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
     # dX₊q(t) becomes dqₓ(t)
     # ltx = replace(ltx, r"([^d\W]+){\\_\+}(\w+)" => s"\2_{\1}")
     # \mathrm{...} is removed
-    ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
+    # ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
 
-    print(io, ltx)
+    print(io, "\$\$ " * ltx * " \$\$")
 end

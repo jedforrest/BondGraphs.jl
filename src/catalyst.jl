@@ -1,6 +1,13 @@
 #TODO: include reaction rates in forming the bondgraph
 
-# Convert a ReactionSystem type into a BondGraph type
+"""
+    BondGraph(rs::ReactionSystem; chemostats=[])
+
+Convert a Catalyst.ReactionSystem into a BondGraph.
+
+`chemostats` are chemical species with fixed concentrations. In bond graph terms, these are
+"SCe" types (chemical energy sources) instead of "Ce" types (chemical energy store).
+"""
 function BondGraph(rs::ReactionSystem; chemostats=[])
     bg = BondGraph(rs.name)
 

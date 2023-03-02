@@ -1,3 +1,8 @@
+"""
+    add_node!(bg::BondGraph, nodes)
+
+Add a node to a bond graph `bg`. Can add a single node or list of nodes.
+"""
 function add_node!(bg::BondGraph, nodes)
     for node in nodes
         add_node!(bg, node)
@@ -10,7 +15,11 @@ function add_node!(bg::BondGraph, node::AbstractNode)
     g.add_vertex!(bg, node) || @warn "Node '$(name(node))' already in model"
 end
 
+"""
+    remove_node!(bg::BondGraph, nodes)
 
+Remove a node to a bond graph `bg`. Can remove a single node or list of nodes.
+"""
 function remove_node!(bg::BondGraph, nodes)
     for node in nodes
         remove_node!(bg, node)
@@ -24,6 +33,13 @@ function remove_node!(bg::BondGraph, node::AbstractNode)
     end
 end
 
+"""
+    connect!(bg::BondGraph, srcnode, dstnode)
+    connect!(bg::BondGraph, srcnode, dstnode; srcportindex, dstportindex)
+
+Connect two components together in the same bond graph. The bond direction is always from
+`srcnode` to `dstnode`. The port index of `srcnode` and `dstnode` can be optionally set.
+"""
 function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode;
         srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
     srcnode in bg.nodes || error("$srcnode not found in bond graph")
@@ -33,6 +49,11 @@ function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode;
     return g.add_edge!(bg, srcport, dstport)
 end
 
+"""
+    disconnect!(bg::BondGraph, node1, node2)
+
+Remove the bond connecting `node1` and `node2`. The order of nodes does not matter.
+"""
 function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     # rem_edge! removes the bond regardless of the direction of the bond
     return g.rem_edge!(bg, node1, node2)
@@ -41,6 +62,14 @@ end
 # TODO
 # Flip bond function
 
+"""
+    swap!(bg::BondGraph, oldnode, newnode)
+
+Remove `oldnode` from bond graph `bg` and replace it with `newnode`. The new node
+will have the same connections (bonds) as the original model.
+
+`newnode` must have a greater or equal number of ports as `oldnode`.
+"""
 function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
     _check_port_number(oldnode,newnode)
 
@@ -71,8 +100,16 @@ _check_port_number(oldnode::AbstractNode, newnode::Junction) = true
 
 # end
 
-# Inserts an AbstractNode between two connected (bonded) nodes
-# The direction of the original bond is preserved by this action
+
+"""
+    insert_node!(bg::BondGraph, bond, newnode)
+    insert_node!(bg::BondGraph, (node1, node2), newnode)
+
+Inserts `newnode` between two existing connected nodes. The direction of the original bond
+is preserved.
+
+Supply either the two nodes as a tuple, or the bond that connects them in `bg`.
+"""
 function insert_node!(bg::BondGraph, bond::Bond, newnode::AbstractNode)
     src = srcnode(bond)
     dst = dstnode(bond)
@@ -97,7 +134,15 @@ function insert_node!(bg::BondGraph, tuple::Tuple, newnode::AbstractNode)
     insert_node!(bg, bonds[1], newnode)
 end
 
+"""
+    merge_nodes!(bg::BondGraph, node1, node2; junction=EqualEffort())
 
+Combine two copies of the same component in `bg` by adding a `junction` and connecting the
+neighbours of `node1` and `node2` to the new junction.
+
+Merging nodes this way means there is only one component representing a system element, and
+all other nodes connect to the component via the new junction.
+"""
 function merge_nodes!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode; junction=EqualEffort())
     node1.type == node2.type || error("$(node1.name) must be the same type as $(node2.name)")
 
@@ -120,7 +165,17 @@ function merge_nodes!(bg::BondGraph, node1::Junction, node2::Junction)
     swap!(bg, node2, node1)
 end
 
+"""
+    simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
 
+Remove unnecessary or redundant Junctions from bond graph `bg`.
+
+If `remove_redundant` is true, junctions that have zero or one neighbours are removed, and
+junctions with two neighbours are squashed (connected components remain connected).
+
+If `squash_identical` is true, connected junctions of the same type are squashed into a
+single junction.
+"""
 function simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
     junctions = filter(n -> n isa Junction, bg.nodes)
 

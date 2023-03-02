@@ -1,4 +1,13 @@
-# BONDGRAPH
+"""
+    BondGraph(name="BG") <: Graphs.AbstractGraph{Int64}
+    BondGraph(name, nodes::Vector{AbstractNode}, bonds::Vector{Bond})
+
+The bond graph object which contains a vector of `nodes` and `bonds`. All operations on
+components or bonds must happen within the same bond graph. This inherits the methods of the
+AbstractGraph type and so will work with
+
+See also [`BondGraphNode`](@ref).
+"""
 struct BondGraph <: g.AbstractGraph{Int64}
     name::AbstractString
     nodes::Vector{T} where {T<:AbstractNode}
@@ -42,10 +51,23 @@ has_controls(bg::BondGraph) = any(.!isempty.(controls.(nodes(bg))))
 components(bg::BondGraph) = filter(x -> x isa Component, bg.nodes)
 junctions(bg::BondGraph) = filter(x -> x isa Junction, bg.nodes)
 
+"""
+    getnodes(bg::BondGraph, type)
+
+Return all nodes a particular bond graph type in the bond graph `bg`.
+
+`type` can be a DataType (e.g. Component{1}), a string (e.g. "C"), or a vector of strings.
+"""
 getnodes(bg::BondGraph, T::DataType) = filter(n -> n isa T, bg.nodes)
 getnodes(bg::BondGraph, t::AbstractString) = filter(n -> "$(type(n)):$(name(n))" == t, bg.nodes)
 getnodes(bg::BondGraph, ts::Vector{T} where T <: AbstractString) = vcat((getnodes(bg, t) for t in ts)...)
 
+"""
+    getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode)
+    getbonds(bg::BondGraph, (n1, n2))
+
+Return the bond in `bg` connecting nodes `n1` and `n2`, if it exists.
+"""
 getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
 getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
 
@@ -69,7 +91,15 @@ function getproperty(bg::BondGraph, sym::Symbol)
 end
 
 
-# BONDGRAPH NODE
+"""
+    BondGraphNode(bg::BondGraph, name=name(bg); deepcopy=false)
+
+Convert a `BondGraph` into a component that can be added in another level bond graph.
+Componets can be exposed to the outer bond graph by replacing them with a `SourceSensor`
+type using the `swap!` function.
+
+See also [`BondGraph`](@ref).
+"""
 struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::AbstractString
