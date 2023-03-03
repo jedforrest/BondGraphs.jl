@@ -1,4 +1,4 @@
-using Documenter, BondGraphs
+using Documenter, BondGraphs, Graphs, Plots, ModelingToolkit, Catalyst
 
 makedocs(
     sitename = "BondGraphs.jl",
