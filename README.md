@@ -11,13 +11,9 @@ For tutorials and code demonstrations in Jupyter Notebooks, see [BondGraphsTutor
 
 ## Installation
 ```julia
-using Pkg; Pkg.add(url="https://github.com/jedforrest/BondGraphs.jl")
+using Pkg; Pkg.add("BondGraphs")
 using BondGraphs
 ```
 
 ## Bond graphs
 Bond graphs are an energy-based modelling framework that describe the rate of energy flow moving through system components. By construction, bond graph models enforce physical and thermodynamic constraints, guaranteeing compatibility with other physical models. This framework has been applied to mechanical, electrical, chemical, and biological systems, and is even capable of modelling complex multi-physics systems.
-
-
-
-
