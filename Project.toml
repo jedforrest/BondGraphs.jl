@@ -1,7 +1,7 @@
 name = "BondGraphs"
 uuid = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
 authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
