@@ -24,11 +24,10 @@ C = Component(:C)
 description(:C)
 ```
 
-Available component types are defined in the `DEFAULT_LIBRARY`.
-
-```@example simple_circuit
-print(keys(BondGraphs.DEFAULT_LIBRARY))
-```
+Available component types are defined in `BondGraphs.DEFAULT_LIBRARY`. The default component types are:
+- Standard components (`:C`, `:R`, `:I`, `:TF`)
+- Biochemical components (`:Ce`, `:Re`, `:ce`, `:re`)
+- Sources of effort or flow (`:Se`, `:Sf`, `:SCe`)
 
 We next create a resistor 'R'-component and an `EqualEffort` node which represents Kirchoff's Voltage Law. In bond graph terminology, 0-Junctions are `EqualEffort` nodes, and 1-Junctions are `EqualFlow` nodes.
 

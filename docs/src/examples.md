@@ -251,12 +251,12 @@ sol = simulate(bg_serca, tspan; solver=Rosenbrock23());
 plot(sol, lw=2, legend=:right)
 ```
 
-## Electrochemical System - Ion Transport
+## Electrochemical System: Ion Pore Transport
 A multiphysics bond graph example that combines biochemical reactions with electrical (ion) forces. This example is taken from Cudmore et al.[^3]
 
 [^3]: Cudmore et al., _Analysing and simulating energy-based models in biology using BondGraphTools_ (2021)
 
-For this example we are modelling three ion pore channels for Na<sup>+</sup>, Cl<sup>-</sup> and K<sup>+</sup>. It is therefore a good idea to define a function that returns an ion pore base model.
+For this example we are modelling three ion pore channels for $\mathrm{Na}^+$, $\mathrm{Cl}^-$ and $\mathrm{K}^+$. It is a good idea to define a function that returns an ion pore base model.
 
 ```@setup iontransport
 using BondGraphs
@@ -265,7 +265,7 @@ using Plots
 
 ```@example iontransport
 function ion_pore(name=""; z=1, conc_ex=1//1000, conc_in=1//1000)
-    bg = BondGraph(name * " Ion Transport")
+    bg = BondGraph(name * " Ion Pore Transport")
 
     membrane = Component(:C, "mem"; C=1)
     ion_ex = Component(:SCe, "Ie"; K=1, xs=t->conc_ex)
@@ -324,7 +324,7 @@ plot!(; xlabel="Time [ms]", ylabel="Membrane potential [mV]", yformatter=y->y*10
 We can create custom reaction components which describe enzyme-catalyzed reaction mechanices, such as the Michaelis-Menten rate law.
 
 !!! warning
-    This method of adding custom components will be deprecated in the near future.
+    This method of adding custom components will be deprecated in the near future and replaced with a new method.
 
 ```@setup enzyme
 using BondGraphs
