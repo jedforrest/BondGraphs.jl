@@ -18,7 +18,7 @@ Depth = 1
 
 ## Installation
 ```julia
-using Pkg; Pkg.add(url="https://github.com/jedforrest/BondGraphs.jl")
+using Pkg; Pkg.add("BondGraphs")
 using BondGraphs
 ```
 
