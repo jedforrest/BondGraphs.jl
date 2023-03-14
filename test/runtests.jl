@@ -1,10 +1,10 @@
 using Test
+using BondGraphs
 using Graphs
 using ModelingToolkit
 using DifferentialEquations: Rosenbrock23
 using Catalyst
 using RecipesBase
-using BondGraphs
 
 @testset "BondGraphs.jl" begin
     @testset "Graph functions" begin include("graphfunctions_tests.jl") end

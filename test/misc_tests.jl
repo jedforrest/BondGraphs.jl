@@ -36,7 +36,7 @@ end
 end
 
 @testset "Plotting" begin
-    # See conversion_tests.jl
+    # See catalyst_tests.jl
     rn = @reaction_network MM_reversible begin
         (1, 1), E + S <--> C
         (1, 1), C <--> E + P

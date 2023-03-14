@@ -13,6 +13,7 @@ using Setfield
 using Catalyst
 using RecipesBase, GraphRecipes
 using Latexify
+using GraphMakie, NetworkLayout
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 SourceSensor, Port, Bond, BondGraph, BondGraphNode,
@@ -26,7 +27,7 @@ srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
 add_node!, remove_node!, connect!, disconnect!,
 swap!, insert_node!, merge_nodes!, simplify_junctions!, expose,
 
-simulate, addlibrary!, description
+simulate, addlibrary!, description, bgplot
 
 # Component libraries
 include("libraries/biochemical.jl")
@@ -44,5 +45,6 @@ include("construction.jl")
 include("equations.jl")
 include("catalyst.jl")
 include("plotrecipes.jl")
+include("graphplot.jl")
 
 end
