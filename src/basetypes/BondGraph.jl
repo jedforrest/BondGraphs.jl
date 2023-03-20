@@ -90,9 +90,12 @@ function getproperty(bg::BondGraph, sym::Symbol)
     end
 end
 
+# Conversion to common graph types
+g.SimpleGraph(bg::BondGraph) = g.SimpleGraph(g.SimpleDiGraph(bg))
+g.SimpleDiGraph(bg::BondGraph) = g.SimpleDiGraph(g.adjacency_matrix(bg))
 
 """
-    BondGraphNode(bg::BondGraph, name=name(bg); deepcopy=false)
+    BondGraphNode(bg::BondGraph, name=name(bg); deep_copy=false)
 
 Convert a `BondGraph` into a component that can be added in another level bond graph.
 Componets can be exposed to the outer bond graph by replacing them with a `SourceSensor`
@@ -108,8 +111,8 @@ struct BondGraphNode <: AbstractNode
     freeports::Vector{Bool}
     vertex::RefValue{Int}
 end
-function BondGraphNode(bg::BondGraph, name=name(bg); vertex::Int=0, deepcopy=false)
-    _bg = deepcopy ? deepcopy(bg) : bg
+function BondGraphNode(bg::BondGraph, name=name(bg); vertex::Int=0, deep_copy=false)
+    _bg = deep_copy ? deepcopy(bg) : bg
 
     exposed_ports = getnodes(_bg, SourceSensor)
     freeports = fill(true, length(exposed_ports))
