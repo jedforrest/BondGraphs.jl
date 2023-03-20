@@ -262,3 +262,13 @@ end
     add_node!(bg1, C2)
     @test main.third.second.first.C == [C, C2]
 end
+
+@testset "Conversion to Other Graphs" begin
+     bg = RCI()
+     g = SimpleGraph(bg)
+     dg = SimpleDiGraph(bg)
+
+     bg_adj, g_adj, dg_adj = adjacency_matrix.([bg, g, dg])
+     @test dg_adj == bg_adj
+     @test g_adj == bg_adj + bg_adj' # A + A' forms undirected graph adj matrix
+end

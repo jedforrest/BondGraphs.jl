@@ -31,8 +31,8 @@ end
         BondGraphNode(BondGraph("testBG"))
     ]
 
-    @test BondGraphs.nodecolours(nodes) == [1, 2, 3, :lightgray, :lightgray, :white]
-    @test BondGraphs.nodenames(nodes) == ["C:C", "Re:R1", "SS:SS", "1", "0", "BG:testBG"]
+    @test BondGraphs.nodecolour.(nodes) == [:lightblue, :coral, :lightgreen, :white, :white, :white]
+    @test BondGraphs.nodelabel.(nodes) == ["C", "R1", "SS", "1", "0", "testBG"]
 end
 
 @testset "Plotting" begin
@@ -48,7 +48,7 @@ end
 
     @test attributes[:curves] == false
     @test attributes[:title] == "MM_reversible"
-    @test attributes[:nodeshape] == :rect
+    @test attributes[:nodeshape] == :circle
 end
 
 # @testset "Latexify" begin

@@ -13,7 +13,8 @@ using Setfield
 using Catalyst
 using RecipesBase, GraphRecipes
 using Latexify
-using GraphMakie, NetworkLayout
+using GraphMakie, GraphMakie.NetworkLayout
+
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
 SourceSensor, Port, Bond, BondGraph, BondGraphNode,
@@ -45,6 +46,5 @@ include("construction.jl")
 include("equations.jl")
 include("catalyst.jl")
 include("plotrecipes.jl")
-include("graphplot.jl")
 
 end
