@@ -1,10 +1,10 @@
 # Base.eltype
 eltype(::Type{BondGraph}) = AbstractNode
-eltype(bg::BondGraph) = AbstractNode
+eltype(::BondGraph) = AbstractNode
 
 # edgetype
 g.edgetype(::Type{BondGraph}) = g.AbstractSimpleEdge{Integer}
-g.edgetype(bg::BondGraph) = g.AbstractSimpleEdge{Integer}
+g.edgetype(::BondGraph) = g.AbstractSimpleEdge{Integer}
 
 # edges
 g.edges(bg::BondGraph) = bg.bonds
@@ -29,11 +29,11 @@ g.all_neighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[g.all_neighbors(bg, v
 
 # is_directed
 g.is_directed(::Type{BondGraph}) = true
-g.is_directed(bg::BondGraph) = true
+g.is_directed(::BondGraph) = true
 
 # zero
 g.zero(::Type{BondGraph}) = BondGraph()
-g.zero(bg::BondGraph) = BondGraph()
+g.zero(::BondGraph) = BondGraph()
 
 # src, dst
 g.src(b::Bond) = vertex(srcnode(b))
@@ -60,40 +60,33 @@ function g.rem_vertex!(bg::BondGraph, node::AbstractNode)
     return true
 end
 
-# add_edge is done in terms of ports so that a port index can be specified higher up
-function g.add_edge!(bg::BondGraph, srcport::Port, dstport::Port)
-    srcnode = srcport.node
-    dstnode = dstport.node
-    g.has_edge(bg, srcnode, dstnode) && error("Bond already exists between $srcnode and $dstnode")
-    g.has_edge(bg, dstnode, srcnode) && error("Bond already exists between $dstnode and $srcnode")
-    new_bond = Bond(srcport, dstport)
+function g.add_edge!(bg::BondGraph, srctuple, dsttuple)
+    new_bond = Bond(srctuple, dsttuple)
     push!(bg.bonds, new_bond)
-    srcportidx = new_bond.srcport.index
-    dstportidx = new_bond.dstport.index
-    updateport!(srcnode, srcportidx)
-    updateport!(dstnode, dstportidx)
-    srcnode isa Junction && set_weight!(srcnode, srcportidx, -1)
-    dstnode isa Junction && set_weight!(dstnode, dstportidx, +1)
+
+    srcnode(new_bond) isa Junction && set_weight!(srctuple..., -1)
+    dstnode(new_bond) isa Junction && set_weight!(dsttuple..., +1)
+
+    updateport!(srctuple...)
+    updateport!(dsttuple...)
+
     return new_bond
-end
-function g.add_edge!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode)
-    g.add_edge!(bg, Port(srcnode), Port(dstnode))
 end
 
 function g.rem_edge!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
-    g.has_edge(bg, node1, node2) || g.has_edge(bg, node2, node1) || return
     index = findfirst(b -> node1 in b && node2 in b, bg.bonds)
+    isnothing(index) && return false # already disconnected
+
     deleted_bond = bg.bonds[index]
     deleteat!(bg.bonds, index)
 
-    src_node = srcnode(deleted_bond)
-    dst_node = dstnode(deleted_bond)
-    srcportidx = deleted_bond.srcport.index
-    dstportidx = deleted_bond.dstport.index
+    for (node, label) in deleted_bond
+        if node isa Junction
+            set_weight!(node, label, 0)
+        else
+            updateport!(node, label)
+        end
+    end
 
-    updateport!(src_node, srcportidx)
-    updateport!(dst_node, dstportidx)
-    src_node isa Junction && set_weight!(src_node, srcportidx, 0)
-    dst_node isa Junction && set_weight!(dst_node, dstportidx, 0)
     return deleted_bond
 end

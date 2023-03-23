@@ -104,17 +104,16 @@ struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::AbstractString
     name::AbstractString
-    exposed::Vector{SourceSensor}
-    freeports::Vector{Bool}
+    ports::OrderedDict{Any,Bool}
     vertex::RefValue{Int}
 end
-function BondGraphNode(bg::BondGraph, name=name(bg); vertex::Int=0, deepcopy=false)
-    _bg = deepcopy ? deepcopy(bg) : bg
+function BondGraphNode(bg::BondGraph, name=name(bg); vertex::Int=0, deep_copy=false)
+    _bg = deep_copy ? deepcopy(bg) : bg
 
     exposed_ports = getnodes(_bg, SourceSensor)
-    freeports = fill(true, length(exposed_ports))
+    ports = Dict(i => false for i in 1:length(exposed_ports))
 
-    BondGraphNode(_bg, "BG", string(name), exposed_ports, freeports, Ref(vertex))
+    BondGraphNode(_bg, "BG", string(name), ports, Ref(vertex))
 end
 
 # Easier referencing systems using a.b notation
@@ -127,4 +126,4 @@ function getproperty(bgn::BondGraphNode, sym::Symbol)
     end
 end
 
-exposed(bgn::BondGraphNode) = bgn.exposed
+exposed(bgn::BondGraphNode) = getnodes(bgn.bondgraph, SourceSensor)

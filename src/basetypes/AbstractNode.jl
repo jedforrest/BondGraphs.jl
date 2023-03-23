@@ -1,3 +1,24 @@
+# """
+#     Port(node::AbstractNode)
+#     Port(node::AbstractNode, index::Int)
+
+# Create a new Port for `node`. Ports have an index corresponding to the component's variables.
+
+# Ports are the `node` elements that are connected by bonds. The port does not technically
+# exist until this is called, even though a component has a fixed number of assigned ports
+# when created.
+
+# WARNING: connecting a bond to the wrong port may assign values to the wrong variables!
+# """
+# struct Port
+#     label
+#     isconnected::Bool
+# end
+
+# isconnected(p::Port) = p.isconnected
+
+# show(io::IO, p::Port) = print(io, "$(p.label) $(isconnected(p) ? "⬤" : "◯")")
+
 abstract type AbstractNode end
 
 """
@@ -14,12 +35,13 @@ graph type. Other properties and equations of available components are defined i
 struct Component{N} <: AbstractNode
     type::AbstractString
     name::AbstractString
-    freeports::MVector{N,Bool}
+    ports::OrderedDict{Any,Bool}
     vertex::RefValue{Int}
     variables::Dict{Symbol,Dict{Num,Any}}
     equations::Vector{Equation}
     function Component{N}(t, n, vx, vars, eq) where {N}
-        new(string(t), string(n), ones(MVector{N,Bool}), Ref(vx), vars, eq)
+        ports = Dict(i => false for i in 1:N)
+        new(string(t), string(n), ports, Ref(vx), vars, eq)
     end
 end
 
@@ -56,10 +78,10 @@ Special component type that acts as a source of both effort and flow.
 """
 struct SourceSensor <: AbstractNode
     name::AbstractString
-    freeports::MVector{1,Bool}
+    ports::Dict{Any,Bool} # might be redundant
     vertex::RefValue{Int}
     function SourceSensor(; name="SS", v::Int=0)
-        new(string(name), ones(MVector{1,Bool}), Ref(v))
+        new(string(name), Dict(1 => false), Ref(v))
     end
 end
 
@@ -74,11 +96,10 @@ Efforts are all equal, flows sum to zero (0-junction).
 """
 struct EqualEffort <: Junction
     name::AbstractString
-    freeports::Vector{Bool}
-    weights::Vector{Int}
+    ports::Vector{Int} # port number => weight (+1 or -1)
     vertex::RefValue{Int}
     function EqualEffort(; name="𝟎", v::Int=0)
-        new(string(name), [true], [0], Ref(v))
+        new(string(name), [0], Ref(v))
     end
 end
 
@@ -89,11 +110,10 @@ Flows are all equal, efforts sum to zero (1-junction).
 """
 struct EqualFlow <: Junction
     name::AbstractString
-    freeports::Vector{Bool}
-    weights::Vector{Int}
+    ports::Vector{Int} # port number => weight (+1 or -1)
     vertex::RefValue{Int}
     function EqualFlow(; name="𝟏", v::Int=0)
-        new(string(name), [true], [0], Ref(v))
+        new(string(name), [0], Ref(v))
     end
 end
 
@@ -109,23 +129,32 @@ name(n::AbstractNode) = n.name
 name(n::Junction) = vertex(n) == 0 ? n.name : "$(n.name)_$(vertex(n))"
 
 # Ports
-freeports(n::AbstractNode) = n.freeports
-numports(n::AbstractNode) = length(n.freeports)
-updateport!(n::AbstractNode, idx::Int) = freeports(n)[idx] = !freeports(n)[idx]
+ports(n::AbstractNode) = n.ports
+numports(n::AbstractNode) = length(ports(n))
+portlabels(n::AbstractNode) = collect(keys(ports(n)))
+
+isconnected(n::AbstractNode, label) = ports(n)[label] != 0 # '!=0' needed for junctions
+updateport!(n::AbstractNode, label) = ports(n)[label] = !ports(n)[label]
+updateport!(::Junction, ::Int) = nothing # override
+
+port_info(n::AbstractNode) = (n, nextfreeport(n))
+port_info(t::Tuple{AbstractNode,Any}) = t
+
+# ports renamed as ports to make purpose clearer
+@deprecate freeports(n::AbstractNode) ports(n::AbstractNode)
 
 # Weights
-weights(j::Junction) = j.weights
-set_weight!(j::Junction, idx::Int, w::Int) = j.weights[idx] = w
+weights(j::Junction) = j.ports # deprecated
+set_weight!(j::Junction, idx::Int, w::Int) = ports(j)[idx] = w
 
-nextfreeport(n::AbstractNode) = findfirst(freeports(n))
+nextfreeport(n::AbstractNode) = findfirst(!, ports(n)) # first 'not' connected port
 function nextfreeport(j::Junction)
-    freeport = findfirst(freeports(j))
-    if isnothing(freeport)
-        push!(j.freeports, true)
-        push!(j.weights, 0)
-        return length(j.freeports)
+    index = findfirst(==(0), ports(j))
+    if isnothing(index)
+        push!(j.ports, 0) # add new empty port
+        return numports(j)
     else
-        return freeport
+        return index
     end
 end
 

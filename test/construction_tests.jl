@@ -78,21 +78,25 @@ end
     connect!(model, R, zero_law)
     connect!(model, C, zero_law)
 
-    @test I.freeports == [true]
+    I_port_info = BondGraphs.port_info(I)
+    @test I_port_info == (I, 1)
+    @test I_port_info == BondGraphs.port_info(I_port_info)
+
+    @test ports(I) == Dict(1 => false)
     b1 = connect!(model, zero_law, I)
     @test ne(model) == 3
-    @test b1 in model.bonds
-    @test I.freeports == [false]
+    @test b1 in bonds(model)
+    @test ports(I) == Dict(1 => true)
 
-    disconnect!(model, I, zero_law) # test disconnect when node order is swapped
+    disconnect!(model, I, zero_law) # tests disconnect when node order is swapped
     @test ne(model) == 2
-    @test !(b1 in model.bonds)
-    @test I.freeports == [true]
+    @test !(b1 in bonds(model))
+    @test I.ports == Dict(1 => false)
 
     connect!(model, zero_law, I)
     swap!(model, zero_law, one_law)
-    @test I.freeports == [false]
-    @test one_law in model.nodes
+    @test ports(I) == Dict(1 => true)
+    @test one_law in nodes(model)
     @test inneighbors(model, one_law) == [R, C]
     @test outneighbors(model, one_law) == [I]
 end
@@ -119,6 +123,7 @@ end
     @test_throws ErrorException swap!(model, tf, C)
 
     # if inserting a node fails, the original nodes should still remain connected
+    @test has_edge(model, bond)
     @test_throws ErrorException insert_node!(model, bond, Component(:I))
     @test has_edge(model, bond)
 end
@@ -139,18 +144,18 @@ end
     connect!(model, C, J_CD)
     connect!(model, D, J_CD)
 
-    @test freeports(Re) == [true, true]
-    @test freeports(J_AB) == [false, false]
+    @test ports(Re) == Dict(1 => false, 2 => false)
+    @test ports(J_AB) == [1, 1]
 
     # Connecting junctions to specific ports in Re
-    connect!(model, Re, J_CD, srcportindex=2)
-    @test freeports(Re) == [true, false]
+    connect!(model, (Re,2), J_CD)
+    @test ports(Re) == Dict(1 => false, 2 => true)
 
     # connecting to a full port should fail
-    @test_throws ErrorException connect!(model, J_AB, Re, dstportindex=2)
+    @test_throws ErrorException connect!(model, J_AB, (Re,2))
 
-    connect!(model, J_AB, Re, dstportindex=1)
-    @test freeports(Re) == [false, false]
+    connect!(model, J_AB, (Re,1))
+    @test ports(Re) == Dict(1 => true, 2 => true)
 
     @test nv(model) == 7
     @test ne(model) == 6
@@ -249,7 +254,7 @@ end
     @test bgn1.bondgraph === bg1
     @test bgn1.type === "BG"
     @test bgn1.name === bg1.name
-    @test freeports(bgn1) == Bool[]
+    @test ports(bgn1) == Bool[]
 
     add_node!(bg1, C)
     add_node!(bg2, bgn1)
