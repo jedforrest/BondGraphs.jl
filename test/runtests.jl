@@ -1,5 +1,4 @@
 using Test
-using Documenter
 using BondGraphs
 using Graphs
 using ModelingToolkit
