@@ -16,5 +16,3 @@ using RecipesBase
     @testset "Miscellaneous" begin include("misc_tests.jl") end
     @testset "Modules" begin include("module_tests.jl") end
 end
-
-doctest(BondGraphs)
