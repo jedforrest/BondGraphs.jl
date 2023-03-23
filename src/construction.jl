@@ -32,11 +32,12 @@ function remove_node!(bg::BondGraph, node::AbstractNode)
 end
 
 """
-    connect!(bg::BondGraph, srcnode, dstnode)
-    connect!(bg::BondGraph, srcnode, dstnode; srcportindex, dstportindex)
+    connect!(bg::BondGraph, source_node, destination_node)
+    connect!(bg::BondGraph, (source_node, port_label), (destination_node, port_label))
 
 Connect two components together in the same bond graph. The bond direction is always from
-`srcnode` to `dstnode`. The port index of `srcnode` and `dstnode` can be optionally set.
+`source_node` to `destination_node`. The port index of `source_node` and `destination_node`
+can be optionally set.
 """
 function connect!(bg::BondGraph, src, dst)
     (srcnode, srcport) = port_info(src)

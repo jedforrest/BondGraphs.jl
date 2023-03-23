@@ -1,6 +1,6 @@
 """
     Bond(source::AbstractNode, destination::AbstractNode)
-    Bond(source::Port, destination::Port)
+    Bond((source_node, port_label), (destination_node, port_label))
 
 Connect two bond graph components (or two ports of two components) with a bond. The bond
 direction is from `source` to `destination`. If the ports are not specified, the bond will
@@ -15,13 +15,6 @@ end
 function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
     Bond((srcnode, nextfreeport(srcnode)), (dstnode, nextfreeport(dstnode)))
 end
-# struct Bond <: g.AbstractSimpleEdge{Int}
-#     srcport::Port
-#     dstport::Port
-# end
-# function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
-#     Bond(Port(srcnode), Port(dstnode))
-# end
 
 # Source and Destination
 srcnode(b::Bond) = b.src[1]

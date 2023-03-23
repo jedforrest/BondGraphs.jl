@@ -57,7 +57,7 @@ end
     bgn = BondGraphNode(bg)
 
     @test bgn.name == "RCI"
-    @test bgn.ports == Bool[]
+    @test bgn.ports == Dict()
 end
 
 @testset "Printing" begin

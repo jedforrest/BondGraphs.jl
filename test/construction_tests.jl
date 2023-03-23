@@ -254,7 +254,7 @@ end
     @test bgn1.bondgraph === bg1
     @test bgn1.type === "BG"
     @test bgn1.name === bg1.name
-    @test ports(bgn1) == Bool[]
+    @test bgn1.ports == Dict()
 
     add_node!(bg1, C)
     add_node!(bg2, bgn1)

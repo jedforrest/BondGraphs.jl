@@ -1,24 +1,3 @@
-# """
-#     Port(node::AbstractNode)
-#     Port(node::AbstractNode, index::Int)
-
-# Create a new Port for `node`. Ports have an index corresponding to the component's variables.
-
-# Ports are the `node` elements that are connected by bonds. The port does not technically
-# exist until this is called, even though a component has a fixed number of assigned ports
-# when created.
-
-# WARNING: connecting a bond to the wrong port may assign values to the wrong variables!
-# """
-# struct Port
-#     label
-#     isconnected::Bool
-# end
-
-# isconnected(p::Port) = p.isconnected
-
-# show(io::IO, p::Port) = print(io, "$(p.label) $(isconnected(p) ? "⬤" : "◯")")
-
 abstract type AbstractNode end
 
 """
@@ -74,7 +53,8 @@ _get_comp_default(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
 """
     SourceSensor <: AbstractNode
 
-Special component type that acts as a source of both effort and flow.
+Special component type that acts as a source of both effort and flow. SourceSensors are used
+as external ports for [`BondGraphNode`](@ref)s.
 """
 struct SourceSensor <: AbstractNode
     name::AbstractString
@@ -92,7 +72,7 @@ abstract type Junction <: AbstractNode end
 """
     EqualEffort <: Junction
 
-Efforts are all equal, flows sum to zero (0-junction).
+Efforts are all equal, flows sum to zero (0-junction). Has an unlimited number of ports.
 """
 struct EqualEffort <: Junction
     name::AbstractString
@@ -106,7 +86,7 @@ end
 """
     EqualFlow <: Junction
 
-Flows are all equal, efforts sum to zero (1-junction).
+Flows are all equal, efforts sum to zero (1-junction). Has an unlimited number of ports.
 """
 struct EqualFlow <: Junction
     name::AbstractString

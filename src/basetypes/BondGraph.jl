@@ -95,8 +95,8 @@ end
     BondGraphNode(bg::BondGraph, name=name(bg); deepcopy=false)
 
 Convert a `BondGraph` into a component that can be added in another level bond graph.
-Componets can be exposed to the outer bond graph by replacing them with a `SourceSensor`
-type using the `swap!` function.
+Componets can be exposed to the outer bond graph by replacing them with a [`SourceSensor`](@ref)
+type using the [`swap!`](@ref) function.
 
 See also [`BondGraph`](@ref).
 """
