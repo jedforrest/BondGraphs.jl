@@ -4,7 +4,7 @@ import Graphs as g
 import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!
 import ModelingToolkit: parameters, states, equations, controls
 
-using StaticArrays
+# using StaticArrays
 using ModelingToolkit
 using DifferentialEquations
 using SymbolicUtils, SymbolicUtils.Rewriters
@@ -17,13 +17,13 @@ using GraphMakie, GraphMakie.NetworkLayout
 
 
 export AbstractNode, Component, Junction, EqualEffort, EqualFlow,
-SourceSensor, Port, Bond, BondGraph, BondGraphNode,
+SourceSensor, Bond, BondGraph, BondGraphNode,
 
-type, name, id, freeports, numports, weights, vertex, set_vertex!,
+type, name, id, ports, numports, isconnected, weights, vertex, set_vertex!,
 parameters, globals, states, controls, all_variables, constitutive_relations,
 has_controls,
 
-srcnode, dstnode, nodes, bonds, components, junctions, getnodes, getbonds,
+srcnode, dstnode, srclabel, dstlabel, nodes, bonds, components, junctions, getnodes, getbonds,
 
 add_node!, remove_node!, connect!, disconnect!,
 swap!, insert_node!, merge_nodes!, simplify_junctions!, expose,

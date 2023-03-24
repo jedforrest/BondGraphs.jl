@@ -9,8 +9,6 @@ function add_node!(bg::BondGraph, nodes)
     end
 end
 
-# TODO add better checking for valid/invalid nodes
-# e.g. no duplicate names
 function add_node!(bg::BondGraph, node::AbstractNode)
     g.add_vertex!(bg, node) || @warn "Node '$(name(node))' already in model"
 end
@@ -34,19 +32,25 @@ function remove_node!(bg::BondGraph, node::AbstractNode)
 end
 
 """
-    connect!(bg::BondGraph, srcnode, dstnode)
-    connect!(bg::BondGraph, srcnode, dstnode; srcportindex, dstportindex)
+    connect!(bg::BondGraph, source_node, destination_node)
+    connect!(bg::BondGraph, (source_node, port_label), (destination_node, port_label))
 
 Connect two components together in the same bond graph. The bond direction is always from
-`srcnode` to `dstnode`. The port index of `srcnode` and `dstnode` can be optionally set.
+`source_node` to `destination_node`. The port index of `source_node` and `destination_node`
+can be optionally set.
 """
-function connect!(bg::BondGraph, srcnode::AbstractNode, dstnode::AbstractNode;
-        srcportindex=nextfreeport(srcnode), dstportindex=nextfreeport(dstnode))
-    srcnode in bg.nodes || error("$srcnode not found in bond graph")
-    dstnode in bg.nodes || error("$dstnode not found in bond graph")
-    srcport = Port(srcnode, srcportindex)
-    dstport = Port(dstnode, dstportindex)
-    return g.add_edge!(bg, srcport, dstport)
+function connect!(bg::BondGraph, src, dst)
+    (srcnode, srcport) = port_info(src)
+    (dstnode, dstport) = port_info(dst)
+
+    srcnode in nodes(bg) || error("$srcnode not found in bond graph")
+    dstnode in nodes(bg) || error("$dstnode not found in bond graph")
+    isnothing(srcport) && error("$srcnode has no free ports")
+    isnothing(dstport) && error("$dstnode has no free ports")
+    isconnected(srcnode, srcport) && error("Port '$srcport' in $srcnode is already connected")
+    isconnected(dstnode, dstport) && error("Port '$dstport' in $dstnode is already connected")
+
+    return g.add_edge!(bg, (srcnode, srcport), (dstnode, dstport))
 end
 
 """
@@ -59,8 +63,6 @@ function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     return g.rem_edge!(bg, node1, node2)
 end
 
-# TODO
-# Flip bond function
 
 """
     swap!(bg::BondGraph, oldnode, newnode)
@@ -94,13 +96,6 @@ _check_port_number(oldnode::AbstractNode, newnode::AbstractNode) =
     numports(newnode) >= numports(oldnode) || error("New node must have a greater or equal number of ports to the old node")
 _check_port_number(oldnode::AbstractNode, newnode::Junction) = true
 
-
-# TODO implement according to https://bondgraphtools.readthedocs.io/en/latest/api.html#BondGraphTools.expose
-# function expose!()
-
-# end
-
-
 """
     insert_node!(bg::BondGraph, bond, newnode)
     insert_node!(bg::BondGraph, (node1, node2), newnode)
@@ -118,8 +113,8 @@ function insert_node!(bg::BondGraph, bond::Bond, newnode::AbstractNode)
 
     try
         add_node!(bg, newnode)
+        connect!(bg, newnode, dst) # dst first for TF component
         connect!(bg, src, newnode)
-        connect!(bg, newnode, dst)
     catch e
         # if connection fails, reconnect original bond
         disconnect!(bg, src, newnode)

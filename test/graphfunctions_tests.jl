@@ -24,7 +24,7 @@ end
 
     @test add_vertex!(bg, c)
 
-    b = add_edge!(bg, c, j0)
+    b = add_edge!(bg, (c,1), (j0,1))
     @test src(b) == vertex(c)
     @test dst(b) == vertex(j0)
 
@@ -57,7 +57,7 @@ end
     bgn = BondGraphNode(bg)
 
     @test bgn.name == "RCI"
-    @test bgn.freeports == Bool[]
+    @test bgn.ports == Dict()
 end
 
 @testset "Printing" begin
@@ -66,24 +66,24 @@ end
     J0 = EqualEffort(name="J")
     b1 = Bond(C, J0)
     b2 = Bond(J0, SS)
-    port = b1.srcport
+    port = b1.src
     bg = BondGraph(:newbg)
     bgn = BondGraphNode(bg)
 
     # repr returns the output of the 'show' function
     @test repr(C) == "C:C"
     @test repr(SS) == "SS:Source"
-    @test repr(b1) == "Bond C:C ⇀ J"
-    @test repr(b2) == "Bond J ⇀ SS:Source"
-    @test repr(port) == "Port C:C (1)"
+    @test repr(b1) == "Bond C:C[1] ⇀ J[1]"
+    @test repr(b2) == "Bond J[1] ⇀ SS:Source[1]"
+    @test repr(port) == "(C:C, 1)"
     @test repr(bg) == "BondGraph newbg (0 Nodes, 0 Bonds)"
     @test repr(bgn) == "BG:newbg"
 
     add_vertex!(bg, C)
     add_vertex!(bg, SS)
     add_vertex!(bg, J0)
-    add_edge!(bg, C, J0)
-    add_edge!(bg, J0, SS)
+    add_edge!(bg, (C,1), (J0,1))
+    add_edge!(bg, (J0,1), (SS,1)) # junction index is '1' here as a quick fix
     @test repr(bg) == "BondGraph newbg (3 Nodes, 2 Bonds)"
 end
 
@@ -100,9 +100,9 @@ end
     add_vertex!(bg, c3)
     add_vertex!(bg, j)
 
-    add_edge!(bg, c1, j)
-    add_edge!(bg, j, c2)
-    add_edge!(bg, j, c3)
+    add_edge!(bg, (c1,1), (j,1))
+    add_edge!(bg, (j,1), (c2,1)) # junction index is '1' here as a quick fix
+    add_edge!(bg, (j,1), (c3,1)) # junction index is '1' here as a quick fix
 
     # Testing on a selection of common graph functions
     @test Δ(bg) == 3

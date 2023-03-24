@@ -191,8 +191,8 @@ end
     connect!(bg, j, c3)
 
     @test numports(j) == 3
-    @test length(j.weights) == 3
-    @test j.weights == [1, -1, -1]
+    @test length(ports(j)) == 3
+    @test ports(j) == [1, -1, -1]
 
     @variables E(t)[1:3] F(t)[1:3]
     @test isequal(constitutive_relations(j), [
@@ -258,8 +258,8 @@ end
     bg = BondGraph()
 
     add_node!(bg, [A, B, re])
-    connect!(bg, A, re; dstportindex=1)
-    connect!(bg, re, B; srcportindex=2)
+    connect!(bg, A, (re,1))
+    connect!(bg, (re,2), B)
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
 
@@ -284,13 +284,13 @@ end
 
     bg = BondGraph()
     add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
-    connect!(bg, C_A, re1; dstportindex=1)
-    connect!(bg, re1, BC; srcportindex=2)
+    connect!(bg, C_A, (re1,1))
+    connect!(bg, (re1,2), BC)
     connect!(bg, BC, C_B)
     connect!(bg, BC, common_C)
     connect!(bg, common_C, C_C)
-    connect!(bg, common_C, re2; dstportindex=1)
-    connect!(bg, re2, C_D; srcportindex=2)
+    connect!(bg, common_C, (re2,1))
+    connect!(bg, (re2,2), C_D)
 
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)

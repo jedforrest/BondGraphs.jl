@@ -25,7 +25,7 @@ If `n` is a Junction, the flow and effort constraints are generated from its con
 """
 constitutive_relations(n::AbstractNode) = equations(n)
 function constitutive_relations(n::EqualEffort)
-    if all(freeports(n)) # all ports are empty
+    if all(==(0), ports(n)) # all ports are empty
         return Equation[]
     end
 
@@ -37,7 +37,7 @@ function constitutive_relations(n::EqualEffort)
     return vcat(flow_constraint, effort_constraints)
 end
 function constitutive_relations(n::EqualFlow)
-    if all(freeports(n)) # all ports are empty
+    if all(==(0), ports(n)) # all ports are empty
         return Equation[]
     end
 
@@ -102,9 +102,9 @@ function _sub_defaults(eqs, defaults)
 end
 
 function get_connection_eq(b::Bond, subsystems)
-    (s, d) = b
-    src_port = getproperty(subsystems[s.node], Symbol("p$(s.index)"))
-    dst_port = getproperty(subsystems[d.node], Symbol("p$(d.index)"))
+    src, dst = b # (node, label)
+    src_port = getproperty(subsystems[src[1]], Symbol("p$(src[2])"))
+    dst_port = getproperty(subsystems[dst[1]], Symbol("p$(dst[2])"))
     connect(src_port, dst_port)
 end
 
@@ -146,8 +146,8 @@ function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_
     ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
 
     (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
-    es = [subsystems[c].p1.E for c in exposed(bgn)]
-    fs = [subsystems[c].p1.F for c in exposed(bgn)]
+    es = [subsystems[comp].p1.E for comp in exposed(bgn)]
+    fs = [subsystems[comp].p1.F for comp in exposed(bgn)]
     port_eqs = [
         [0 ~ p.E - E for (E, p) in zip(es, ps)]
         [0 ~ p.F + F for (F, p) in zip(fs, ps)]
