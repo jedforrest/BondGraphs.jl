@@ -291,12 +291,12 @@ function ion_pore(name=""; z=1, conc_ex=1//1000, conc_in=1//1000)
     connect!(bg, flow_f, re_pore)
     connect!(bg, re_pore, flow_r)
     connect!(bg, flow_r, ion_in)
-    connect!(bg, flow_r, TF_zr, dstportindex=2)
-    connect!(bg, TF_zr, potential_mem, srcportindex=1)
-    connect!(bg, potential_mem, TF_zf, dstportindex=1)
-    connect!(bg, TF_zf, flow_f, srcportindex=2)
-    connect!(bg, potential_mem, TF_F, dstportindex=2)
-    connect!(bg, TF_F, membrane, srcportindex=1)
+    connect!(bg, flow_r, (TF_zr,2))
+    connect!(bg, (TF_zr,1), potential_mem)
+    connect!(bg, potential_mem, (TF_zf,1))
+    connect!(bg, (TF_zf,2), flow_f)
+    connect!(bg, potential_mem, (TF_F,2))
+    connect!(bg, (TF_F,1), membrane)
     
     return bg
 end
