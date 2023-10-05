@@ -17,3 +17,6 @@ using BondGraphs
 
 ## Bond graphs
 Bond graphs are an energy-based modelling framework that describe the rate of energy flow moving through system components. By construction, bond graph models enforce physical and thermodynamic constraints, guaranteeing compatibility with other physical models. This framework has been applied to mechanical, electrical, chemical, and biological systems, and is even capable of modelling complex multi-physics systems.
+
+## Cite
+> Joshua Forrest, Vijay Rajagopal, Michael P H Stumpf, Michael Pan, BondGraphs.jl: composable energy-based modelling in systems biology, Bioinformatics, Volume 39, Issue 10, October 2023, btad578, https://doi.org/10.1093/bioinformatics/btad578
