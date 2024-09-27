@@ -16,6 +16,9 @@
     @test length(getnodes(bg_rn, EqualFlow)) == 1
     @test length(getnodes(bg_rn, "Re:R1")) == 1
 
+    bond_rev = Bond((bg_rn.C, 1),(bg_rn.R1, 2))
+    @test bond_rev in bonds(bg_rn)
+
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
 end
 
