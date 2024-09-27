@@ -1,5 +1,5 @@
-@independent_variables t
-D = Differential(t)
+t = ModelingToolkit.t_nounits
+D = ModelingToolkit.D_nounits
 
 function RLC()
     r = Component(:R)

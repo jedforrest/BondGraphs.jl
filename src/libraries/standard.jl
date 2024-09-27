@@ -14,8 +14,8 @@ export standard_library
 #   controls -> time-dependent parameters, can accept an arbitrary julia function (can also remain constant)
 # equations -> symbolic description of the constitutive equations
 
-@independent_variables t
-D = Differential(t)
+t = ModelingToolkit.t_nounits
+D = ModelingToolkit.D_nounits
 
 @variables E(t)[1:2] F(t)[1:2]
 

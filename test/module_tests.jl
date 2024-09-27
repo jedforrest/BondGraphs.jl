@@ -1,5 +1,5 @@
-@independent_variables t
-D = Differential(t)
+t = ModelingToolkit.t_nounits
+D = ModelingToolkit.D_nounits
 
 function find_subsys(sys, s)
     subsys = ModelingToolkit.get_systems(sys)

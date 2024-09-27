@@ -1,4 +1,4 @@
-@variables t
+t = ModelingToolkit.t_nounits
 
 # New simplification rules
 #TODO: enable threaded simplifier option
