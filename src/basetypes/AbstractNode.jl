@@ -119,6 +119,16 @@ updateport!(::Junction, ::Int) = nothing # override
 
 port_info(n::AbstractNode) = (n, nextfreeport(n))
 port_info(t::Tuple{AbstractNode,Any}) = t
+function port_info(t::Tuple{BondGraphNode,String})
+    pts = [n for n in nodes(t[1].bondgraph) if n isa SourceSensor]
+    for (i,c) in enumerate(pts)
+        if (c isa SourceSensor) && (t[2] == c.name)
+            return (t[1],i)
+        end
+    end
+    return error("Port $(t[2]) not found.")
+end
+port_info(t::Tuple{BondGraphNode,Symbol}) = port_info((t[1],string(t[2])))
 
 # ports renamed as ports to make purpose clearer
 @deprecate freeports(n::AbstractNode) ports(n::AbstractNode)
