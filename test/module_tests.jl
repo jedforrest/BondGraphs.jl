@@ -1,4 +1,4 @@
-@parameters t
+@independent_variables t
 D = Differential(t)
 
 function find_subsys(sys, s)
@@ -83,8 +83,8 @@ end
     @test length(eqs) == 2
 
     sys = ODESystem(bg)
-    (R, C, L) = sys.ps
-    (qC, pL) = sys.states
+    (R, C, L) = (sys.RC.R.R, sys.RC.C.C, sys.L.I.L)
+    (qC, pL) = (sys.RC.C.q, sys.L.I.p)
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
@@ -113,12 +113,12 @@ end
 
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
-
-    (xB, xA) = sys.states
-    (KA, KB, r) = sys.ps
-    e1 = D(xB) ~ r * (KA * xA - KB * xB)
-    e2 = D(xA) ~ -r * (KA * xA - KB * xB)
-
+    
+    (xA, xB) = (sys.A.q, sys.B.q)
+    (KA, KB, r) = (sys.A.K, sys.B.K, sys.R.r.r)
+    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
+    e2 = D(xB) ~ r * (KA * xA - KB * xB)
+    
     @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(eqs[1].rhs, e1.rhs)
     @test isequal(eqs[2].lhs, e2.lhs)

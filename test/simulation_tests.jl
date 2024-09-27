@@ -79,7 +79,7 @@ end
     f(x, a, τ) = a * exp(-x / τ)
 
     tspan = (0.0, 10.0)
-    sol = simulate(bg, tspan; flag_ODE=false) # Model is a DAE
+    sol = simulate(bg, tspan, abstol=1e-9, reltol=1e-9)
     for t in [0.5, 1.0, 5.0, 10.0]
         @test isapprox(sol(t)[1], f(t, 10, τ), atol=1e-5)
     end
@@ -124,8 +124,8 @@ end
     sol = simulate(bg, tspan; solver=Rosenbrock23(), flag_ODE=false) # Model is a DAE
 
     # Need sys states to test solution (states may change order)
-    sys = ODESystem(bg, simplify_eqs=false)
-    @nonamespace L, Ca, Cb = sys.L₊p, sys.Ca₊q, sys.Cb₊q
+    sys = ODESystem(bg)
+    (L, Ca, Cb) = (sys.L.p, sys.Ca.q, sys.Cb.q)
 
     @test (sol[Ca,1] == 1) && (sol[Cb,1] == 2) && (sol[L,1] == 1)
     @test isapprox(sol[Ca][end], 1.0, atol=1e-5)
@@ -213,7 +213,7 @@ end
 
     # Need sys states to test solution (states may change order)
     sys = ODESystem(bg_abc)
-    @nonamespace A, B, C = sys.A₊q, sys.B₊q, sys.C₊q
+    (A, B, C) = (sys.A.q, sys.B.q, sys.C.q)
 
     sol = simulate(bg_abc, (0.0, 3.0); u0=[A=>1, B=>2, C=>3])
     @test isapprox(sol[A][end], 1.23606, atol=1e-5)
@@ -235,7 +235,7 @@ end
     bg = BondGraph(rn)
 
     sys = ODESystem(bg)
-    @nonamespace A, B = sys.A₊q, sys.B₊q
+    (A, B) = (sys.A.q, sys.B.q)
 
     sol = simulate(bg, (0.0, 1.0); u0=[A=>1, B=>0])
     @test isapprox(sol[A][end], 0.61969, atol=1e-5)
@@ -251,7 +251,7 @@ end
     bg_mm.S.xs = t -> 2
 
     sys = ODESystem(bg_mm)
-    @nonamespace E, C = sys.E₊q, sys.C₊q
+    (E, C) = (sys.E.q, sys.C.q)
 
     sol = simulate(bg_mm, (0.0, 3.0); u0=[E=>1, C=>2])
     @test isapprox(sol[E][end], 1.2, atol=1e-5)
@@ -342,21 +342,20 @@ end
     sol = simulate(bg_serca, tspan; solver=Rosenbrock23())
 
     # calculated using the same model, verified by plot from BGT tutorial
-    real_solution = Dict(
-        :P1₊q  => 4.4404656222265794e-5,
-        :P2₊q  => 0.09777422826977565,
-        :P2a₊q => 0.8970112784324162,
-        :P4₊q  => 2.6596475539704174e-9,
-        :P5₊q  => 0.0009426424413096248,
-        :P6₊q  => 0.001015195974904865,
-        :P8₊q  => 0.001212098675876874,
-        :P9₊q  => 0.0011543788312157496,
-        :P10₊q => 0.0008357702283899367,
-    )
-
     sys = ODESystem(bg_serca, simplify_eqs=false)
-    for species in states(sys)
-        real_sol = real_solution[species.f.name]
-        @test isapprox(sol[species][end], real_sol, atol=1e-5)
+    real_solution = Dict(
+        sys.P1.q  => 4.4404656222265794e-5,
+        sys.P2.q  => 0.09777422826977565,
+        sys.P2a.q => 0.8970112784324162,
+        sys.P4.q  => 2.6596475539704174e-9,
+        sys.P5.q  => 0.0009426424413096248,
+        sys.P6.q  => 0.001015195974904865,
+        sys.P8.q  => 0.001212098675876874,
+        sys.P9.q  => 0.0011543788312157496,
+        sys.P10.q => 0.0008357702283899367,
+    )
+    
+    for (var,real_sol) in real_solution
+        @test isapprox(sol[var][end], real_sol, atol=1e-5)
     end
 end

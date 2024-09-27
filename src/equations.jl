@@ -127,8 +127,8 @@ function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
     _globals = collect(keys(globals(n)))
     _states = collect(keys(states(n)))
 
-    sys = ODESystem(eqs, t, _states, [_params; _ctrls; _globals];
-        name=Symbol(name), defaults=all_variables(n), controls=_ctrls)
+    sys = ODESystem(eqs, t, _states, [_params; _globals];
+        name=Symbol(name), defaults=all_variables(n))
     return compose(sys, ps...)
 end
 
@@ -137,7 +137,6 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
     # TODO check for disconnected ports/nodes
     (subsystems, connections) = get_subsys_and_connections(m)
     sys = compose_bg_model(subsystems, connections, m.name, simplify_eqs)
-    structural_simplify(sys)
 end
 
 # BondGraphNode
@@ -185,23 +184,20 @@ end
 
 
 """
-    simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), flag_ODE=true, kwargs...)
+    simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), kwargs...)
 
 Simulate the bond graph model.
 
 The keyword arguments are the same as for `ODEProblem` and `solve` in DifferentialEquations.
 """
-function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), flag_ODE=true, kwargs...)
+function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=nothing, kwargs...)
     # DAEs break custom model simplification, so skip this step in ODESystem
-    sys = ODESystem(bg; simplify_eqs=flag_ODE)
+    sys = ODESystem(bg)
 
     # If bg has control variables, need to allow union type for parameters
     use_union = has_controls(bg)
 
-    # Check if problem is an ODE or DAE
-    ODEProblemType = flag_ODE ? ODEProblem : ODAEProblem
-
-    prob = ODEProblemType(sys, u0, tspan, pmap; use_union, kwargs...)
+    prob = ODEProblem(sys, u0, tspan, pmap; use_union, kwargs...)
     return solve(prob, solver; kwargshandle=KeywordArgSilent)
 end
 

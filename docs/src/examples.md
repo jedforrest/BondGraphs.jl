@@ -337,7 +337,8 @@ New components are constructed using the same dictionary structure as in the def
 ```@example enzyme
 using ModelingToolkit
 
-@parameters t R T r1 r2 k_c e_T
+@independent_variables t 
+@parameters R T r1 r2 k_c e_T
 @variables E(t)[1:2] F(t)[1:2] # effort and flow variables
 
 R, T = GlobalScope(R), GlobalScope(T) # no namespace

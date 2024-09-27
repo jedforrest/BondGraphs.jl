@@ -11,7 +11,7 @@ const _T = 310.0
 @parameters R T
 R, T = GlobalScope(R), GlobalScope(T)
 
-@parameters t
+@independent_variables t
 D = Differential(t)
 
 @variables E(t)[1:2] F(t)[1:2]

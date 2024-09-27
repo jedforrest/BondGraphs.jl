@@ -1,4 +1,4 @@
-@parameters t
+@independent_variables t
 D = Differential(t)
 
 function RLC()
@@ -134,8 +134,8 @@ end
     cr_bg = constitutive_relations(bg)
     sys = ODESystem(bg)
 
-    C, L, R = sys.ps
-    q, p = sys.states
+    C, L, R = (sys.C.C, sys.I.L, sys.R.R)
+    q, p = sys.C.q, sys.I.p
     cr1 = D(q) ~ -(q / C) / R + (-p) / L
     cr2 = D(p) ~ q / C
 
@@ -213,8 +213,8 @@ end
     eqs = constitutive_relations(bg)
     @test length(eqs) == 1
 
-    (C, R) = sys.ps
-    x = sys.states[1]
+    (C, R) = (sys.C.C, sys.R.R)
+    x = sys.C.q
     e1 = eqs[1]
     e2 = D(x) ~ -x / C / R
 
@@ -231,8 +231,8 @@ end
 
     eqs = constitutive_relations(bg)
     sys = ODESystem(bg)
-    x = sys.states[1]
-    (R, L) = sys.ps
+    x = sys.I.p
+    (R, L) = (sys.R.R, sys.I.L)
     @test eqs == [D(x) ~ -R * x / L]
 end
 
@@ -242,8 +242,8 @@ end
     @test length(eqs) == 2
 
     sys = ODESystem(bg)
-    (C, L, R) = sys.ps
-    (qC, pL) = sys.states
+    (R, L, C) = (sys.R.R, sys.I.L, sys.C.C)
+    (qC, pL) = (sys.C.q, sys.I.p)
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
@@ -263,9 +263,9 @@ end
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
 
-    @nonamespace xA, xB = sys.A₊q, sys.B₊q
-    @nonamespace KA, KB, r = sys.A₊K, sys.B₊K, sys.r₊r
-    e1 = D(xA) ~ -r * (KA * xA - KB * xB)
+    (xA, xB) = (sys.A.q, sys.B.q)
+    (KA, KB, r) = (sys.A.K, sys.B.K, sys.r.r)
+    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
     e2 = D(xB) ~ r * (KA * xA - KB * xB)
 
     @test isequal(eqs[1].rhs, e1.rhs)
@@ -295,15 +295,15 @@ end
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
 
-    @nonamespace xA, xB, xC, xD = sys.A₊q, sys.B₊q, sys.C₊q, sys.D₊q
-    @nonamespace KA, KB, KC, KD, r1, r2 = sys.A₊K, sys.B₊K, sys.C₊K, sys.D₊K, sys.r1₊r, sys.r2₊r
+    (xA, xB, xC, xD) = (sys.A.q, sys.B.q, sys.C.q, sys.D.q)
+    (KA, KB, KC, KD, r1, r2) = (sys.A.K, sys.B.K, sys.C.K, sys.D.K, sys.r1.r, sys.r2.r)
     e1 = D(xA) ~ -r1 * (KA * xA - KB * xB * KC * xC)
     e2 = D(xB) ~ r1 * (KA * xA - KB * xB * KC * xC)
     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
-    @test isequal(eqs[1].rhs, e1.rhs)
-    @test isequal(eqs[2].rhs, e2.rhs)
-    @test isequal(eqs[3].rhs, e3.rhs)
-    @test isequal(eqs[4].rhs, e4.rhs)
+    @test isequal(simplify(eqs[1].rhs - e1.rhs),0)
+    @test isequal(simplify(eqs[2].rhs - e2.rhs),0)
+    @test isequal(simplify(eqs[3].rhs - e3.rhs),0)
+    @test isequal(simplify(eqs[4].rhs - e4.rhs),0)
 end
