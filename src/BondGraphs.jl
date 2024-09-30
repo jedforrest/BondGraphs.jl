@@ -2,7 +2,7 @@ module BondGraphs
 
 import Graphs as g
 import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!
-import ModelingToolkit: parameters, states, equations, controls
+import ModelingToolkit: parameters, equations, controls
 
 # using StaticArrays
 using ModelingToolkit
