@@ -18,18 +18,18 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 
 [compat]
-Catalyst = "12"
+Catalyst = "14"
 DifferentialEquations = "7"
 GraphMakie = "0.5"
 GraphRecipes = "0.5"
 Graphs = "1"
-Latexify = "0.15"
-ModelingToolkit = "8"
+Latexify = "0.16"
+ModelingToolkit = "9"
 OrderedCollections = "1"
 RecipesBase = "1"
 Setfield = "0.8, 1"
 StaticArrays = "1"
-SymbolicUtils = "0.19, 1"
+SymbolicUtils = "3"
 julia = "1"
 
 [extras]

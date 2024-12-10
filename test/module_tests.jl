@@ -1,5 +1,5 @@
-@parameters t
-D = Differential(t)
+t = ModelingToolkit.t_nounits
+D = ModelingToolkit.D_nounits
 
 function find_subsys(sys, s)
     subsys = ModelingToolkit.get_systems(sys)
@@ -83,8 +83,8 @@ end
     @test length(eqs) == 2
 
     sys = ODESystem(bg)
-    (R, C, L) = sys.ps
-    (qC, pL) = sys.states
+    (R, C, L) = (sys.RC.R.R, sys.RC.C.C, sys.L.I.L)
+    (qC, pL) = (sys.RC.C.q, sys.L.I.p)
     e1 = D(qC) ~ -pL / L + (-qC / C / R)
     e2 = D(pL) ~ qC / C
 
@@ -113,12 +113,43 @@ end
 
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
+    
+    (xA, xB) = (sys.A.q, sys.B.q)
+    (KA, KB, r) = (sys.A.K, sys.B.K, sys.R.r.r)
+    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
+    e2 = D(xB) ~ r * (KA * xA - KB * xB)
+    
+    @test isequal(eqs[1].lhs, e1.lhs)
+    @test isequal(eqs[1].rhs, e1.rhs)
+    @test isequal(eqs[2].lhs, e2.lhs)
+    @test isequal(eqs[2].rhs, e2.rhs)
+end
 
-    (xB, xA) = sys.states
-    (KA, KB, r) = sys.ps
-    e1 = D(xB) ~ r * (KA * xA - KB * xB)
-    e2 = D(xA) ~ -r * (KA * xA - KB * xB)
+@testset "Named ports" begin
+    bg1 = BondGraph(:R)
+    re = Component(:re, :r)
+    SSA = SourceSensor(name=:A)
+    SSB = SourceSensor(name=:B)
+    add_node!(bg1, [SSA, SSB, re])
+    connect!(bg1, SSA, (re, 1))
+    connect!(bg1, (re, 2), SSB)
+    bgn1 = BondGraphNode(bg1)
 
+    bg = BondGraph()
+    A = Component(:ce, :A)
+    B = Component(:ce, :B)
+    add_node!(bg, [A, B, bgn1])
+    connect!(bg, A, (bgn1, :A))
+    connect!(bg, (bgn1, :B), B)
+
+    sys = ODESystem(bg)
+    eqs = constitutive_relations(bg)
+    
+    (xA, xB) = (sys.A.q, sys.B.q)
+    (KA, KB, r) = (sys.A.K, sys.B.K, sys.R.r.r)
+    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
+    e2 = D(xB) ~ r * (KA * xA - KB * xB)
+    
     @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(eqs[1].rhs, e1.rhs)
     @test isequal(eqs[2].lhs, e2.lhs)

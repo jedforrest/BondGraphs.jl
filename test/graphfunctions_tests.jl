@@ -40,7 +40,7 @@ end
     @test has_vertex(bg, 3)
     @test !has_vertex(bg, 0)
 
-    @test components(bg) == [c, r]
+    @test BondGraphs.components(bg) == [c, r]
     @test junctions(bg) == [j0]
 
     @test inneighbors(bg, vertex(c)) == []

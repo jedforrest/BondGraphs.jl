@@ -11,8 +11,8 @@ const _T = 310.0
 @parameters R T
 R, T = GlobalScope(R), GlobalScope(T)
 
-@parameters t
-D = Differential(t)
+t = ModelingToolkit.t_nounits
+D = ModelingToolkit.D_nounits
 
 @variables E(t)[1:2] F(t)[1:2]
 

@@ -24,8 +24,8 @@ function BondGraph(rs::ReactionSystem; chemostats=[])
 
         Re = Component(:Re, Symbol("R$(re_num[])"))
         add_node!(bg, Re)
-        _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats, tf_num)
-        _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats, tf_num)
+        _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats, tf_num, port=(Re,1))
+        _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats, tf_num, port=(Re,2))
 
         re_num[] += 1
     end
@@ -47,7 +47,7 @@ end
 # then together they form a bi-directional reaction pair.
 _is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
 
-function _half_equation!(bg, species, stoich, Re, chemostats, tf_num)
+function _half_equation!(bg, species, stoich, Re, chemostats, tf_num; port=Re)
     species_names = _stringify_species.(species)
 
     if length(species) > 1
@@ -63,12 +63,12 @@ function _half_equation!(bg, species, stoich, Re, chemostats, tf_num)
             n != 1 && _insert_tf!(bg, comp, one_junction, n, tf_num)
         end
 
-        connect!(bg, one_junction, Re)
+        connect!(bg, one_junction, port)
     else
         spcs = species_names[1]
         comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
         add_node!(bg, comp)
-        connect!(bg, comp, Re)
+        connect!(bg, comp, port)
 
         n = stoich[1]
         n != 1 && _insert_tf!(bg, comp, Re, n, tf_num)
