@@ -1,4 +1,4 @@
-using Documenter, BondGraphs, Graphs, Plots, ModelingToolkit, Catalyst, DifferentialEquations
+using Documenter, BondGraphs, Graphs, Plots, ModelingToolkit, Catalyst, DifferentialEquations, Latexify
 
 makedocs(
     sitename = "BondGraphs.jl",
