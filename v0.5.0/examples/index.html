@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · BondGraphs.jl</title><meta name="title" content="Examples · BondGraphs.jl"/><meta property="og:title" content="Examples · BondGraphs.jl"/><meta property="twitter:title" content="Examples · BondGraphs.jl"/><meta name="description" content="Documentation for BondGraphs.jl."/><meta property="og:description" content="Documentation for BondGraphs.jl."/><meta property="twitter:description" content="Documentation for BondGraphs.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">BondGraphs.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Introduction</a></li><li><a class="tocitem" href="../gettingstarted/">Getting Started</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Simple-Electric-Circuit"><span>Simple Electric Circuit</span></a></li><li><a class="tocitem" href="#Biochemical-Reaction-Networks"><span>Biochemical Reaction Networks</span></a></li><li><a class="tocitem" href="#SERCA-Pump"><span>SERCA Pump</span></a></li><li><a class="tocitem" href="#Electrochemical-System:-Ion-Pore-Transport"><span>Electrochemical System: Ion Pore Transport</span></a></li><li><a class="tocitem" href="#Enzyme-Catalysed-Reactions"><span>Enzyme Catalysed Reactions</span></a></li></ul></li><li><a class="tocitem" href="../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/jedforrest/BondGraphs.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/jedforrest/BondGraphs.jl/blob/master/docs/src/examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><p>Interactive Jupyter Notebook versions of these tutorials can be found on <a href="https://github.com/jedforrest/BondGraphsTutorials">GitHub</a>.</p><pre><code class="language-julia hljs">using BondGraphs
+using Catalyst
+using Plots</code></pre><h2 id="Simple-Electric-Circuit"><a class="docs-heading-anchor" href="#Simple-Electric-Circuit">Simple Electric Circuit</a><a id="Simple-Electric-Circuit-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-Electric-Circuit" title="Permalink"></a></h2><p>This is a reduced copy-and-paste version of the electric circuit tutorial in the <a href="../gettingstarted/#Getting-Started">Getting Started</a> section.</p><p><img src="../assets/simple_electric_circuit_current.png" alt/></p><pre><code class="language-julia hljs">model = BondGraph(&quot;RC Circuit&quot;)
+C = Component(:C)
+R = Component(:R)
+Is = Component(:Sf, &quot;Is&quot;)
+kvl = EqualEffort()
+
+add_node!(model, [C, R, Is, kvl])
+connect!(model, R, kvl)
+connect!(model, C, kvl)
+connect!(model, Is, kvl)
+
+C.C = 1
+R.R = 2
+
+u0 = [1]
+p = plot()
+for i in 1:4
+    Is.fs = t -&gt; cos(i * t)
+    sol = simulate(model, (0., 5.); u0)
+    plot!(p, sol, label = &quot;f(t) = cos($(i)t)&quot;, lw=2)
+end
+plot(p)</code></pre><img src="59af1efa.svg" alt="Example block output"/><h2 id="Biochemical-Reaction-Networks"><a class="docs-heading-anchor" href="#Biochemical-Reaction-Networks">Biochemical Reaction Networks</a><a id="Biochemical-Reaction-Networks-1"></a><a class="docs-heading-anchor-permalink" href="#Biochemical-Reaction-Networks" title="Permalink"></a></h2><p>BondGraphs.jl includes a special type conversion from a <code>Catalyst.ReactionSystem</code> to a <code>BondGraph</code>. This means we can easily create chemical reaction networks with the <a href="https://docs.sciml.ai/Catalyst/stable/api/catalyst_api/#Catalyst.@reaction_network"><code>@reaction_network</code></a> macro and automatically generate a biochemical bond graph.</p><h3 id="A-simple-biochemical-example"><a class="docs-heading-anchor" href="#A-simple-biochemical-example">A simple biochemical example</a><a id="A-simple-biochemical-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-simple-biochemical-example" title="Permalink"></a></h3><p>We will start with a very simple chemical reaction.</p><p class="math-container">\[A + B \rightleftharpoons C\]</p><p>Due to the design of bond graphs, all reactions must be reversible. </p><pre><code class="language-julia hljs">abc = @reaction_network ABC begin
+    1, A + B --&gt; C
+end
+
+bg_abc = BondGraph(abc)
+plot(bg_abc)</code></pre><img src="5d14f9d1.svg" alt="Example block output"/><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The <code>1</code> before the reaction definition is the reaction rate. This is currently not used in the conversion, so the value is only a placeholder. The reaction rate can be set later in the bond graph. </p></div></div><p>This model derives equations for mass-action kinetics. (Other reaction equations can be used with a custom reaction component.)</p><pre><code class="language-julia hljs">constitutive_relations(bg_abc; sub_defaults=true)</code></pre><p class="math-container">\[ \begin{align}
+\frac{\mathrm{d} \mathtt{A.q}\left( t \right)}{\mathrm{d}t} &amp;= \mathtt{C.q}\left( t \right) - \mathtt{A.q}\left( t \right) \mathtt{B.q}\left( t \right) \\
+\frac{\mathrm{d} \mathtt{B.q}\left( t \right)}{\mathrm{d}t} &amp;= \mathtt{C.q}\left( t \right) - \mathtt{A.q}\left( t \right) \mathtt{B.q}\left( t \right) \\
+\frac{\mathrm{d} \mathtt{C.q}\left( t \right)}{\mathrm{d}t} &amp;=  - \mathtt{C.q}\left( t \right) + \mathtt{A.q}\left( t \right) \mathtt{B.q}\left( t \right)
+\end{align}
+ \]</p><pre><code class="language-julia hljs">tspan = (0., 2.)
+u0 = [1, 1, 0]
+sol = simulate(bg_abc, tspan; u0)
+plot(sol, lw=3)</code></pre><img src="46a92943.svg" alt="Example block output"/><h3 id="Stoichiometry"><a class="docs-heading-anchor" href="#Stoichiometry">Stoichiometry</a><a id="Stoichiometry-1"></a><a class="docs-heading-anchor-permalink" href="#Stoichiometry" title="Permalink"></a></h3><p>This process works with multiple reactions with different stoichiometries.</p><p class="math-container">\[A + 2B \rightleftharpoons 3C \\
+8A + 4C \rightleftharpoons D\]</p><pre><code class="language-julia hljs">abcd = @reaction_network ABCD begin
+    1, A + 2B --&gt; 3C
+    1, 8A + 4C --&gt; D
+end
+bg_abcd = BondGraph(abcd)
+plot(bg_abcd)</code></pre><img src="01b01600.svg" alt="Example block output"/><pre><code class="language-julia hljs">constitutive_relations(bg_abcd; sub_defaults=true)</code></pre><p class="math-container">\[ \begin{align}
+\frac{\mathrm{d} \mathtt{A.q}\left( t \right)}{\mathrm{d}t} &amp;= e^{3 \log\left( \mathtt{C.q}\left( t \right) \right)} - \left( \mathtt{B.q}\left( t \right) \right)^{2} \mathtt{A.q}\left( t \right) + 8 \left( \mathtt{D.q}\left( t \right) - \left( \mathtt{C.q}\left( t \right) \right)^{4} \left( \mathtt{A.q}\left( t \right) \right)^{8} \right) \\
+\frac{\mathrm{d} \mathtt{B.q}\left( t \right)}{\mathrm{d}t} &amp;= 2 \left( e^{3 \log\left( \mathtt{C.q}\left( t \right) \right)} - \left( \mathtt{B.q}\left( t \right) \right)^{2} \mathtt{A.q}\left( t \right) \right) \\
+\frac{\mathrm{d} \mathtt{C.q}\left( t \right)}{\mathrm{d}t} &amp;= 3 \left( \left( \mathtt{B.q}\left( t \right) \right)^{2} \mathtt{A.q}\left( t \right) - \left( \mathtt{C.q}\left( t \right) \right)^{3} \right) + 4 \left( \mathtt{D.q}\left( t \right) - \left( \mathtt{C.q}\left( t \right) \right)^{4} \left( \mathtt{A.q}\left( t \right) \right)^{8} \right) \\
+\frac{\mathrm{d} \mathtt{D.q}\left( t \right)}{\mathrm{d}t} &amp;=  - \mathtt{D.q}\left( t \right) + \left( \mathtt{C.q}\left( t \right) \right)^{4} \left( \mathtt{A.q}\left( t \right) \right)^{8}
+\end{align}
+ \]</p><pre><code class="language-julia hljs">tspan = (0.0, 0.1)
+u0 = [3, 2, 1, 0]
+sol = simulate(bg_abcd, tspan; u0)
+plot(sol, lw=3)</code></pre><img src="d2bb4dd3.svg" alt="Example block output"/><h3 id="The-reversible-Michaelis-Menten-model"><a class="docs-heading-anchor" href="#The-reversible-Michaelis-Menten-model">The reversible Michaelis-Menten model</a><a id="The-reversible-Michaelis-Menten-model-1"></a><a class="docs-heading-anchor-permalink" href="#The-reversible-Michaelis-Menten-model" title="Permalink"></a></h3><p>A realistic example with chemostats. Chemostats are chemical species that are held constant throught the reaction by adding or removing the species to maintian the set concentration.</p><p class="math-container">\[E + S \rightleftharpoons C \\ 
+C \rightleftharpoons E + P\]</p><p>Here, the substrate <code>S</code> and <code>P</code> are chemostats. In bond graph terms, this means replacing the <code>Ce</code> components with a <code>SCe</code> component.</p><pre><code class="language-julia hljs">rn_mm = @reaction_network MM_reversible begin
+    (1, 1), E + S &lt;--&gt; C
+    (1, 1), C &lt;--&gt; E + P
+end
+
+bg_mm = BondGraph(rn_mm; chemostats=[&quot;S&quot;, &quot;P&quot;])
+
+plot(bg_mm, fontsize=12)</code></pre><img src="d98dee7d.svg" alt="Example block output"/><pre><code class="language-julia hljs">bg_mm.S.xs = t -&gt; 1 + t # substrate increases over time
+
+tspan = (0., 10.)
+u0 = [1,2]
+sol = simulate(bg_mm, tspan; u0)
+plot(sol, lw=3)</code></pre><img src="6979e36b.svg" alt="Example block output"/><h2 id="SERCA-Pump"><a class="docs-heading-anchor" href="#SERCA-Pump">SERCA Pump</a><a id="SERCA-Pump-1"></a><a class="docs-heading-anchor-permalink" href="#SERCA-Pump" title="Permalink"></a></h2><p>In this example we will demonstrate biochemical bond graph construction on a larger system.</p><p>We will model the SERCA reaction network as described in Tran et al.<sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup> and Pan et al.<sup class="footnote-reference"><a id="citeref-2" href="#footnote-2">[2]</a></sup></p><p><img src="../assets/SERCA_reaction_network.png" alt/></p><pre><code class="language-julia hljs">rn_serca = @reaction_network SERCA begin
+    (1, 1), P1 + MgATP &lt;--&gt; P2
+    (1, 1), P2 + H &lt;--&gt; P2a
+    (1, 1), P2 + 2Cai &lt;--&gt; P4
+    (1, 1), P4 &lt;--&gt; P5 + 2H
+    (1, 1), P5 &lt;--&gt; P6 + MgADP
+    (1, 1), P6 &lt;--&gt; P8 + 2Casr
+    (1, 1), P8 + 2H &lt;--&gt; P9
+    (1, 1), P9 &lt;--&gt; P10 + H
+    (1, 1), P10 &lt;--&gt; P1 + Pi
+end
+
+chemostats = [&quot;MgATP&quot;, &quot;MgADP&quot;, &quot;Pi&quot;, &quot;H&quot;, &quot;Cai&quot;, &quot;Casr&quot;]
+bg_serca = BondGraph(rn_serca; chemostats)
+plot(bg_serca, size=(600,600), fontsize=10)</code></pre><img src="23ec445f.svg" alt="Example block output"/><p>For this example we need to set the parameter values for the reaction rates <span>$r$</span>, the species affinities <span>$K$</span>, the chemostat concentrations <span>$x_s$</span>, and the initial concentrations for all <span>$P_i$</span>.</p><p>We also set let the calcium concentration increase over time with <span>$[\text{Ca}^{2+}] = 0.05 + 0.01t$</span></p><pre><code class="language-julia hljs">reaction_rates = [
+    :R1 =&gt; 0.00053004,
+    :R2 =&gt; 8326784.0537,
+    :R3 =&gt; 1567.7476,
+    :R4 =&gt; 1567.7476,
+    :R5 =&gt; 3063.4006,
+    :R6 =&gt; 130852.3839,
+    :R7 =&gt; 11612934.8748,
+    :R8 =&gt; 11612934.8748,
+    :R9 =&gt; 0.049926
+]
+species_affinities = [
+    :P1 =&gt; 5263.6085,
+    :P2 =&gt; 3803.6518,
+    :P2a =&gt; 3110.4445,
+    :P4 =&gt; 16520516.1239,
+    :P5 =&gt; 0.82914,
+    :P6 =&gt; 993148.433,
+    :P8 =&gt; 37.7379,
+    :P9 =&gt; 2230.2717,
+    :P10 =&gt; 410.6048,
+    :Cai =&gt; 1.9058,
+    :Casr =&gt; 31.764,
+    :MgATP =&gt; 244.3021,
+    :MgADP =&gt; 5.8126e-7,
+    :Pi =&gt; 0.014921,
+    :H =&gt; 1862.5406
+]
+vol_sr = 2.28
+chemostat_amounts = [
+    :Cai =&gt; t -&gt; 0.0057,
+    :Casr =&gt; t -&gt; vol_sr*(0.05 + 0.01t), # Ca2+ increases over time
+    :H =&gt; t -&gt; 0.004028,
+    :MgADP =&gt; t -&gt; 1.3794,
+    :MgATP =&gt; t -&gt; 3.8,
+    :Pi =&gt; t -&gt; 570
+]
+initial_conditions = [
+    :P1 =&gt; 0.000483061870385487,
+    :P2 =&gt; 0.0574915174273067,
+    :P2a =&gt; 0.527445119834607,
+    :P4 =&gt; 1.51818391164022e-09,
+    :P5 =&gt; 0.000521923287622898,
+    :P6 =&gt; 7.80721128535043e-05,
+    :P8 =&gt; 0.156693953834181,
+    :P9 =&gt; 0.149232225342376,
+    :P10 =&gt; 0.108044124948978
+]
+for (reaction, rate) in reaction_rates
+    getproperty(bg_serca, reaction).r = rate
+end
+for (species, affinity) in species_affinities
+    getproperty(bg_serca, species).K = affinity
+end
+for (chemostat, amount) in chemostat_amounts
+    getproperty(bg_serca, chemostat).xs = amount
+end
+for (species, ic) in initial_conditions
+    getproperty(bg_serca, species).q = ic
+end</code></pre><pre><code class="language-julia hljs">import DifferentialEquations: Rosenbrock23 # stiff equation solver
+
+tspan = (0., 200.)
+sol = simulate(bg_serca, tspan; solver=Rosenbrock23());
+plot(sol, lw=2, legend=:right)</code></pre><img src="eaab91f0.svg" alt="Example block output"/><h2 id="Electrochemical-System:-Ion-Pore-Transport"><a class="docs-heading-anchor" href="#Electrochemical-System:-Ion-Pore-Transport">Electrochemical System: Ion Pore Transport</a><a id="Electrochemical-System:-Ion-Pore-Transport-1"></a><a class="docs-heading-anchor-permalink" href="#Electrochemical-System:-Ion-Pore-Transport" title="Permalink"></a></h2><p>A multiphysics bond graph example that combines biochemical reactions with electrical (ion) forces. This example is taken from Cudmore et al.<sup class="footnote-reference"><a id="citeref-3" href="#footnote-3">[3]</a></sup></p><p>For this example we are modelling three ion pore channels for <span>$\mathrm{Na}^+$</span>, <span>$\mathrm{Cl}^-$</span> and <span>$\mathrm{K}^+$</span>. It is a good idea to define a function that returns an ion pore base model.</p><pre><code class="language-julia hljs">function ion_pore(name=&quot;&quot;; z=1, conc_ex=1//1000, conc_in=1//1000)
+    bg = BondGraph(name * &quot; Ion Pore Transport&quot;)
+
+    membrane = Component(:C, &quot;mem&quot;; C=1)
+    ion_ex = Component(:SCe, &quot;Ie&quot;; K=1, xs=t-&gt;conc_ex)
+    ion_in = Component(:SCe, &quot;Ii&quot;; K=1, xs=t-&gt;conc_in)
+
+    potential_mem = EqualEffort()
+    flow_f = EqualFlow()
+    flow_r = EqualFlow()
+
+    TF_F = Component(:TF, &quot;F&quot;; n=96485)
+    TF_zf = Component(:TF, &quot;-z/2&quot;; n=-z//2) # -ve voltage
+    TF_zr = Component(:TF, &quot;z/2&quot;; n=z//2) # +ve voltage
+
+    re_pore = Component(:Re, &quot;pore&quot;; r=1//10_000_000)
+
+    allcomps = [
+        membrane, ion_ex, ion_in, potential_mem, flow_f, flow_r,
+        TF_F, TF_zr, TF_zf, re_pore
+    ]
+
+    add_node!(bg, allcomps)
+    connect!(bg, ion_ex, flow_f)
+    connect!(bg, flow_f, re_pore)
+    connect!(bg, re_pore, flow_r)
+    connect!(bg, flow_r, ion_in)
+    connect!(bg, flow_r, (TF_zr,2))
+    connect!(bg, (TF_zr,1), potential_mem)
+    connect!(bg, potential_mem, (TF_zf,1))
+    connect!(bg, (TF_zf,2), flow_f)
+    connect!(bg, potential_mem, (TF_F,2))
+    connect!(bg, (TF_F,1), membrane)
+
+    return bg
+end
+ion_pore_bg = ion_pore()
+plot(ion_pore_bg)</code></pre><img src="dd0ae8c2.svg" alt="Example block output"/><pre><code class="language-julia hljs">ions = [
+    &quot;Na&quot; =&gt; (z=1, conc_ex=155//1000, conc_in=19//1000),
+    &quot;Cl&quot; =&gt; (z=-1, conc_ex=112//1000, conc_in=78//1000),
+    &quot;K&quot;  =&gt; (z=1, conc_ex=5//1000, conc_in=136//1000),
+]
+
+plot(; legend=:bottomright)
+for (ionname, params) in ions
+    model = ion_pore(ionname; params...)
+    sol = simulate(model, (0., 1000.))
+    plot!(sol, label=ionname, lw=3)
+end
+plot!(; xlabel=&quot;Time [ms]&quot;, ylabel=&quot;Membrane potential [mV]&quot;, yformatter=y-&gt;y*1000)</code></pre><img src="145e1ae7.svg" alt="Example block output"/><h2 id="Enzyme-Catalysed-Reactions"><a class="docs-heading-anchor" href="#Enzyme-Catalysed-Reactions">Enzyme Catalysed Reactions</a><a id="Enzyme-Catalysed-Reactions-1"></a><a class="docs-heading-anchor-permalink" href="#Enzyme-Catalysed-Reactions" title="Permalink"></a></h2><p>We can create custom reaction components which describe enzyme-catalyzed reaction mechanices, such as the Michaelis-Menten rate law.</p><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>This method of adding custom components will be deprecated in the near future and replaced with a new method.</p></div></div><p>New components are constructed using the same dictionary structure as in the default component library. See <a href="../api/#BondGraphs.addlibrary!-Tuple{Any}"><code>addlibrary!</code></a> for more details.</p><pre><code class="language-julia hljs">using ModelingToolkit
+
+t = ModelingToolkit.t_nounits
+@parameters R T r1 r2 k_c e_T
+@variables E(t)[1:2] F(t)[1:2] # effort and flow variables
+
+R, T = GlobalScope(R), GlobalScope(T) # no namespace
+D = ModelingToolkit.D_nounits
+
+# Custom Michaelis-Mentin reaction component
+ReMM = Dict(
+    :description =&gt; &quot;&quot;&quot;
+    Michaelis-Menten reaction
+    r1: Rate of reaction 1
+    r2: Rate of reaction 2
+    k_c: Affinity of complex relative to free enzyme
+    e_T: Total amount of enzyme
+    R: Universal Gas Constant
+    T: Temperature
+    &quot;&quot;&quot;,
+    :numports =&gt; 2,
+    :variables =&gt; Dict(
+        :parameters =&gt; Dict(
+            r1 =&gt; 1,
+            r2 =&gt; 1,
+            k_c =&gt; 1,
+            e_T =&gt; 1
+        ),
+        :globals =&gt; Dict(
+            R =&gt; 8.314,
+            T =&gt; 310.0
+        )
+    ),
+    :equations =&gt; [
+        0 ~ F[1] + F[2],
+        0 ~ F[1] - e_T*r1*r2*k_c*(exp(E[1]/R/T) - exp(E[2]/R/T)) / (r1*exp(E[1]/R/T) + r2*exp(E[2]/R/T) + k_c*(r1+r2))
+    ]
+)
+
+# add to component library
+addlibrary!(Dict(:ReMM =&gt; ReMM))
+
+ReMM[:equations]</code></pre><p class="math-container">\[ \begin{align}
+0 &amp;= F\left( t \right)_{1} + F\left( t \right)_{2} \\
+0 &amp;= F\left( t \right)_{1} + \frac{ - \mathtt{e\_T} \mathtt{k\_c} \mathtt{r1} \mathtt{r2} \left( e^{\frac{E\left( t \right)_{1}}{R T}} - e^{\frac{E\left( t \right)_{2}}{R T}} \right)}{\mathtt{k\_c} \left( \mathtt{r1} + \mathtt{r2} \right) + \mathtt{r1} e^{\frac{E\left( t \right)_{1}}{R T}} + \mathtt{r2} e^{\frac{E\left( t \right)_{2}}{R T}}}
+\end{align}
+ \]</p><p>We will create a bond graph with these new equations. $ A \rightleftharpoons B \rightleftharpoons C $</p><pre><code class="language-julia hljs">rn_enzyme = @reaction_network EnzymeNetwork begin
+    (1, 1), A &lt;--&gt; B
+    (1, 1), B &lt;--&gt; C
+end
+bg = BondGraph(rn_enzyme)
+
+bg.A.K, bg.B.K, bg.C.K = 1, 1, 1
+
+# Swap mass-action components for new michaelis-menten components
+MM1 = Component(:ReMM, &quot;MM1&quot;; r1=100, r2=100)
+MM2 = Component(:ReMM, &quot;MM2&quot;; r1=100, r2=100)
+swap!(bg, bg.R1, MM1)
+swap!(bg, bg.R2, MM2)
+
+plot(bg)</code></pre><img src="1ef0bcaa.svg" alt="Example block output"/><pre><code class="language-julia hljs">constitutive_relations(bg; sub_defaults=true)</code></pre><p class="math-container">\[ \begin{align}
+\frac{\mathrm{d} \mathtt{A.q}\left( t \right)}{\mathrm{d}t} &amp;= \frac{100 \left(  - \mathtt{A.q}\left( t \right) + \mathtt{B.q}\left( t \right) \right)}{2 + \mathtt{A.q}\left( t \right) + \mathtt{B.q}\left( t \right)} \\
+\frac{\mathrm{d} \mathtt{B.q}\left( t \right)}{\mathrm{d}t} &amp;= \frac{200 \mathtt{A.q}\left( t \right) + 200 \mathtt{C.q}\left( t \right) - 400 \mathtt{B.q}\left( t \right) + 200 \mathtt{A.q}\left( t \right) \mathtt{C.q}\left( t \right) - 200 \left( \mathtt{B.q}\left( t \right) \right)^{2}}{\left( 2 + \mathtt{A.q}\left( t \right) + \mathtt{B.q}\left( t \right) \right) \left( 2 + \mathtt{C.q}\left( t \right) + \mathtt{B.q}\left( t \right) \right)} \\
+\frac{\mathrm{d} \mathtt{C.q}\left( t \right)}{\mathrm{d}t} &amp;= \frac{100 \left(  - \mathtt{C.q}\left( t \right) + \mathtt{B.q}\left( t \right) \right)}{2 + \mathtt{C.q}\left( t \right) + \mathtt{B.q}\left( t \right)}
+\end{align}
+ \]</p><pre><code class="language-julia hljs">sol = simulate(bg, (0., 20.); u0=[200,50,100])
+plot(sol, lw=2)</code></pre><img src="9a89f9e2.svg" alt="Example block output"/><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Tran et al., <em>A Thermodynamic Model of the Cardiac Sarcoplasmic/Endoplasmic Ca2+ (SERCA) Pump</em> (2009)</li><li class="footnote" id="footnote-2"><a class="tag is-link" href="#citeref-2">2</a>Pan et al., <em>Bond graph modelling of the cardiac action potential: implications for drift and non-unique steady states</em> (2018)</li><li class="footnote" id="footnote-3"><a class="tag is-link" href="#citeref-3">3</a>Cudmore et al., <em>Analysing and simulating energy-based models in biology using BondGraphTools</em> (2021)</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../gettingstarted/">« Getting Started</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 19 December 2024 01:51">Thursday 19 December 2024</span>. Using Julia version 1.10.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
