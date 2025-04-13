@@ -1,4 +1,9 @@
-@testset "BondGraph Properties" begin
+@testmodule GraphFunctions begin
+    using Graphs
+end
+
+
+@testitem "BondGraph Properties" setup=[GraphFunctions] begin
     bg = BondGraph("newBG")
     @test name(bg) == "newBG"
     @test isempty(vertices(bg))
@@ -15,7 +20,7 @@
     @test size(zero(bg)) == size(BondGraph())
 end
 
-@testset "Adding and removing elements" begin
+@testitem "Adding and removing elements" begin
     c = Component(:C)
     r = Component(:R)
     j0 = EqualEffort()
@@ -52,7 +57,7 @@ end
     @test nv(bg) == 2
 end
 
-@testset "BondGraphNode" begin
+@testitem "BondGraphNode" begin
     bg = BondGraph("RCI")
     bgn = BondGraphNode(bg)
 
@@ -60,7 +65,7 @@ end
     @test bgn.ports == Dict()
 end
 
-@testset "Printing" begin
+@testitem "Printing" begin
     C = Component(:C)
     SS = Component(:SS, "Source")
     J0 = EqualEffort(name="J")
@@ -87,7 +92,7 @@ end
     @test repr(bg) == "BondGraph newbg (3 Nodes, 2 Bonds)"
 end
 
-@testset "Graphs.jl Extra Functions" begin
+@testitem "Graphs.jl Extra Functions" begin
     c1 = Component(:C)
     c2 = Component(:R)
     c3 = Component(:I)
