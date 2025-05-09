@@ -1,12 +1,4 @@
-t = ModelingToolkit.t_nounits
-D = ModelingToolkit.D_nounits
-
-function find_subsys(sys, s)
-    subsys = ModelingToolkit.get_systems(sys)
-    return filter(x -> nameof(x) == s, subsys)[1]
-end
-
-@testset "SS component system" begin
+@testitem "SS component system" setup=[Setup] begin
     SS = SourceSensor(name=:SS)
 
     @test length(freeports(SS)) == 1
@@ -22,7 +14,7 @@ end
     @test sys.p1.F isa Num
 end
 
-@testset "Expose models" begin
+@testitem "Expose models" setup=[Setup] begin
     r = Component(:R)
     kcl = EqualFlow(name=:kcl)
     SSA = SourceSensor(name=:A)
@@ -55,7 +47,7 @@ end
     @test (0 ~ F2 + BF) in eqns
 end
 
-@testset "Modular RLC circuit" begin
+@testitem "Modular RLC circuit" setup=[Setup] begin
     r = Component(:R)
     l = Component(:I)
     c = Component(:C)
@@ -94,7 +86,7 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Modular reaction" begin
+@testitem "Modular reaction" setup=[Setup] begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
     SSA = SourceSensor(name=:A)
@@ -113,19 +105,19 @@ end
 
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
-    
+
     (xA, xB) = (sys.A.q, sys.B.q)
     (KA, KB, r) = (sys.A.K, sys.B.K, sys.R.r.r)
     e1 = D(xA) ~ r * (-KA * xA + KB * xB)
     e2 = D(xB) ~ r * (KA * xA - KB * xB)
-    
+
     @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(eqs[1].rhs, e1.rhs)
     @test isequal(eqs[2].lhs, e2.lhs)
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Named ports" begin
+@testitem "Named ports" setup=[Setup] begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
     SSA = SourceSensor(name=:A)
@@ -144,12 +136,12 @@ end
 
     sys = ODESystem(bg)
     eqs = constitutive_relations(bg)
-    
+
     (xA, xB) = (sys.A.q, sys.B.q)
     (KA, KB, r) = (sys.A.K, sys.B.K, sys.R.r.r)
     e1 = D(xA) ~ r * (-KA * xA + KB * xB)
     e2 = D(xB) ~ r * (KA * xA - KB * xB)
-    
+
     @test isequal(eqs[1].lhs, e1.lhs)
     @test isequal(eqs[1].rhs, e1.rhs)
     @test isequal(eqs[2].lhs, e2.lhs)

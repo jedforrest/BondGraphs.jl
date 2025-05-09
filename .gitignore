@@ -28,4 +28,4 @@ Manifest.toml
 temp/
 
 LocalPreferences.toml
-.vscode/settings.json
+.vscode

@@ -1,21 +1,4 @@
-function RCI(name=:RCI)
-    model = BondGraph(name)
-    C = Component(:C)
-    R = Component(:R)
-    I = Component(:I)
-    SS = Component(:SS)
-    zero_law = EqualEffort()
-
-    add_node!(model, [C, R, I, SS, zero_law])
-    connect!(model, R, zero_law)
-    connect!(model, C, zero_law)
-    connect!(model, zero_law, I)
-    connect!(model, zero_law, SS)
-
-    model
-end
-
-@testset "Creating Components" begin
+@testitem "Creating Components" setup=[Setup] begin
     C = Component(:C)
     @test type(C) == "C"
     @test name(C) == "C"
@@ -33,7 +16,7 @@ end
     @test type(SS) == "SS"
 end
 
-@testset "Creating Junctions" begin
+@testitem "Creating Junctions" setup=[Setup] begin
     EqE_1 = EqualEffort()
     EqE_2 = EqualEffort(name="foo")
     EqF = EqualFlow()
@@ -44,7 +27,7 @@ end
 end
 
 # Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
-@testset "BondGraph Construction" begin
+@testitem "BondGraph Construction" setup=[Setup] begin
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
@@ -61,7 +44,7 @@ end
     @test b2 in model.bonds
 end
 
-@testset "BondGraph Modification" begin
+@testitem "BondGraph Modification" setup=[Setup] begin
     model = BondGraph(:RCI)
     C = Component(:C)
     R = Component(:R)
@@ -101,7 +84,7 @@ end
     @test outneighbors(model, one_law) == [I]
 end
 
-@testset "Construction Failure" begin
+@testitem "Construction Failure" setup=[Setup] begin
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
@@ -128,7 +111,7 @@ end
     @test has_edge(model, bond)
 end
 
-@testset "Chemical reaction" begin
+@testitem "Chemical reaction" setup=[Setup] begin
     model = BondGraph(:Chemical)
     A = Component(:C, :A)
     B = Component(:C, :B)
@@ -161,7 +144,7 @@ end
     @test ne(model) == 6
 end
 
-@testset "Standard components" begin
+@testitem "Standard components" setup=[Setup] begin
     tf = Component(:TF, :n)
     @test tf isa Component{2}
     @test tf.type == "TF"
@@ -172,7 +155,7 @@ end
     @test r.type == "R"
 end
 
-@testset "Inserting Nodes" begin
+@testitem "Inserting Nodes" setup=[Setup] begin
     bg = RCI()
 
     c, r, J0 = bg.nodes[[1, 2, 5]]
@@ -189,7 +172,7 @@ end
     @test ne(bg) == 6
 end
 
-@testset "Merging components" begin
+@testitem "Merging components" setup=[Setup] begin
     bg = RCI()
     C = bg.C
     R = bg.R
@@ -210,7 +193,7 @@ end
     @test ne(bg) == 7
 end
 
-@testset "Simplifying Junctions" begin
+@testitem "Simplifying Junctions" setup=[Setup] begin
     bg = RCI()
     C, R, I, SS, J0 = bg.nodes
 
@@ -240,7 +223,7 @@ end
     @test ne(bg) == 4
 end
 
-@testset "BondGraphNodes" begin
+@testitem "BondGraphNodes" setup=[Setup] begin
     C = Component(:C, "C")
     bg1 = BondGraph("first")
     bg2 = BondGraph("second")
@@ -268,7 +251,7 @@ end
     @test main.third.second.first.C == [C, C2]
 end
 
-@testset "Conversion to Other Graphs" begin
+@testitem "Conversion to Other Graphs" setup=[Setup] begin
      bg = RCI()
      g = SimpleGraph(bg)
      dg = SimpleDiGraph(bg)
