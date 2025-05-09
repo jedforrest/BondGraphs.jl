@@ -57,11 +57,3 @@ using TestItemRunner
         return filter(x -> nameof(x) == s, subsys)[1]
     end
 end
-
-# @testitem "Graph functions" begin include("graphfunctions_tests.jl") end
-# @testitem "Construction" begin include("construction_tests.jl") end
-# @testitem "Equations" begin include("equation_tests.jl") end
-# @testitem "Simulations" begin include("simulation_tests.jl") end
-# @testitem "Catalyst" begin include("catalyst_tests.jl") end
-# @testitem "Miscellaneous" begin include("misc_tests.jl") end
-# @testitem "Modules" begin include("module_tests.jl") end

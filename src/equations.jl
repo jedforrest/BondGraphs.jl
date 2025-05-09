@@ -200,18 +200,3 @@ function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=nothing, kwargs..
     prob = ODEProblem(sys, u0, tspan, pmap; use_union, kwargs...)
     return solve(prob, solver; kwargshandle=KeywordArgSilent)
 end
-
-# Custom post-processing of latex display for equations
-# TODO: move inside cr functions
-function Base.show(io::IO, ::MIME"text/latex", x::Vector{Equation})
-    ltx = latexify(x)
-
-    # _+ becomes ₊
-    ltx = replace(ltx, r"{\\_\+}" => s"_+")
-    # dX₊q(t) becomes dqₓ(t)
-    # ltx = replace(ltx, r"([^d\W]+){\\_\+}(\w+)" => s"\2_{\1}")
-    # \mathrm{...} is removed
-    # ltx = replace(ltx, r"\\mathrm{(.+?)}" => s"\1")
-
-    print(io, "\$\$ " * ltx * " \$\$")
-end

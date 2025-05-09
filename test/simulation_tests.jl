@@ -168,7 +168,8 @@ end
     ]
 
     for t in [0.0, 0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t), f(t, τ, ω), atol=1e-5)
+        # sort! so that the order of the output is consistent
+        @test isapprox(sort!(sol(t)), sort!(f(t, τ, ω)), atol=1e-5)
     end
 end
 
