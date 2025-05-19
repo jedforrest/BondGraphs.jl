@@ -11,7 +11,13 @@ struct EnergyVariables
     p::Num
     q::Num
 end
-function EnergyVariables(e::Symbol=:e, f::Symbol=:f, p::Symbol=:p, q::Symbol=:q)
+function EnergyVariables(e::Symbol=:e, f::Symbol=:f, p::Symbol=:p, q::Symbol=:q; subscript=nothing)
+    if !isnothing(subscript)
+        e = Symbol("$(e)_$subscript")
+        f = Symbol("$(f)_$subscript")
+        p = Symbol("$(p)_$subscript")
+        q = Symbol("$(q)_$subscript")
+    end
     e, f, p, q = @variables $e(t), $f(t), $p(t), $q(t)
     EnergyVariables(e, f, p, q)
 end
