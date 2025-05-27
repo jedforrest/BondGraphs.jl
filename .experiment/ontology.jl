@@ -47,6 +47,11 @@ abstract type Gyrator <: ParametricJunction end
 abstract type EqualEffort <: NonParametricJunction end
 abstract type EqualFlow <: NonParametricJunction end
 
+# Julia Type trees
+# using GraphRecipes, Plots
+# default(size=(1000, 1000))
+# plot(BondGraphVertexClass, method=:tree, fontsize=10, nodeshape=:ellipse)
+
 ############################################################################
 
 abstract type AbstractNode end  # with the new ontology, this may not be needed?
@@ -145,7 +150,7 @@ end
 import Base: size
 
 # New bond graph structure
-mutable struct NewBondGraph
+mutable struct NewBondGraph <: AbstractGraph{Int64}
     name::Symbol
     graph::MetaGraph
     function NewBondGraph(graph::AbstractGraph; name::Symbol)
@@ -156,6 +161,7 @@ mutable struct NewBondGraph
             vertex_data_type=AbstractNode,  # node type
             edge_data_type=Bond,  # bond
             graph_data=name,  # tag for the whole graph
+            # TODO add weight function and default weight
         )
         return new(name, metagraph)
     end
@@ -164,8 +170,26 @@ NewBondGraph(; name=:NewBG) = NewBondGraph(DiGraph(); name=Symbol(name))
 
 name(bg::NewBondGraph) = bg.name
 size(bg::NewBondGraph) = (nv(bg.graph), ne(bg.graph))
+graph(bg::NewBondGraph) = bg.graph
 
 show(io::IO, bg::NewBondGraph) = print(io, "$(name(bg)) BondGraph$(size(bg))")
+
+# Graphs.jl interface https://juliagraphs.org/Graphs.jl/stable/ecosystem/interface/
+# FIXME arguably we don't need to do this and instead just get the graph structure from
+# the NewBG with graph(bg)
+# we only really need to access the graph for plotting and other specialised routines
+# import Graphs: edges, edgetype, has_edge, has_vertex, inneighbors, outneighbors, ne, nv, vertices, is_directed
+# edges(bg::NewBondGraph) = edges(bg.graph)
+# edgetype(bg::NewBondGraph) = edgetype(bg.graph)
+# has_edge(bg::NewBondGraph, src, dst) = has_edge(bg.graph, src, dst)
+# has_edge(bg::NewBondGraph, edge) = has_edge(bg.graph, edge)
+# has_vertex(bg::NewBondGraph, vertex) = has_vertex(bg.graph, vertex)
+# inneighbors(bg::NewBondGraph, vertex) = inneighbors(bg.graph, vertex)
+# ne(bg::NewBondGraph) = ne(bg.graph)
+# nv(bg::NewBondGraph) = nv(bg.graph)
+# outneighbors(bg::NewBondGraph, vertex) = outneighbors(bg.graph, vertex)
+# vertices(bg::NewBondGraph) = vertices(bg.graph)
+# is_directed(bg::NewBondGraph) = true  # up for discussion
 
 bg = NewBondGraph()
 
@@ -233,8 +257,31 @@ connect!(rc_model, kvl, resistor)
 
 rc_model
 
-incidence_matrix(rc_model.graph)
+# Graphs.jl
+G = graph(rc_model)
+incidence_matrix(G)
 
-# TODO CONTINUE
-using Plots
-plot(rc_model.graph)
+G[:capacitor]
+G.vertex_properties
+G.edge_data
+G.vertex_labels
+
+
+############################################################################
+using Plots, GraphRecipes
+import GraphRecipes: graphplot
+
+function graphplot(bg::NewBondGraph; kwargs...)
+    g = graph(bg)
+    graphplot(g;
+        title = name(bg),
+        names = g.vertex_labels,
+        curves = false,
+        nodeshape = :rect,
+        kwargs...
+    )
+end
+
+graphplot(rc_model)
+
+# TODO CONTINUE FROM HERE
