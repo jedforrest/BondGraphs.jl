@@ -1,4 +1,6 @@
 import Base: show
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
 
 # mutable so that connection bool can be changed
 mutable struct Port

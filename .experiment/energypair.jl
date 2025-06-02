@@ -1,4 +1,5 @@
 import Base: show, iterate
+using ModelingToolkit
 using Symbolics
 
 # these are symbolic representations and can not yet be "solved"
@@ -28,7 +29,14 @@ power(ef::EffortFlowPair) = effort(ef) * flow(ef)
 
 show(io::IO, ef::EffortFlowPair) = print(io, "<$(effort(ef)), $(flow(ef))>")
 
-###
+####################################
+
+@connector EffortFlow begin
+    e(t)
+    f(t), [connect = Flow]
+end
+
+####################################
 ef = EffortFlowPair()
 e_num, f_num = ef
 uv = EffortFlowPair(:u, :v)
