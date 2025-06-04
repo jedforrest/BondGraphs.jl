@@ -49,6 +49,8 @@ abstract type Gyrator <: ParametricJunction end
 abstract type EqualEffort <: NonParametricJunction end
 abstract type EqualFlow <: NonParametricJunction end
 
+# TODO Can add concrete structs at the end of each of these types (e.g. resistor)
+
 # Julia Type trees
 # using GraphRecipes, Plots
 # default(size=(1000, 1000))

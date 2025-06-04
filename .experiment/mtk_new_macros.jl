@@ -37,3 +37,23 @@ continuous_events = [[x ~ 0] => [vx ~ -vx]
         D(vx) ~ -9.8 - 0.1vx, # gravity + some small air resistance
         D(vy) ~ -0.1vy
     ], t; continuous_events)
+
+
+@connector function HydraulicPort(; p_int, name)
+    pars = @parameters begin
+        ρ
+        β
+        μ
+    end
+
+    vars = @variables begin
+        p(t) = p_int
+        dm(t), [connect = Flow]
+    end
+
+    ODESystem(Equation[], t, vars, pars; name, defaults = [dm => 0])
+end
+
+@named h_port = HydraulicPort(p_int = 1)
+fieldnames(typeof(h_port))
+h_port.connector_type

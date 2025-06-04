@@ -22,6 +22,11 @@ function Bond(src_comp::Component, dst_comp::Component)
     Bond(nextfreeport(src_comp), nextfreeport(dst_comp))
 end
 
+# NOTE: I believe domain_connect() is the right way to connect bonds
+# see: https://docs.sciml.ai/ModelingToolkit/stable/tutorials/domain_connections/#Special-Connection-Cases-(domain_connect())
+conn = domain_connect(port_a, port_b)
+conn
+
 ############################################################################
 
 # New bond graph structure
