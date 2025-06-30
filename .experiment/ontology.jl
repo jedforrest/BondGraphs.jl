@@ -1,6 +1,7 @@
 # see Cobos Mendez et al. (2020), Fig. 5, Table 3, and Table 4
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
+using StaticArrays
 
 # Maybe 'component' should be 'element' which includes functionality for
 # components and junctions. Then dispatch on the parametric type:
@@ -25,10 +26,11 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 # from a graph description or interface - I don't need to reinvent the wheel when it comes
 # to definining ports and components
 
-abstract type BondGraphVertexClass end
 
-abstract type BondGraphElement <: BondGraphVertexClass end
-abstract type JunctionStructure <: BondGraphVertexClass end
+abstract type BondGraphNode end
+
+abstract type BondGraphElement <: BondGraphNode end
+abstract type JunctionStructure <: BondGraphNode end
 
 abstract type StorageElement <: BondGraphElement end
 abstract type DissipatorElement <: BondGraphElement end
@@ -49,7 +51,6 @@ abstract type Gyrator <: ParametricJunction end
 abstract type EqualEffort <: NonParametricJunction end
 abstract type EqualFlow <: NonParametricJunction end
 
-# TODO Can add concrete structs at the end of each of these types (e.g. resistor)
 
 # Julia Type trees
 # using GraphRecipes, Plots
@@ -58,18 +59,19 @@ abstract type EqualFlow <: NonParametricJunction end
 
 ############################################################################
 
-# abstract type AbstractNode end  # with the new ontology, this may not be needed?
-
 # FIXME CONTINUE FROM HERE
 # Challenge: how to test that MTK models are chosen correctly
 # i.e. that a storage component is really a storage component
 
-struct Component{T<:BondGraphVertexClass}
-    class::T
-    name::Symbol
-    model::ModelingToolkit.AbstractSystem
+struct Component{T<:BondGraphElement}
+    name::AbstractString
+    constitutive_relations::Vector{Equation}
+    # model::ModelingToolkit.AbstractSystem
+    ports::MVector
 end
-function Component{T}(; name, variables=Num[], parameters=Num[], equations=Equation[], ports=Port[]) where {T<:BondGraphVertexClass}
+Component(class::Type{<:BondGraphElement}, name, cr, ports) = Component{class}(name, cr, ports)
+
+function Component{T}(; name, variables=Num[], parameters=Num[], equations=Equation[], ports=Port[]) where {T<:BondGraphNode}
     # empty 'generic' component
     Component{T}(name, variables, parameters, equations, ports)
 end
@@ -84,13 +86,18 @@ numports(node::Component) = length(ports(node))
 efforts(node::Component) = effort.(ports(node))
 flows(node::Component) = flow.(ports(node))
 
-c = Component{BondGraphVertexClass}(name=:test, ports=[Port()])
+
+c1 = Component{StaticStorageElement}(:foo, MVector(:p))
+c2 = Component(StaticStorageElement, :foo, MVector(:p))
+
+
+c = Component{BondGraphNode}(name=:test, ports=[Port()])
 class(c)
 numports(c)
 efforts(c)
 flows(c)
 
-# or icon; can't think of a better word. Used when displaying in a graph.
+# Used when displaying in a graph.
 glyph(::Component) = :X
 glyph(::Component{BondGraphElement}) = :E
 glyph(::Component{JunctionStructure}) = :J
@@ -103,8 +110,10 @@ glyph(::Component{FlowSource}) = :Sf
 
 glyph(::Component{Transformer}) = :TF
 glyph(::Component{Gyrator}) = :GY
-glyph(::Component{EqualEffort}) = :𝟘
-glyph(::Component{EqualFlow}) = :𝟙
+glyph(::Component{EqualEffort}) = Symbol(0)
+glyph(::Component{EqualFlow}) = Symbol(1)
+
+displayname(c::Component) = glyph(c) * ":" * name(c)
 
 glyph(c)
 
@@ -159,6 +168,9 @@ function ZeroJunction(; name=:zero)
     return Component{EqualEffort}(; name)
 end
 
+############################
+
+StaticStorageElement()
 
 ############################
 # TODO determine whether a defined MTK.AbstractSystem fits the component definition

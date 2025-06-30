@@ -1,11 +1,14 @@
 import Base: show, size
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 
-include("energypair.jl")
+# include("energypair.jl")
 include("ports.jl")
 include("ontology.jl")
 
 ############################################################################
+
+# FIXME CONTINUE FROM HERE
+
 
 struct Bond
     src::Port
