@@ -2,8 +2,10 @@ import Base: show, size
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 
 # include("energypair.jl")
-include("ports.jl")
+# include("ports.jl")
 include("ontology.jl")
+include("standardlibrary.jl")
+using .Library
 
 ############################################################################
 
@@ -34,9 +36,9 @@ conn
 
 # New bond graph structure
 mutable struct NewBondGraph <: AbstractGraph{Int64}
-    name::Symbol
+    name::AbstractString
     graph::MetaGraph
-    function NewBondGraph(graph::AbstractGraph; name::Symbol)
+    function NewBondGraph(graph::AbstractGraph; name::AbstractString)
         # creating MetaGraph in a constructor keeps it type stable
         metagraph = MetaGraph(
             graph;  # underlying graph structure

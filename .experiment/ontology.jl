@@ -3,6 +3,8 @@ using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using StaticArrays
 
+import Base: show
+
 # Maybe 'component' should be 'element' which includes functionality for
 # components and junctions. Then dispatch on the parametric type:
 # - StaticStorage
@@ -39,14 +41,14 @@ abstract type SourceElement <: BondGraphElement end
 abstract type StaticStorageElement <: StorageElement end
 abstract type DynamicStorageElement <: StorageElement end
 
-abstract type EffortSource <: SourceElement end
-abstract type FlowSource <: SourceElement end
+# abstract type EffortSource <: SourceElement end
+# abstract type FlowSource <: SourceElement end
 
 abstract type ParametricJunction <: JunctionStructure end
 abstract type NonParametricJunction <: JunctionStructure end
 
-abstract type Transformer <: ParametricJunction end
-abstract type Gyrator <: ParametricJunction end
+# abstract type Transformer <: ParametricJunction end
+# abstract type Gyrator <: ParametricJunction end
 
 abstract type EqualEffort <: NonParametricJunction end
 abstract type EqualFlow <: NonParametricJunction end
@@ -58,67 +60,57 @@ abstract type EqualFlow <: NonParametricJunction end
 # plot(BondGraphVertexClass, method=:tree, fontsize=10, nodeshape=:ellipse)
 
 ############################################################################
-
 # FIXME CONTINUE FROM HERE
 # Challenge: how to test that MTK models are chosen correctly
 # i.e. that a storage component is really a storage component
 
 struct Component{T<:BondGraphElement}
     name::AbstractString
-    constitutive_relations::Vector{Equation}
-    # model::ModelingToolkit.AbstractSystem
-    ports::MVector
+    numports::Integer
+    model::Union{ModelingToolkit.Model,Nothing}  # Optional
+    Component{T}(name, numports=1, model=nothing) where {T} = new{T}(name, numports, model)
 end
-Component(class::Type{<:BondGraphElement}, name, cr, ports) = Component{class}(name, cr, ports)
+Component(T::Type{<:BondGraphElement}, name, numports, model) = Component{T}(name, numports, model)
 
 function Component{T}(; name, variables=Num[], parameters=Num[], equations=Equation[], ports=Port[]) where {T<:BondGraphNode}
     # empty 'generic' component
     Component{T}(name, variables, parameters, equations, ports)
 end
 name(node::Component) = node.name
-variables(node::Component) = node.variables
-parameters(node::Component) = node.parameters
-equations(node::Component) = node.equations
-ports(node::Component) = node.ports
-
+numports(node::Component) = node.numports
+model(node::Component) = node.model
 class(node::Component) = typeof(node).parameters[1]
-numports(node::Component) = length(ports(node))
-efforts(node::Component) = effort.(ports(node))
-flows(node::Component) = flow.(ports(node))
 
+c = Component{StaticStorageElement}("foo")
 
-c1 = Component{StaticStorageElement}(:foo, MVector(:p))
-c2 = Component(StaticStorageElement, :foo, MVector(:p))
-
-
-c = Component{BondGraphNode}(name=:test, ports=[Port()])
 class(c)
 numports(c)
-efforts(c)
-flows(c)
 
 # Used when displaying in a graph.
 glyph(::Component) = :X
 glyph(::Component{BondGraphElement}) = :E
-glyph(::Component{JunctionStructure}) = :J
 
 glyph(::Component{StaticStorageElement}) = :C
 glyph(::Component{DynamicStorageElement}) = :I
 glyph(::Component{DissipatorElement}) = :R
-glyph(::Component{EffortSource}) = :Se
-glyph(::Component{FlowSource}) = :Sf
+# glyph(::Component{EffortSource}) = :Se
+# glyph(::Component{FlowSource}) = :Sf
+# glyph(::Component{Transformer}) = :TF
+# glyph(::Component{Gyrator}) = :GY
 
-glyph(::Component{Transformer}) = :TF
-glyph(::Component{Gyrator}) = :GY
-glyph(::Component{EqualEffort}) = Symbol(0)
-glyph(::Component{EqualFlow}) = Symbol(1)
+# glyph(::Component{JunctionStructure}) = :J
+# glyph(::Component{EqualEffort}) = Symbol(0)
+# glyph(::Component{EqualFlow}) = Symbol(1)
 
-displayname(c::Component) = glyph(c) * ":" * name(c)
+displayname(c::Component) = string(glyph(c)) * ":" * name(c)
 
 glyph(c)
+displayname(c)
 
 show(io::IO, comp::Component) = print(io, "$(glyph(comp))::$(name(comp))")
 show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp))")
+
+c
 
 ############################################################################
 
