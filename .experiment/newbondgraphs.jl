@@ -4,13 +4,13 @@ using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 # include("energypair.jl")
 # include("ports.jl")
 include("ontology.jl")
+include("components.jl")
 include("standardlibrary.jl")
 using .Library
 
 ############################################################################
 
 # FIXME CONTINUE FROM HERE
-
 
 struct Bond
     src::Port
@@ -21,7 +21,7 @@ struct Bond
         new(src, dst)
     end
 end
-function Bond(src_comp::Component, dst_comp::Component)
+function Bond(src_comp::Element, dst_comp::Element)
     hasfreeport(src_comp) || error("$src_comp has no free ports")
     hasfreeport(dst_comp) || error("$dst_comp has no free ports")
     Bond(nextfreeport(src_comp), nextfreeport(dst_comp))
@@ -64,11 +64,11 @@ bg = NewBondGraph()
 
 ############################################################################
 
-function add_node!(bg::NewBondGraph, comp::Component)
+function add_node!(bg::NewBondGraph, comp::Element)
     bg.graph[comp.name] = comp
 end
 
-function connect!(bg::NewBondGraph, src_comp::Component, dst_comp::Component)
+function connect!(bg::NewBondGraph, src_comp::Element, dst_comp::Element)
     # TODO assuming single ports, change to allow selecting a specific port
     bg.graph[src_comp.name, dst_comp.name] = Bond(src_comp, dst_comp)
 end

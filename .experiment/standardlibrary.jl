@@ -6,6 +6,10 @@ using Symbolics: scalarize
 
 const Effort = ModelingToolkit.Equality
 
+export Effort
+
+############################################################
+
 @connector PowerPort begin
     @structural_parameters begin
         N = 1
@@ -22,7 +26,9 @@ end
 
 @mtkmodel Capacitor begin
     @description "Generalised Linear Capacitor"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @parameters begin
         C = 1.0
     end
@@ -33,25 +39,29 @@ end
         q => 0.0
     end
     @equations begin
-        D(q) ~ f[1]
-        q ~ C * e[1]
+        D(q) ~ port.f[1]
+        q ~ C * port.e[1]
     end
 end
 
 @mtkmodel Resistor begin
     @description "Generalised Linear Resistor"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @parameters begin
         R = 1.0
     end
     @equations begin
-        e[1] ~ R * f[1]
+        port.e[1] ~ R * port.f[1]
     end
 end
 
 @mtkmodel Inductor begin
     @description "Generalised Linear Inductor"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @parameters begin
         L = 1.0
     end
@@ -62,30 +72,34 @@ end
         p => 0.0
     end
     @equations begin
-        p ~ L * f[1]
-        D(p) ~ e[1]
+        p ~ L * port.f[1]
+        D(p) ~ port.e[1]
     end
 end
 
 @mtkmodel EffortSource begin
     @description "Effort Source"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @parameters begin
         E = 1.0
     end
     @equations begin
-        e[1] ~ E
+        port.e[1] ~ E
     end
 end
 
 @mtkmodel FlowSource begin
     @description "Flow Source"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @parameters begin
         F = 1.0
     end
     @equations begin
-        f[1] ~ F
+        port.f[1] ~ F
     end
 end
 
@@ -103,37 +117,38 @@ check_num_ports(N) = N >= 2 || error("Junction must have at least 2 ports (N=$N)
 
 @mtkmodel Transformer begin
     @description "Ideal Transformer"
-    @extend PowerPort(N=2)
+    @components begin
+        port = PowerPort(N=2)
+    end
     @parameters begin
         n = 1.0
     end
     @equations begin
-        e[1] ~ n * e[2]
-        f[2] ~ n * f[1]
+        port.e[1] ~ n * port.e[2]
+        port.f[2] ~ n * port.f[1]
     end
 end
 
 @mtkmodel Gyrator begin
     @description "Ideal Gyrator"
-    @extend PowerPort(N=2)
+    @components begin
+        port = PowerPort(N=2)
+    end
     @parameters begin
         r = 1.0
     end
     @equations begin
-        e[1] ~ r * f[2]
-        e[2] ~ r * f[1]
+        port.e[1] ~ r * port.f[2]
+        port.e[2] ~ r * port.f[1]
     end
 end
 
 @mtkmodel ZeroJunction begin
     @description "0-Junction (EqualEffort)"
-    @structural_parameters begin
-        Nports = 2
-    end
+    @extend PowerPort(; N)
     begin
-        check_num_ports(Nports)
+        check_num_ports(N)
     end
-    @extend PowerPort(N=Nports)
     @equations begin
         scalarize(sum(f)) ~ 0
         scalarize([e[1] ~ e_i for e_i in e[2:end]])
@@ -142,13 +157,10 @@ end
 
 @mtkmodel OneJunction begin
     @description "1-Junction (EqualFlow)"
-    @structural_parameters begin
-        Nports = 2
-    end
+    @extend PowerPort(; N)
     begin
-        check_num_ports(Nports)
+        check_num_ports(N)
     end
-    @extend PowerPort(N=Nports)
     @equations begin
         scalarize(sum(e)) ~ 0
         scalarize([f[1] ~ f_i for f_i in f[2:end]])
@@ -159,8 +171,8 @@ end
 @named tfmr = Transformer(n=3.0)
 @named gyr = Gyrator(r=4.0)
 
-@named zjunc = ZeroJunction(Nports=4)
-@named ojunc = OneJunction(Nports=10)
+@named zjunc = ZeroJunction(N=4)
+@named ojunc = OneJunction(N=10)
 equations(zjunc)
 equations(ojunc)
 
@@ -172,7 +184,9 @@ const _T = 310.0
 
 @mtkmodel ChemicalSpecies begin
     @description "Chemical Species"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @constants begin
         R = _R
         T = _T
@@ -187,14 +201,17 @@ const _T = 310.0
         x => 0.0
     end
     @equations begin
-        e[1] ~ R * T * log(K * x)    # chemical potential
-        f[1] ~ D(x)          # flow is time derivative of amount
+        port.e[1] ~ R * T * log(K * x)    # chemical potential
+        port.f[1] ~ D(x)          # flow is time derivative of amount
     end
 end
 
 @mtkmodel Reaction begin
     @description "Chemical Reaction (Re)"
-    @extend PowerPort(N=2)
+    @components begin
+        reactants = PowerPort()
+        products = PowerPort()
+    end
     @constants begin
         R = _R
         T = _T
@@ -207,16 +224,18 @@ end
         Ar(t)  # reverse affinity
     end
     @equations begin
-        f[1] ~ f[2]
-        Af ~ exp(e[1] / (R * T))
-        Ar ~ exp(e[2] / (R * T))
-        f[1] ~ r * (Af - Ar)
+        Af ~ exp(reactants.e[1] / (R * T))
+        Ar ~ exp(products.e[1] / (R * T))
+        reactants.f[1] ~ products.f[1]
+        reactants.f[1] ~ r * (Af - Ar)
     end
 end
 
 @mtkmodel ChemicalSource begin
     @description "Chemical Source (Se)"
-    @extend PowerPort(N=1)
+    @components begin
+        port = PowerPort()
+    end
     @constants begin
         R = _R
         T = _T
@@ -228,7 +247,7 @@ end
         X = 0.0    # chemical potential
     end
     @equations begin
-        e[1] ~ R * T * log(K * X)
+        port.e[1] ~ R * T * log(K * X)
     end
 end
 
