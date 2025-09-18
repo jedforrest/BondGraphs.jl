@@ -1,21 +1,18 @@
 import Base: show, size
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
 
-# include("energypair.jl")
-# include("ports.jl")
 include("ontology.jl")
 include("components.jl")
-include("standardlibrary.jl")
-using .Library
+# include("standardlibrary.jl")
+# using .Library
 
 ############################################################################
 
-# FIXME CONTINUE FROM HERE
-
 struct Bond
-    src::Port
-    dst::Port
-    function Bond(src::Port, dst::Port)
+    src::PortType
+    dst::PortType
+    function Bond(src::PortType, dst::PortType)
         src.connected = true
         dst.connected = true
         new(src, dst)
@@ -35,23 +32,25 @@ conn
 ############################################################################
 
 # New bond graph structure
-mutable struct NewBondGraph <: AbstractGraph{Int64}
+mutable struct NewBondGraph{I<:Integer} <: AbstractGraph{I}
     name::AbstractString
     graph::MetaGraph
-    function NewBondGraph(graph::AbstractGraph; name::AbstractString)
-        # creating MetaGraph in a constructor keeps it type stable
-        metagraph = MetaGraph(
-            graph;  # underlying graph structure
-            label_type=Symbol,  # node name
-            vertex_data_type=AbstractNode,  # node type
-            edge_data_type=Bond,  # bond
-            graph_data=name,  # tag for the whole graph
-            # TODO add weight function and default weight
-        )
-        return new(name, metagraph)
-    end
+    sys::ModelingToolkit.AbstractSystem
 end
-NewBondGraph(; name=:NewBG) = NewBondGraph(DiGraph(); name=Symbol(name))
+function NewBondGraph(name)
+    # creating MetaGraph in a constructor keeps it type stable
+    metagraph = MetaGraph(
+        DiGraph();  # underlying graph structure
+        label_type=Symbol,  # node name
+        vertex_data_type=BondGraphVertex,  # node type
+        edge_data_type=Bond,  # bond
+        graph_data=name,  # tag for the whole graph
+        # TODO add weight function and default weight
+    )
+    # default "empty" MTK model which is extended with components
+    model = ODESystem(Equation[], t; name=Symbol(name))
+    new(name, metagraph, model)
+end
 
 name(bg::NewBondGraph) = bg.name
 size(bg::NewBondGraph) = (nv(bg.graph), ne(bg.graph))
@@ -59,8 +58,7 @@ graph(bg::NewBondGraph) = bg.graph
 
 show(io::IO, bg::NewBondGraph) = print(io, "$(name(bg)) BondGraph$(size(bg))")
 
-
-bg = NewBondGraph()
+bg = NewBondGraph("RC Circuit")
 
 ############################################################################
 
