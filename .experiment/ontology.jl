@@ -34,10 +34,19 @@ abstract type BondElement <: BondGraphVertex end
 abstract type StorageElement <: BondElement end
 abstract type SourceElement <: BondElement end
 
+@variables R
+cr = (e, f) -> R * f - e
+
 """`R` component"""
 struct DissipatorElement <: BondElement
-    cr::Vector{Equation}
+    cr::Vector{Any}
 end
+# function (d::DissipatorElement)(e, f)
+#     d.cr(e, f)
+# end
+# @variables e f
+# DissipatorElement(e, f)
+# returns R*f - e
 
 # TODO
 """`C` component"""
@@ -77,7 +86,11 @@ struct EqualFlow <: NonParametricJunction end
 
 # TODO the above structs include the CR
 
-numports(C::BondElement) = length(C.cr)
+numports(c::BondElement) = length(c.cr)
+
+# CRs map (e,f) -> ϕ
+# TODO define for other vertex types
+constitutive_relations(c::BondElement) = c.cr
 
 # Used when displaying in a graph.
 # TODO these can just be included in the struct definitions above (kwdef)
@@ -94,62 +107,64 @@ glyph(::EqualFlow) = :𝟏
 
 ############################################################
 mutable struct Port
-    name::Symbol
-    parent::Any
-    connected::Bool
-    Port(name, parent) = new(Symbol(name), parent, false)
+    parent::Any  # should be Component
+    index::Int
+    connected::Bool  # Ref value?
+    effort::Num
+    flow::Num
+    function Port(parent::Any, index::Int=1)
+        effort = Symbolics.variable(:e, index)
+        flow = Symbolics.variable(:f, index)
+        new(parent, index, false, effort, flow)
+    end
 end
 is_connected(p::Port) = p.connected
+parent(p::Port) = p.parent
+effort(p::Port) = p.effort
+flow(p::Port) = p.flow
 
 function show(io::IO, port::Port)
     connection_state = is_connected(port) ? "⬤" : "◯"
-    print(io, "$(port.name) $connection_state")
+    print(io, "p$(port.index) $connection_state")
 end
 
 ############################################################
-# TODO Component and Junction structure could be combined (into e.g. "Element")
-# if they end up being similar enough
 
-struct Component{E<:BondElement}
-    type::E
+# Components now define BG elements and junction structures
+struct Component{V<:BondGraphVertex}
+    type::V
     name::Symbol
     ports::Vector{Port}
 end
 function Component(type::BondElement, name)
     newcomp = Component(type, Symbol(name), Port[])
     for i in 1:numports(type)
-        push!(newcomp.ports, Port("p$i", newcomp))
+        push!(newcomp.ports, Port(newcomp, i))
     end
     newcomp
 end
-
-struct Junction{J<:JunctionStructure}
-    type::J
-    name::Symbol
-    ports::Vector{Port}
-end
-function Junction(type::JunctionStructure, name)
-    Junction(type, Symbol(name), Port[])
+function Component(type::JunctionStructure, name)
+    Component(type, Symbol(name), Port[])
 end
 
-const ComponentOrJunction = Union{Component,Junction}
-
-show(io::IO, comp::Component) = print(io, "$(glyph(comp.type))::$(comp.name)")
-show(io::IO, comp::Junction) = print(io, "$(glyph(comp.type))")
+show(io::IO, comp::Component{<:BondElement}) = print(io, "$(glyph(comp.type))::$(comp.name)")
+show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.type))")
 
 hasfreeport(comp::Component) = any(!is_connected, comp.ports)
-hasfreeport(::Junction{<:NonParametricJunction}) = true
+hasfreeport(::Component{<:NonParametricJunction}) = true
 
 nextfreeport(comp::Component) = first(filter(!is_connected, comp.ports))
-function nextfreeport(junc::Junction{<:NonParametricJunction})
+function nextfreeport(junc::Component{<:NonParametricJunction})
     # FIXME should only create ports if none are free
     # 0- and 1- junctions have unlimited ports
     # so create a new port if trying to connect
     index = length(junc.ports) + 1
-    port = Port("p$index", junc)
+    port = Port(junc, index)
     push!(junc.ports, port)
     port
 end
+
+constitutive_relations(c::Component) = constitutive_relations(c.type)
 
 ############################################################
 
@@ -164,7 +179,7 @@ struct Bond
         new(src, dst)
     end
 end
-function Bond(src::ComponentOrJunction, dst::ComponentOrJunction)
+function Bond(src::Component, dst::Component)
     hasfreeport(src) || error("$src has no free ports")
     hasfreeport(dst) || error("$dst has no free ports")
     srcport = nextfreeport(src)
@@ -172,37 +187,41 @@ function Bond(src::ComponentOrJunction, dst::ComponentOrJunction)
     Bond(srcport, dstport)
 end
 
-srcvertex(b::Bond) = b.src.parent
-dstvertex(b::Bond) = b.dst.parent
+vertices(b::Bond) = parent(b.src), parent(b.dst)
 
-show(io::IO, b::Bond) = print(io, "$(srcvertex(b)) ⇀ $(dstvertex(b))")
+function show(io::IO, b::Bond)
+    src, dst = vertices(b)
+    print(io, "$src ⇀ $dst")
+end
 
 ############################################################
 
 struct BondGraph
     name::Symbol
-    components::Vector{Component}
-    junctions::Vector{Junction}
+    elements::Vector{Component}
+    junctions::Vector{Component}
     bonds::Vector{Bond}
-    function BondGraph(name, components=[], junctions=[], bonds=[])
-        new(Symbol(name), components, junctions, bonds)
+    function BondGraph(name, elements=[], junctions=[], bonds=[])
+        new(Symbol(name), elements, junctions, bonds)
     end
 end
 # 3 argument constructor
-function BondGraph(name, components_junctions=[], bonds=[])
-    components = filter(x -> x isa Component, components_junctions)
-    junctions = filter(x -> x isa Junction, components_junctions)
-    BondGraph(Symbol(name), components, junctions, bonds)
+function BondGraph(name, elements_junctions, bonds)
+    elements = filter(x -> x.type isa BondElement, elements_junctions)
+    junctions = filter(x -> x.type isa JunctionStructure, elements_junctions)
+    BondGraph(Symbol(name), elements, junctions, bonds)
 end
-vertices(bg::BondGraph) = [bg.components; bg.junctions]
+# 2 argument constructor
+function BondGraph(name, bonds::Vector{Bond})
+    src_dsts = reduce(vcat, collect.(vertices.(bonds)))
+    BondGraph(Symbol(name), unique(src_dsts), bonds)
+end
+components(bg::BondGraph) = [bg.elements; bg.junctions]
 
 # maybe not as the default "show" option (summary print instead)
 function show(io::IO, bg::BondGraph)
-    print_str = """
-    BondGraph $(bg.name)
-    ----------------------
-    $(join(bg.bonds,'\n'))
-    """
+    print_str = "BondGraph \"$(bg.name)\""
+    print_str *= isempty(bg.bonds) ? "" : "\n$(join(bg.bonds,"\n"))"
     print(io, print_str)
 end
 
@@ -211,42 +230,36 @@ end
 r = DissipatorElement([e ~ R * f])
 c = StaticStorageElement([e ~ C * q])
 
-resistor = Component(r, "resistor")
-resistor.ports
+resistor = Component(r, "R1")
+capacitor = Component(c, "C1")
 
-capacitor = Component(c, "capacitor")
-
-j0 = Junction(EqualEffort(), "j0")
-# push!(j0.ports, Port("in"))
-# push!(j0.ports, Port("out"))
+j0 = Component(EqualEffort(), "j0")
 
 b1 = Bond(resistor, j0)
 b2 = Bond(j0, capacitor)
 
 bg = BondGraph("NewBG", [resistor, capacitor, j0], [b1, b2])
-vertices(bg)
 
-c_j = [resistor, capacitor, j0]
+# alternative construction
+bg2 = BondGraph("NewBG", [b1, b2])
 
 ############################################################
 # Graph representation
 function graph(bg::BondGraph)
-    # creating MetaGraph in a function keeps it type stable
     bg_graph = MetaGraph(
         DiGraph();
         label_type=Symbol,
-        vertex_data_type=ComponentOrJunction,
+        vertex_data_type=Component,
         edge_data_type=Bond,
         graph_data=string(bg.name),
         # TODO add weight function and default weight
     )
-    for vertex in vertices(bg)
-        bg_graph[vertex.name] = vertex
+    for comp in components(bg)
+        bg_graph[comp.name] = comp
     end
     for bond in bg.bonds
-        srcname = srcvertex(bond).name
-        dstname = dstvertex(bond).name
-        bg_graph[srcname, dstname] = bond
+        src, dst = vertices(bond)
+        bg_graph[src.name, dst.name] = bond
     end
     bg_graph
 end
@@ -254,7 +267,7 @@ end
 g = graph(bg)
 g[]
 
-g[:capacitor]
+g[:C1]
 g.vertex_properties
 g.edge_data
 g.vertex_labels
@@ -276,6 +289,6 @@ function graphplot(bg::BondGraph; kwargs...)
     )
 end
 
-graphplot(bg)
+# graphplot(bg)
 
 # TODO CONTINUE FROM HERE

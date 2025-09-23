@@ -2,22 +2,34 @@
 
 include("../ontology.jl")
 
-model = BondGraph(name="RC Circuit")
+@variables e f p q R C
+r = DissipatorElement([e ~ R * f])
+c = StaticStorageElement([e ~ C * q])
 
-C = StorageElement(:C)
+cap = Component(c, "C1")
+res = Component(r, "R1")
+j0 = Component(EqualEffort(), "j0")
 
-R = Component(:R)
-kvl = EqualEffort()
+b1 = Bond(res, j0)
+b2 = Bond(j0, cap)
 
-add_node!(model, [C, R, kvl])
-connect!(model, R, kvl)
-connect!(model, C, kvl)
-model
+bg = BondGraph("RC Circuit", [res, cap, j0], [b1, b2])
+# bg = BondGraph("RC Circuit", [b1, b2]) # alternative
 
 using Graphs
-incidence_matrix(model)
+g = graph(bg)
 
-constitutive_relations(model)
+incidence_matrix(g)
+
+constitutive_relations(r)  # e ~ R * f
+constitutive_relations(c)  # e ~ C * q
+constitutive_relations(cap)
+constitutive_relations(res)
+# TODO CONTINUE FROM HERE
+equations(cap)
+equations(res)
+
+constitutive_relations(bg)
 
 C.C = 1
 R.R = 2
