@@ -3,12 +3,23 @@
 include("../ontology.jl")
 
 @variables e f p q R C
-r = DissipatorElement([e ~ R * f])
-c = StaticStorageElement([e ~ C * q])
+@variables ee[1:3] ff[1:3]
+phiR(e, f, R) = R * f - e
+phiC(e, q, C) = C * q - e
+
+r = DissipatorElement(phiR, [R], 1)
+c = StaticStorageElement(phiC, [C], 1)
+z = EqualEffort()
+r(e, f)
+c(e, f)
+z(collect(ee), collect(ff))
 
 cap = Component(c, "C1")
 res = Component(r, "R1")
-j0 = Component(EqualEffort(), "j0")
+j0 = Component(z, "j0")
+
+subtype(cap)
+parameters(cap)
 
 b1 = Bond(res, j0)
 b2 = Bond(j0, cap)
@@ -18,18 +29,15 @@ bg = BondGraph("RC Circuit", [res, cap, j0], [b1, b2])
 
 using Graphs
 g = graph(bg)
-
 incidence_matrix(g)
 
-constitutive_relations(r)  # e ~ R * f
-constitutive_relations(c)  # e ~ C * q
-constitutive_relations(cap)
 constitutive_relations(res)
-# TODO CONTINUE FROM HERE
-equations(cap)
-equations(res)
+constitutive_relations(cap)
+constitutive_relations(j0)
 
-constitutive_relations(bg)
+equations(bg)
+
+
 
 C.C = 1
 R.R = 2

@@ -1,32 +1,11 @@
 # see Cobos Mendez et al. (2020), Fig. 5, Table 3, and Table 4
-
-# Maybe 'component' should be 'element' which includes functionality for
-# components and junctions. Then dispatch on the parametric type:
-# - StaticStorage
-# - DynamicStorage
-# - Dissipator
-# - Junction
-# - Transformer etc.
-
-# Doing it this way means we can get the benefit of dispatch
-# while easily able to extend to new sub types for custom components
-# e.g. can define a chemical energy store:
-#   Ce <: StaticStorage
-
-# These abstract types could define specific components stored in the standard library
-# e.g. electric capacitor <: static storage
-# these define a fixed definition that is reusable across a bond graph definition
-# then the Component struct is specifically for repeated *instances* within a single bond graph model
-# TODO See https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects
-
-# TODO I should think of the model-building side of this package as generating MTK models
-# from a graph description or interface - I don't need to reinvent the wheel when it comes
-# to definining ports and components
 import Base: show, size
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
+import ModelingToolkit: equations
 
 ############################################################
+# TODO: https://discourse.julialang.org/t/extracting-kwargs-from-anonymous-function/37350/8
 
 abstract type BondGraphVertex end
 
@@ -34,25 +13,28 @@ abstract type BondElement <: BondGraphVertex end
 abstract type StorageElement <: BondElement end
 abstract type SourceElement <: BondElement end
 
-@variables R
-cr = (e, f) -> R * f - e
-
 """`R` component"""
 struct DissipatorElement <: BondElement
-    cr::Vector{Any}
+    cr::Any
+    parameters::Vector{Num}
+    numports::Int
 end
-# function (d::DissipatorElement)(e, f)
-#     d.cr(e, f)
-# end
-# @variables e f
-# DissipatorElement(e, f)
-# returns R*f - e
+function (de::DissipatorElement)(e, f)
+    @show de.parameters
+    [de.cr(e, f, de.parameters...) ~ 0]
+end
 
-# TODO
 """`C` component"""
 struct StaticStorageElement <: StorageElement
-    cr::Vector{Equation}
+    cr::Any
+    parameters::Vector{Num}
+    numports::Int
 end
+function (sse::StaticStorageElement)(e, f)
+    @variables q
+    [sse.cr(e, q, sse.parameters...) ~ 0, D(q) ~ f]
+end
+
 """`I` component"""
 struct DynamicStorageElement <: StorageElement
     cr::Vector{Equation}
@@ -70,27 +52,39 @@ abstract type ParametricJunction <: JunctionStructure end
 abstract type NonParametricJunction <: JunctionStructure end
 
 """`TF` component"""
-struct Transformer <: ParametricJunction end
+struct Transformer <: ParametricJunction
+    cr::Any
+    numports::Int
+end
 """`GY` component"""
-struct Gyrator <: ParametricJunction end
+struct Gyrator <: ParametricJunction
+    cr::Any
+    numports::Int
+end
 
 """`0`-junction"""
 struct EqualEffort <: NonParametricJunction end
 """`1`-junction"""
 struct EqualFlow <: NonParametricJunction end
 
+function (::EqualEffort)(e, f)
+    e_eqs = [e[1] ~ ei for ei in e[2:end]]
+    f_eqs = sum(f) ~ 0
+    [e_eqs; f_eqs]
+end
+function (::EqualFlow)(e, f)
+    f_eqs = [f[1] ~ fi for fi in f[2:end]]
+    e_eqs = sum(e) ~ 0
+    [f_eqs; e_eqs]
+end
+
 # Julia Type trees
 # using GraphRecipes, Plots
 # default(size=(1000, 1000))
 # plot(BondGraphVertexClass, method=:tree, fontsize=10, nodeshape=:ellipse)
 
-# TODO the above structs include the CR
-
-numports(c::BondElement) = length(c.cr)
-
-# CRs map (e,f) -> ϕ
-# TODO define for other vertex types
-constitutive_relations(c::BondElement) = c.cr
+numports(v::BondGraphVertex) = v.numports
+numports(::NonParametricJunction) = Inf
 
 # Used when displaying in a graph.
 # TODO these can just be included in the struct definitions above (kwdef)
@@ -122,6 +116,7 @@ is_connected(p::Port) = p.connected
 parent(p::Port) = p.parent
 effort(p::Port) = p.effort
 flow(p::Port) = p.flow
+vars(p::Port) = p.effort, p.flow
 
 function show(io::IO, port::Port)
     connection_state = is_connected(port) ? "⬤" : "◯"
@@ -132,7 +127,7 @@ end
 
 # Components now define BG elements and junction structures
 struct Component{V<:BondGraphVertex}
-    type::V
+    type::V  # rename
     name::Symbol
     ports::Vector{Port}
 end
@@ -150,6 +145,9 @@ end
 show(io::IO, comp::Component{<:BondElement}) = print(io, "$(glyph(comp.type))::$(comp.name)")
 show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.type))")
 
+subtype(comp::Component) = comp.type
+parameters(comp::Component) = comp.type.parameters
+
 hasfreeport(comp::Component) = any(!is_connected, comp.ports)
 hasfreeport(::Component{<:NonParametricJunction}) = true
 
@@ -164,7 +162,17 @@ function nextfreeport(junc::Component{<:NonParametricJunction})
     port
 end
 
-constitutive_relations(c::Component) = constitutive_relations(c.type)
+# CRs map (e,f) -> ϕ
+function constitutive_relations(comp::Component)
+    comptype = subtype(comp)
+    es = effort.(comp.ports)
+    fs = flow.(comp.ports)
+    if numports(comptype) == 1
+        return comptype(es[], fs[])
+    else
+        return comptype(es, fs)
+    end
+end
 
 ############################################################
 
@@ -225,23 +233,9 @@ function show(io::IO, bg::BondGraph)
     print(io, print_str)
 end
 
-############################################################
-@variables e f p q R C
-r = DissipatorElement([e ~ R * f])
-c = StaticStorageElement([e ~ C * q])
-
-resistor = Component(r, "R1")
-capacitor = Component(c, "C1")
-
-j0 = Component(EqualEffort(), "j0")
-
-b1 = Bond(resistor, j0)
-b2 = Bond(j0, capacitor)
-
-bg = BondGraph("NewBG", [resistor, capacitor, j0], [b1, b2])
-
-# alternative construction
-bg2 = BondGraph("NewBG", [b1, b2])
+function equations(bg::BondGraph)
+    vcat(constitutive_relations.(components(bg))...)
+end
 
 ############################################################
 # Graph representation
@@ -263,16 +257,6 @@ function graph(bg::BondGraph)
     end
     bg_graph
 end
-
-g = graph(bg)
-g[]
-
-g[:C1]
-g.vertex_properties
-g.edge_data
-g.vertex_labels
-
-incidence_matrix(g)
 
 ############################################################################
 using Plots, GraphRecipes
