@@ -2,24 +2,19 @@
 
 include("../ontology.jl")
 
-@variables e f p q R C
-@variables ee[1:3] ff[1:3]
+@variables e(t) f(t) p(t) q(t)
+@parameters R C
 phiR(e, f, R) = R * f - e
 phiC(e, q, C) = C * q - e
 
 r = DissipatorElement(phiR, [R], 1)
 c = StaticStorageElement(phiC, [C], 1)
-z = EqualEffort()
 r(e, f)
 c(e, f)
-z(collect(ee), collect(ff))
 
 cap = Component(c, "C1")
 res = Component(r, "R1")
-j0 = Component(z, "j0")
-
-subtype(cap)
-parameters(cap)
+j0 = Component(EqualEffort(), "j0")
 
 b1 = Bond(res, j0)
 b2 = Bond(j0, cap)
@@ -27,16 +22,25 @@ b2 = Bond(j0, cap)
 bg = BondGraph("RC Circuit", [res, cap, j0], [b1, b2])
 # bg = BondGraph("RC Circuit", [b1, b2]) # alternative
 
-using Graphs
-g = graph(bg)
-incidence_matrix(g)
+# using Graphs
+# g = graph(bg)
+# incidence_matrix(g)
+# graphplot(bg)
 
 constitutive_relations(res)
 constitutive_relations(cap)
 constitutive_relations(j0)
 
-equations(bg)
+system(res)
+system(cap)
 
+sys = system(bg; simplify=false)
+
+equations(sys)
+equations(expand_connections(sys))
+
+# TODO CONTINUE FROM HERE
+simplified_sys = structural_simplify(sys)  # will become mtkcompile
 
 
 C.C = 1

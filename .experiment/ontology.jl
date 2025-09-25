@@ -5,7 +5,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 import ModelingToolkit: equations
 
 ############################################################
-# TODO: https://discourse.julialang.org/t/extracting-kwargs-from-anonymous-function/37350/8
+# TODO?: https://discourse.julialang.org/t/extracting-kwargs-from-anonymous-function/37350/8
 
 abstract type BondGraphVertex end
 
@@ -20,7 +20,6 @@ struct DissipatorElement <: BondElement
     numports::Int
 end
 function (de::DissipatorElement)(e, f)
-    @show de.parameters
     [de.cr(e, f, de.parameters...) ~ 0]
 end
 
@@ -31,7 +30,7 @@ struct StaticStorageElement <: StorageElement
     numports::Int
 end
 function (sse::StaticStorageElement)(e, f)
-    @variables q
+    @variables q(t)
     [sse.cr(e, q, sse.parameters...) ~ 0, D(q) ~ f]
 end
 
@@ -100,30 +99,38 @@ glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
 
 ############################################################
-mutable struct Port
+const Effort = ModelingToolkit.Equality
+
+@connector EffortFlow begin
+    e(t) = 0., [connect = Effort]
+    f(t) = 0., [connect = Flow]
+end
+
+struct Port
     parent::Any  # should be Component
     index::Int
-    connected::Bool  # Ref value?
-    effort::Num
-    flow::Num
+    connected::Base.Ref{Bool}
+    sys::ODESystem
     function Port(parent::Any, index::Int=1)
-        effort = Symbolics.variable(:e, index)
-        flow = Symbolics.variable(:f, index)
-        new(parent, index, false, effort, flow)
+        portname = Symbol(parent.name, :_p, index)
+        sys = EffortFlow(name=portname)
+        new(parent, index, Ref(false), sys)
     end
 end
-is_connected(p::Port) = p.connected
+is_connected(p::Port) = p.connected[]
+connect!(p::Port) = p.connected[] = true
 parent(p::Port) = p.parent
-effort(p::Port) = p.effort
-flow(p::Port) = p.flow
-vars(p::Port) = p.effort, p.flow
+effort(p::Port) = p.sys.e
+flow(p::Port) = p.sys.f
+vars(p::Port) = effort(p), flow(p)
 
 function show(io::IO, port::Port)
     connection_state = is_connected(port) ? "⬤" : "◯"
-    print(io, "p$(port.index) $connection_state")
+    print(io, "⟨$(effort(port)), $(flow(port))⟩ $connection_state")
 end
 
 ############################################################
+# TODO store System in Component definition
 
 # Components now define BG elements and junction structures
 struct Component{V<:BondGraphVertex}
@@ -147,6 +154,7 @@ show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.typ
 
 subtype(comp::Component) = comp.type
 parameters(comp::Component) = comp.type.parameters
+variables(comp::Component) = [effort.(comp.ports); flow.(comp.ports)]
 
 hasfreeport(comp::Component) = any(!is_connected, comp.ports)
 hasfreeport(::Component{<:NonParametricJunction}) = true
@@ -174,16 +182,28 @@ function constitutive_relations(comp::Component)
     end
 end
 
+# This will eventually become the MTK System converter
+function system(elem::Component{<:BondElement})
+    eqs = constitutive_relations(elem)
+    ODESystem(eqs, t, name=elem.name)
+end
+
+# TODO junction should be an MTK connector type
+function system(junc::Component{<:JunctionStructure})
+    eqs = constitutive_relations(junc)
+    ODESystem(eqs, t, name=junc.name)
+end
+
 ############################################################
 
 struct Bond
     src::Port
     dst::Port
     function Bond(src::Port, dst::Port)
-        src.connected && error("$src already connected")
-        dst.connected && error("$dst already connected")
-        src.connected = true
-        dst.connected = true
+        is_connected(src) && error("$src already connected")
+        is_connected(dst) && error("$dst already connected")
+        connect!(src)
+        connect!(dst)
         new(src, dst)
     end
 end
@@ -200,6 +220,13 @@ vertices(b::Bond) = parent(b.src), parent(b.dst)
 function show(io::IO, b::Bond)
     src, dst = vertices(b)
     print(io, "$src ⇀ $dst")
+end
+
+# MTK system connector
+function connect(b::Bond)
+    src_sys = b.src.sys
+    dst_sys = b.dst.sys
+    ModelingToolkit.connect(src_sys, dst_sys)
 end
 
 ############################################################
@@ -224,7 +251,6 @@ function BondGraph(name, bonds::Vector{Bond})
     src_dsts = reduce(vcat, collect.(vertices.(bonds)))
     BondGraph(Symbol(name), unique(src_dsts), bonds)
 end
-components(bg::BondGraph) = [bg.elements; bg.junctions]
 
 # maybe not as the default "show" option (summary print instead)
 function show(io::IO, bg::BondGraph)
@@ -233,9 +259,21 @@ function show(io::IO, bg::BondGraph)
     print(io, print_str)
 end
 
-function equations(bg::BondGraph)
-    vcat(constitutive_relations.(components(bg))...)
+components(bg::BondGraph) = [bg.elements; bg.junctions]
+
+
+# This will eventually become the MTK System converter
+function system(bg::BondGraph; simplify=true)
+    comps = components(bg)
+    subsyss = system.(comps)
+
+    conn_eqns = connect.(bg.bonds)
+    basesys = ODESystem(conn_eqns, t, name=bg.name)
+
+    sys = compose(basesys, subsyss...)
+    simplify ? structural_simplify(sys) : sys
 end
+
 
 ############################################################
 # Graph representation
@@ -246,7 +284,7 @@ function graph(bg::BondGraph)
         vertex_data_type=Component,
         edge_data_type=Bond,
         graph_data=string(bg.name),
-        # TODO add weight function and default weight
+        # optional: add weight function and default weight
     )
     for comp in components(bg)
         bg_graph[comp.name] = comp
@@ -272,7 +310,4 @@ function graphplot(bg::BondGraph; kwargs...)
         kwargs...
     )
 end
-
 # graphplot(bg)
-
-# TODO CONTINUE FROM HERE

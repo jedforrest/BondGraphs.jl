@@ -24,6 +24,50 @@ end
 
 ############################################################
 
+@connector PowerVars begin
+    @structural_parameters begin
+        N = 1
+    end
+    @variables begin
+        e(t)[1:N] = 0., [connect = Effort]
+        f(t)[1:N] = 0., [connect = Flow]
+    end
+end
+@named pv = PowerVars(N=2)
+
+@mtkmodel StaticStorage begin
+    @description "Static Storage Element"
+    @structural_parameters begin
+        phi = (e, q, C) -> q ~ C * e
+    end
+    @extend PowerVars()
+    @parameters begin
+        C
+    end
+    @variables begin
+        q(t)[1:N] = 0.
+    end
+    @equations begin
+        D(q) ~ f
+        phi(e, q, C)
+    end
+end
+
+StaticStorage.structure[:variables]
+StaticStorage.structure[:parameters]
+@named ss = StaticStorage(N=2, C=3)
+equations(ss)
+ss.C
+
+StaticStorage isa ModelingToolkit.Model
+ss isa typeof(__StaticStorage__)
+
+phi2 = (e, q, C) -> q ~ C * e.^2
+@named ss2 = StaticStorage(N=1, C=3, phi=phi2)
+equations(ss2) .|> scalarize
+
+############################################################
+
 @mtkmodel Capacitor begin
     @description "Generalised Linear Capacitor"
     @components begin
