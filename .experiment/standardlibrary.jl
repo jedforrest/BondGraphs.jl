@@ -33,7 +33,7 @@ end
         f(t)[1:N] = 0., [connect = Flow]
     end
 end
-@named pv = PowerVars(N=2)
+@named pv = PowerVars(N=1)
 
 @mtkmodel StaticStorage begin
     @description "Static Storage Element"

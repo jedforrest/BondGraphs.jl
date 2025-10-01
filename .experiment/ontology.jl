@@ -3,15 +3,16 @@ import Base: show, size
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 import ModelingToolkit: equations
+using DifferentialEquations
 
 ############################################################
-# TODO?: https://discourse.julialang.org/t/extracting-kwargs-from-anonymous-function/37350/8
-
 abstract type BondGraphVertex end
 
 abstract type BondElement <: BondGraphVertex end
 abstract type StorageElement <: BondElement end
 abstract type SourceElement <: BondElement end
+
+# CR is a function that maps (e, f, p, q) to a set of equations (constitutive relations)
 
 """`R` component"""
 struct DissipatorElement <: BondElement
@@ -30,7 +31,7 @@ struct StaticStorageElement <: StorageElement
     numports::Int
 end
 function (sse::StaticStorageElement)(e, f)
-    @variables q(t)
+    @variables q(t) [state_priority = 10]  # higher priority -> remain after simplifying
     [sse.cr(e, q, sse.parameters...) ~ 0, D(q) ~ f]
 end
 
@@ -77,11 +78,6 @@ function (::EqualFlow)(e, f)
     [f_eqs; e_eqs]
 end
 
-# Julia Type trees
-# using GraphRecipes, Plots
-# default(size=(1000, 1000))
-# plot(BondGraphVertexClass, method=:tree, fontsize=10, nodeshape=:ellipse)
-
 numports(v::BondGraphVertex) = v.numports
 numports(::NonParametricJunction) = Inf
 
@@ -98,62 +94,59 @@ glyph(::JunctionStructure) = :J
 glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
 
+
 ############################################################
 const Effort = ModelingToolkit.Equality
 
-@connector EffortFlow begin
-    e(t) = 0., [connect = Effort]
-    f(t) = 0., [connect = Flow]
+@connector PortVars begin
+    e(t), [connect = Effort]
+    f(t), [connect = Flow]
 end
 
 struct Port
+    name::Symbol
     parent::Any  # should be Component
-    index::Int
     connected::Base.Ref{Bool}
-    sys::ODESystem
-    function Port(parent::Any, index::Int=1)
-        portname = Symbol(parent.name, :_p, index)
-        sys = EffortFlow(name=portname)
-        new(parent, index, Ref(false), sys)
+    function Port(name, parent)
+        new(Symbol(name), parent, Ref(false))
     end
 end
 is_connected(p::Port) = p.connected[]
 connect!(p::Port) = p.connected[] = true
 parent(p::Port) = p.parent
-effort(p::Port) = p.sys.e
-flow(p::Port) = p.sys.f
-vars(p::Port) = effort(p), flow(p)
+system(p::Port) = getproperty(system(p.parent), p.name)
+
 
 function show(io::IO, port::Port)
     connection_state = is_connected(port) ? "⬤" : "◯"
-    print(io, "⟨$(effort(port)), $(flow(port))⟩ $connection_state")
+    print(io, "$(port.parent.name).$(port.name) $connection_state")
 end
 
 ############################################################
-# TODO store System in Component definition
+# TODO? Numports as a parametric type?
 
 # Components now define BG elements and junction structures
 struct Component{V<:BondGraphVertex}
-    type::V  # rename
+    subtype::V  # rename
     name::Symbol
     ports::Vector{Port}
 end
-function Component(type::BondElement, name)
+function Component(type::BondElement; name)
     newcomp = Component(type, Symbol(name), Port[])
     for i in 1:numports(type)
-        push!(newcomp.ports, Port(newcomp, i))
+        push!(newcomp.ports, Port("_$i", newcomp))
     end
     newcomp
 end
-function Component(type::JunctionStructure, name)
-    Component(type, Symbol(name), Port[])
+function Component(comptype::JunctionStructure; name::Symbol)
+    Component(comptype, name, Port[])
 end
 
-show(io::IO, comp::Component{<:BondElement}) = print(io, "$(glyph(comp.type))::$(comp.name)")
-show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.type))")
+show(io::IO, comp::Component{<:BondElement}) = print(io, "$(glyph(comp.subtype))::$(comp.name)")
+show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.subtype))")
 
-subtype(comp::Component) = comp.type
-parameters(comp::Component) = comp.type.parameters
+subtype(comp::Component) = comp.subtype
+parameters(comp::Component) = comp.subtype.parameters
 variables(comp::Component) = [effort.(comp.ports); flow.(comp.ports)]
 
 hasfreeport(comp::Component) = any(!is_connected, comp.ports)
@@ -165,33 +158,30 @@ function nextfreeport(junc::Component{<:NonParametricJunction})
     # 0- and 1- junctions have unlimited ports
     # so create a new port if trying to connect
     index = length(junc.ports) + 1
-    port = Port(junc, index)
+    port = Port("_$index", junc)
     push!(junc.ports, port)
     port
 end
 
 # CRs map (e,f) -> ϕ
+# TODO is this function useful?
 function constitutive_relations(comp::Component)
-    comptype = subtype(comp)
-    es = effort.(comp.ports)
-    fs = flow.(comp.ports)
-    if numports(comptype) == 1
-        return comptype(es[], fs[])
-    else
-        return comptype(es, fs)
-    end
+    equations(toggle_namespacing(system(comp), false))  # FIXME
 end
 
 # This will eventually become the MTK System converter
-function system(elem::Component{<:BondElement})
-    eqs = constitutive_relations(elem)
-    ODESystem(eqs, t, name=elem.name)
-end
+function system(comp::Component)
+    comptype = subtype(comp)
 
-# TODO junction should be an MTK connector type
-function system(junc::Component{<:JunctionStructure})
-    eqs = constitutive_relations(junc)
-    ODESystem(eqs, t, name=junc.name)
+    port_sys = [PortVars(name=port.name) for port in comp.ports]
+    es = [ps.e for ps in port_sys]
+    fs = [ps.f for ps in port_sys]
+    if numports(comptype) == 1
+        eqs = comptype(es[], fs[])
+    else
+        eqs = comptype(es, fs)
+    end
+    compose(ODESystem(eqs, t; name=comp.name), port_sys)
 end
 
 ############################################################
@@ -199,22 +189,23 @@ end
 struct Bond
     src::Port
     dst::Port
-    function Bond(src::Port, dst::Port)
-        is_connected(src) && error("$src already connected")
-        is_connected(dst) && error("$dst already connected")
-        connect!(src)
-        connect!(dst)
-        new(src, dst)
+    function Bond(srcport::Port, dstport::Port)
+        is_connected(srcport) && error("$srcport already connected")
+        is_connected(dstport) && error("$dstport already connected")
+        connect!(srcport)
+        connect!(dstport)
+        new(srcport, dstport)
     end
 end
-function Bond(src::Component, dst::Component)
-    hasfreeport(src) || error("$src has no free ports")
-    hasfreeport(dst) || error("$dst has no free ports")
-    srcport = nextfreeport(src)
-    dstport = nextfreeport(dst)
+function Bond(srccomp::Component, dstcomp::Component)
+    hasfreeport(srccomp) || error("$srccomp has no free ports")
+    hasfreeport(dstcomp) || error("$dstcomp has no free ports")
+    srcport = nextfreeport(srccomp)
+    dstport = nextfreeport(dstcomp)
     Bond(srcport, dstport)
 end
 
+ports(b::Bond) = b.src, b.dst
 vertices(b::Bond) = parent(b.src), parent(b.dst)
 
 function show(io::IO, b::Bond)
@@ -222,11 +213,11 @@ function show(io::IO, b::Bond)
     print(io, "$src ⇀ $dst")
 end
 
-# MTK system connector
-function connect(b::Bond)
-    src_sys = b.src.sys
-    dst_sys = b.dst.sys
-    ModelingToolkit.connect(src_sys, dst_sys)
+# MTK system connector (rename)
+function connect_equation(b::Bond)
+    srcport_sys = system(b.src)
+    dstport_sys = system(b.dst)
+    ModelingToolkit.connect(srcport_sys, dstport_sys)
 end
 
 ############################################################
@@ -242,8 +233,8 @@ struct BondGraph
 end
 # 3 argument constructor
 function BondGraph(name, elements_junctions, bonds)
-    elements = filter(x -> x.type isa BondElement, elements_junctions)
-    junctions = filter(x -> x.type isa JunctionStructure, elements_junctions)
+    elements = filter(x -> x.subtype isa BondElement, elements_junctions)
+    junctions = filter(x -> x.subtype isa JunctionStructure, elements_junctions)
     BondGraph(Symbol(name), elements, junctions, bonds)
 end
 # 2 argument constructor
@@ -262,12 +253,12 @@ end
 components(bg::BondGraph) = [bg.elements; bg.junctions]
 
 
-# This will eventually become the MTK System converter
+# MTK System converter
 function system(bg::BondGraph; simplify=true)
     comps = components(bg)
     subsyss = system.(comps)
 
-    conn_eqns = connect.(bg.bonds)
+    conn_eqns = connect_equation.(bg.bonds)
     basesys = ODESystem(conn_eqns, t, name=bg.name)
 
     sys = compose(basesys, subsyss...)
