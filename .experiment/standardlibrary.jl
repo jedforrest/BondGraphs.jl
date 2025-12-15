@@ -6,8 +6,6 @@ using Symbolics: scalarize
 
 const Effort = ModelingToolkit.Equality
 
-export Effort
-
 ############################################################
 
 @connector PowerPort begin
@@ -53,97 +51,89 @@ end
     end
 end
 
-StaticStorage.structure[:variables]
-StaticStorage.structure[:parameters]
 @named ss = StaticStorage(N=2, C=3)
 equations(ss)
-ss.C
-
-StaticStorage isa ModelingToolkit.Model
-ss isa typeof(__StaticStorage__)
 
 phi2 = (e, q, C) -> q ~ C * e.^2
 @named ss2 = StaticStorage(N=1, C=3, phi=phi2)
 equations(ss2) .|> scalarize
 
 ############################################################
+# Electrical
+
+@mtkmodel ElectricalVariables begin
+    @variables begin
+        V(t) = 0., [connect = Effort]
+        I(t) = 0., [connect = Flow]
+    end
+end
 
 @mtkmodel Capacitor begin
     @description "Generalised Linear Capacitor"
-    @components begin
-        port = PowerPort()
-    end
-    @parameters begin
-        C = 1.0
-    end
+    @extend ElectricalVariables()
     @variables begin
         q(t)
     end
     @defaults begin
         q => 0.0
     end
+    @parameters begin
+        C = 1
+    end
     @equations begin
-        D(q) ~ port.f[1]
-        q ~ C * port.e[1]
+        D(q) ~ I
+        q ~ C * V
     end
 end
 
 @mtkmodel Resistor begin
     @description "Generalised Linear Resistor"
-    @components begin
-        port = PowerPort()
-    end
+    @extend ElectricalVariables()
     @parameters begin
-        R = 1.0
+        R = 1
     end
     @equations begin
-        port.e[1] ~ R * port.f[1]
+        V ~ R * I
     end
 end
 
 @mtkmodel Inductor begin
     @description "Generalised Linear Inductor"
-    @components begin
-        port = PowerPort()
-    end
-    @parameters begin
-        L = 1.0
-    end
+    @extend ElectricalVariables()
     @variables begin
         p(t)
     end
     @defaults begin
         p => 0.0
     end
+    @parameters begin
+        L = 1
+    end
     @equations begin
-        p ~ L * port.f[1]
-        D(p) ~ port.e[1]
+        D(p) ~ V
+        p ~ L * I
     end
 end
 
 @mtkmodel EffortSource begin
     @description "Effort Source"
-    @components begin
-        port = PowerPort()
-    end
+    @extend ElectricalVariables()
     @parameters begin
         E = 1.0
     end
     @equations begin
-        port.e[1] ~ E
+        V ~ E
     end
 end
 
 @mtkmodel FlowSource begin
     @description "Flow Source"
-    @components begin
-        port = PowerPort()
-    end
+    @extend ElectricalVariables()
     @parameters begin
         F = 1.0
     end
     @equations begin
-        port.f[1] ~ F
+        I ~ F
     end
 end
 
@@ -156,36 +146,39 @@ end
 
 ############################################################
 # Junctions
-
-check_num_ports(N) = N >= 2 || error("Junction must have at least 2 ports (N=$N)")
+############################################################
 
 @mtkmodel Transformer begin
     @description "Ideal Transformer"
     @components begin
-        port = PowerPort(N=2)
+        port = [ElectricalVariables() for i in 1:2]
     end
     @parameters begin
-        n = 1.0
+        n = 1
     end
     @equations begin
-        port.e[1] ~ n * port.e[2]
-        port.f[2] ~ n * port.f[1]
+        port[1].V ~ n * port[2].V
+        port[2].I ~ n * port[1].I
     end
 end
 
 @mtkmodel Gyrator begin
     @description "Ideal Gyrator"
     @components begin
-        port = PowerPort(N=2)
+        port = [ElectricalVariables() for i in 1:2]
     end
     @parameters begin
-        r = 1.0
+        r = 1
     end
     @equations begin
-        port.e[1] ~ r * port.f[2]
-        port.e[2] ~ r * port.f[1]
+        port[1].V ~ r * port[2].I
+        port[2].V ~ r * port[1].I
     end
 end
+
+############################################################
+
+check_num_ports(N) = N >= 2 || error("Junction must have at least 2 ports ($N ports given)")
 
 @mtkmodel ZeroJunction begin
     @description "0-Junction (EqualEffort)"

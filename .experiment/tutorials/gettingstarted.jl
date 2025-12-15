@@ -7,7 +7,11 @@ include("../ontology.jl")
 phiR(e, f, R) = R * f - e
 phiC(e, q, C) = q - C * e
 
+typeof(phiR)
+
+# R: e <=> f
 r = DissipatorElement(phiR, [R], 1)
+# C: e <=> q
 c = StaticStorageElement(phiC, [C], 1)
 r(e, f)
 c(e, f)
@@ -45,26 +49,15 @@ observed(sys2)
 full_equations(sys2)
 
 #############
-@unpack q, C = sys4.capA
-@unpack R = sys4.resA
-sys4.capA.q
-prob = ODEProblem(sys4, [sys4.capA.q => 1], (0., 10.), [sys4.resA.R => 2, sys4.capA.C => 1])
+prob = ODEProblem(sys2, [sys2.cap.q => 1], (0., 10.), [sys2.res.R => 2, sys2.cap.C => 1])
 prob.ps
 sol = solve(prob, Tsit5())
 plot(sol)
 
 #############
 # TODO CONTINUE FROM HERE
-C.C = 1
-R.R = 2
-constitutive_relations(model; sub_defaults=true)
 
-tspan = (0., 10.)
-u0 = [1] # initial value for C.q(t)
-sol = simulate(model, tspan; u0)
-plot(sol)
-
-Is = Component(:Sf, "Is")
+Is = Component(FlowSource(), name=:Is)
 add_node!(model, Is)
 connect!(model, Is, kvl)
 plot(model)

@@ -2,8 +2,19 @@
 import Base: show, size
 using Graphs, MetaGraphsNext, Symbolics, ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-import ModelingToolkit: equations
+import ModelingToolkit: equations, Model, System
 using DifferentialEquations
+
+include("./standardlibrary.jl")
+using .Library
+
+############################################################
+abstract type AbstractPowerVariableType end
+
+struct EffortVar <: AbstractPowerVariableType end
+struct FlowVar <: AbstractPowerVariableType end
+struct MomentumVar <: AbstractPowerVariableType end
+struct DisplacementVar <: AbstractPowerVariableType end
 
 ############################################################
 abstract type BondGraphVertex end
@@ -12,41 +23,123 @@ abstract type BondElement <: BondGraphVertex end
 abstract type StorageElement <: BondElement end
 abstract type SourceElement <: BondElement end
 
-# CR is a function that maps (e, f, p, q) to a set of equations (constitutive relations)
+# NOTE: SDESystems do not yet work with @mtkmodel - therefore must use Non-DSL approach
 
+const Effort = ModelingToolkit.Equality
+
+@connector PowerPort begin
+    e(t) = 0., [connect = Effort]
+    f(t) = 0., [connect = Flow]
+end
+
+# ############################################################
+# # TODO move to Library
+# @component function Res(; name)
+#     vars = @variables begin
+#         V(t), [connect = Effort]
+#         I(t), [connect = Flow]
+#     end
+#     ps = @parameters begin
+#         R = 2
+#     end
+#     eqs = [V ~ R * I]
+#     return System(eqs, t, vars, ps; name)
+# end
+# ############################################################
+
+
+############################################################
+getefforts(sys::ODESystem) = [e for e in unknowns(sys) if getconnect(e) == Effort]
+getflows(sys::ODESystem) = [f for f in unknowns(sys) if getconnect(f) == Flow]
+
+""" General port constructor for Bond Elements """
+function add_port_connections(sys::ODESystem, numports::Int=1)
+    # get effort and flow vars from user-given System
+    efforts = getefforts(sys)
+    flows = getflows(sys)
+
+    # check validity
+    (length(efforts) == length(flows) == numports) || error("Number of efforts, flows, and ports don't match ($numports)")
+
+    port_connection_eqs = Equation[]
+    for i in 1:numports
+        # create N port "systems" and extend the user-given MTK System
+        powerport = PowerPort(name=Symbol("port_", i))
+        sys = compose(sys, powerport)
+
+        # add effort/flow connections to newly added port variables (assuming efforts and flows are in the desired order)
+        append!(port_connection_eqs, [efforts[i] ~ powerport.e, flows[i] ~ powerport.f])
+    end
+    port_eqs_sys = System(port_connection_eqs, t; name=sys.name)
+
+    return extend(port_eqs_sys, sys)
+end
+
+############################################################
 """`R` component"""
 struct DissipatorElement <: BondElement
-    cr::Any
-    parameters::Vector{Num}
+    sys::ODESystem
     numports::Int
-end
-function (de::DissipatorElement)(e, f)
-    [de.cr(e, f, de.parameters...) ~ 0]
+    function DissipatorElement(sys::ODESystem, numports::Int=1)
+        sys = add_port_connections(sys, numports)
+        new(sys, numports)
+    end
 end
 
 """`C` component"""
 struct StaticStorageElement <: StorageElement
-    cr::Any
-    parameters::Vector{Num}
+    sys::ODESystem
     numports::Int
-end
-function (sse::StaticStorageElement)(e, f)
-    @variables q(t) [state_priority = 10]  # higher priority -> remain after simplifying
-    [sse.cr(e, q, sse.parameters...) ~ 0, D(q) ~ f]
+    function StaticStorageElement(sys::ODESystem, numports::Int=1)
+        sys = add_port_connections(sys, numports)
+        new(sys, numports)
+    end
 end
 
 """`I` component"""
 struct DynamicStorageElement <: StorageElement
-    cr::Vector{Equation}
+    sys::ODESystem
+    numports::Int
+    function DynamicStorageElement(sys::ODESystem, numports::Int=1)
+        sys = add_port_connections(sys, numports)
+        new(sys, numports)
+    end
 end
 
-"""`Se` component"""
-struct EffortSource <: SourceElement end
-"""`Sf` component"""
-struct FlowSource <: SourceElement end
-"""`SS` component"""
-struct SourceSensor <: SourceElement end
+# TODO make defaults
+@named res = Library.Resistor()
+DissipatorElement(res)
 
+############################################################
+"""`Se` component"""
+struct EffortSource <: SourceElement
+    sys::ODESystem
+    function StaticStorageElement(sys::ODESystem)
+        sys = add_port_connections(sys, 1)
+        new(sys)
+    end
+end
+
+"""`Sf` component"""
+struct FlowSource <: SourceElement
+    sys::ODESystem
+    function FlowSource(sys::ODESystem)
+        sys = add_port_connections(sys, 1)
+        new(sys)
+    end
+end
+
+"""`SS` component"""
+struct SourceSensor <: SourceElement
+    sys::ODESystem
+    function SourceSensor(sys::ODESystem)
+        sys = add_port_connections(sys, 1)
+        new(sys)
+    end
+end
+
+############################################################
+# TODO CONTINUE FROM HERE
 abstract type JunctionStructure <: BondGraphVertex end
 abstract type ParametricJunction <: JunctionStructure end
 abstract type NonParametricJunction <: JunctionStructure end
@@ -106,7 +199,7 @@ end
 struct Port
     name::Symbol
     parent::Any  # should be Component
-    connected::Base.Ref{Bool}
+    connected::Ref{Bool}
     function Port(name, parent)
         new(Symbol(name), parent, Ref(false))
     end
@@ -162,6 +255,9 @@ function nextfreeport(junc::Component{<:NonParametricJunction})
     push!(junc.ports, port)
     port
 end
+
+############################################################
+
 
 # CRs map (e,f) -> ϕ
 # TODO is this function useful?
