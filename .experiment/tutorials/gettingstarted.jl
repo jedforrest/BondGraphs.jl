@@ -2,46 +2,87 @@
 
 include("../ontology.jl")
 
-@variables e(t) f(t) p(t) q(t)
-@parameters R C
-phiR(e, f, R) = R * f - e
-phiC(e, q, C) = q - C * e
+include("../standardlibrary.jl")
+using .Library
 
-typeof(phiR)
+@named res = Library.Resistor()
+@named cap = Library.Capacitor()
 
 # R: e <=> f
-r = DissipatorElement(phiR, [R], 1)
+r = DissipatorElement(res)
 # C: e <=> q
-c = StaticStorageElement(phiC, [C], 1)
-r(e, f)
-c(e, f)
+c = StaticStorageElement(cap)
 
-@named cap = Component(c)
-@named res = Component(r)
+@named rcomp = Component(r)
+@named ccomp = Component(c)
 @named j0 = Component(EqualEffort())
 
-b1 = Bond(res, j0)
-b2 = Bond(cap, j0)
+b1 = Bond(rcomp, j0)
+b2 = Bond(ccomp, j0)
 
-bg = BondGraph("RC Circuit", [res, cap, j0], [b1, b2])
-# bg = BondGraph("RC Circuit", [b1, b2]) # alternative
+bg = BondGraph("RC Circuit", [rcomp, ccomp, j0], [b1, b2])
 
-# using Graphs
-# g = graph(bg)
-# incidence_matrix(g)
-# graphplot(bg)
-
-system(res)
-system(cap)
+system(rcomp)
+system(ccomp)
 sys0 = system(j0)
 equations(expand_connections(sys0))
 
-sys = system(bg; simplify=false)
-hierarchy(sys)
+j0.element
+j0.ports
 
+sys0
+
+basesys = j0.element.sys
+portsys = system.(j0.ports, namespaced=false)
+portsys[1]
+sys = compose(basesys, portsys)
+
+# TODO cleanup this code (its not very clear)
+e, f = getefforts(sys), getflows(sys)
+inner_connection_eqs = junc.element(e, f)
+extend(System(inner_connection_eqs, t; name=sys.name), sys)
+
+sys0 = system(j0)
+equations(expand_connections(sys0))
+
+b = b1
+srcport_sys = system(b.src)
+dstport_sys = system(b.dst)
+ModelingToolkit.connect(srcport_sys, dstport_sys)
+
+bgsys = system(bg; simplify=false)
+hierarchy(bgsys)
+
+###
+comps = components(bg)
+subsyss = system.(comps)
+
+conn_eqns = connection_equation.(bg.bonds)
+basesys = ODESystem(conn_eqns, t, name=bg.name)
+
+for sub in subsyss
+    eq = equations(expand_connections(sub))
+    println.(eq)
+    println()
+end
+
+nameof.(subsyss)
+conn_eqns
+
+equations(expand_connections(basesys))
+
+sys = System(conn_eqns, t, name=bg.name; systems=subsyss)
 equations(sys)
 equations(expand_connections(sys))
-sys2 = structural_simplify(sys)  # will become mtkcompile
+
+sys2 = structural_simplify(sys)
+###
+
+equations(sys2)
+
+equations(bgsys)
+equations(expand_connections(bgsys))
+sys2 = structural_simplify(bgsys)  # will become mtkcompile in later update
 
 unknowns(sys2)
 equations(sys2)
@@ -55,6 +96,12 @@ sol = solve(prob, Tsit5())
 plot(sol)
 
 #############
+# using Graphs
+# g = graph(bg)
+# incidence_matrix(g)
+# graphplot(bg)
+#############
+
 # TODO CONTINUE FROM HERE
 
 Is = Component(FlowSource(), name=:Is)

@@ -182,10 +182,10 @@ check_num_ports(N) = N >= 2 || error("Junction must have at least 2 ports ($N po
 
 @mtkmodel ZeroJunction begin
     @description "0-Junction (EqualEffort)"
-    @extend PowerPort(; N)
     begin
         check_num_ports(N)
     end
+    @extend PowerPort(; N)
     @equations begin
         scalarize(sum(f)) ~ 0
         scalarize([e[1] ~ e_i for e_i in e[2:end]])
@@ -194,10 +194,10 @@ end
 
 @mtkmodel OneJunction begin
     @description "1-Junction (EqualFlow)"
-    @extend PowerPort(; N)
     begin
         check_num_ports(N)
     end
+    @extend PowerPort(; N)
     @equations begin
         scalarize(sum(e)) ~ 0
         scalarize([f[1] ~ f_i for f_i in f[2:end]])
