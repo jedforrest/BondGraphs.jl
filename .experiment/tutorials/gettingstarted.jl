@@ -5,6 +5,8 @@ include("../ontology.jl")
 include("../standardlibrary.jl")
 using .Library
 
+@named ppt = PowerPort()
+
 @named res = Library.Resistor()
 @named cap = Library.Capacitor()
 
@@ -13,84 +15,38 @@ r = DissipatorElement(res)
 # C: e <=> q
 c = StaticStorageElement(cap)
 
+System(equations(r), t, name=:r)
+
 @named rcomp = Component(r)
 @named ccomp = Component(c)
-@named j0 = Component(EqualEffort())
+@named zcomp = Component(EqualEffort())
 
-b1 = Bond(rcomp, j0)
-b2 = Bond(ccomp, j0)
+b1 = Bond(rcomp, zcomp)
+b2 = Bond(ccomp, zcomp)
 
-bg = BondGraph("RC Circuit", [rcomp, ccomp, j0], [b1, b2])
+rcomp.ports
+zcomp.ports
+
+bg = BondGraph("RC Circuit", [rcomp, ccomp, zcomp], [b1, b2])
 
 system(rcomp)
 system(ccomp)
-sys0 = system(j0)
+sys0 = system(zcomp)
 equations(expand_connections(sys0))
-
-j0.element
-j0.ports
-
-sys0
-
-basesys = j0.element.sys
-portsys = system.(j0.ports, namespaced=false)
-portsys[1]
-sys = compose(basesys, portsys)
-
-# TODO cleanup this code (its not very clear)
-e, f = getefforts(sys), getflows(sys)
-inner_connection_eqs = junc.element(e, f)
-extend(System(inner_connection_eqs, t; name=sys.name), sys)
-
-sys0 = system(j0)
-equations(expand_connections(sys0))
-
-b = b1
-srcport_sys = system(b.src)
-dstport_sys = system(b.dst)
-ModelingToolkit.connect(srcport_sys, dstport_sys)
 
 bgsys = system(bg; simplify=false)
 hierarchy(bgsys)
 
-###
-comps = components(bg)
-subsyss = system.(comps)
-
-conn_eqns = connection_equation.(bg.bonds)
-basesys = ODESystem(conn_eqns, t, name=bg.name)
-
-for sub in subsyss
-    eq = equations(expand_connections(sub))
-    println.(eq)
-    println()
-end
-
-nameof.(subsyss)
-conn_eqns
-
-equations(expand_connections(basesys))
-
-sys = System(conn_eqns, t, name=bg.name; systems=subsyss)
-equations(sys)
-equations(expand_connections(sys))
-
-sys2 = structural_simplify(sys)
-###
-
-equations(sys2)
-
-equations(bgsys)
-equations(expand_connections(bgsys))
 sys2 = structural_simplify(bgsys)  # will become mtkcompile in later update
 
 unknowns(sys2)
 equations(sys2)
 observed(sys2)
 full_equations(sys2)
+ModelingToolkit.iscomplete(sys2)
 
 #############
-prob = ODEProblem(sys2, [sys2.cap.q => 1], (0., 10.), [sys2.res.R => 2, sys2.cap.C => 1])
+prob = ODEProblem(sys2, [sys2.ccomp.q => 5], (0., 10.), [sys2.rcomp.R => 2, sys2.ccomp.C => 1])
 prob.ps
 sol = solve(prob, Tsit5())
 plot(sol)

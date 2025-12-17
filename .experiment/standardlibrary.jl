@@ -63,8 +63,8 @@ equations(ss2) .|> scalarize
 
 @mtkmodel ElectricalVariables begin
     @variables begin
-        V(t) = 0., [connect = Effort]
-        I(t) = 0., [connect = Flow]
+        V(t), [connect = Effort]
+        I(t), [connect = Flow]
     end
 end
 

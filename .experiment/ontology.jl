@@ -22,113 +22,106 @@ abstract type SourceElement <: BondElement end
 const Effort = ModelingToolkit.Equality
 
 @connector PowerPort begin
-    e(t) = 0., [connect = Effort]
-    f(t) = 0., [connect = Flow]
+    e(t), [connect = Effort]
+    f(t), [connect = Flow]
 end
 
 ############################################################
 getefforts(sys::ODESystem) = [e for e in unknowns(sys) if getconnect(e) == Effort]
 getflows(sys::ODESystem) = [f for f in unknowns(sys) if getconnect(f) == Flow]
+getstates(sys::ODESystem) = [x for x in unknowns(sys) if !hasconnect(x)]
 
-""" General port constructor for Bond Elements """
-function add_port_connections(sys::ODESystem, numports::Int=1)
-    # get effort and flow vars from user-given System
-    efforts = getefforts(sys)
-    flows = getflows(sys)
-
-    # check validity
-    (length(efforts) == length(flows) == numports) || error("Number of efforts, flows, and ports don't match ($numports)")
-
-    port_connection_eqs = Equation[]
-    for i in 1:numports
-        # create N port "systems" and extend the user-given MTK System
-        powerport = PowerPort(name=Symbol("port_", i))
-        sys = compose(sys, powerport)
-
-        # add effort/flow connections to newly added port variables (assuming efforts and flows are in the desired order)
-        append!(port_connection_eqs, [efforts[i] ~ powerport.e, flows[i] ~ powerport.f])
-    end
-    port_eqs_sys = System(port_connection_eqs, t; name=sys.name)
-
-    return extend(port_eqs_sys, sys)
+function check_num_ports(efforts, flows)
+    numports = length(efforts)
+    numports >= 1 || error("Must have at least 1 port ($numports)")
+    (numports == length(flows)) || error("Number of efforts and flows don't match ($numports)")
+    return nothing
 end
 
 ############################################################
 # TODO instead of storing a model or sys, this can store the symbolic equations?
 # and label the efforts and flows (and state vars) explicitly
-
 # NOTE: SDESystems do not yet work with @mtkmodel - therefore must use Non-DSL approach
+
 """`R` component"""
 struct DissipatorElement <: BondElement
-    sys::ODESystem
-    numports::Int
-    function DissipatorElement(sys::ODESystem, numports::Int=1)
-        sys = add_port_connections(sys, numports)
-        new(sys, numports)
+    eqs::Vector{Equation}
+    efforts::Vector
+    flows::Vector
+    function DissipatorElement(eqs, efforts, flows)
+        check_num_ports(efforts, flows)
+        new(eqs, efforts, flows)
     end
 end
+function DissipatorElement(sys::ODESystem)
+    DissipatorElement(equations(sys), getefforts(sys), getflows(sys))
+end
+
 
 """`C` component"""
 struct StaticStorageElement <: StorageElement
-    sys::ODESystem
-    numports::Int
-    function StaticStorageElement(sys::ODESystem, numports::Int=1)
-        sys = add_port_connections(sys, numports)
-        new(sys, numports)
+    eqs::Vector{Equation}
+    efforts::Vector
+    flows::Vector
+    states::Vector
+    function StaticStorageElement(eqs, efforts, flows, states)
+        check_num_ports(efforts, flows)
+        new(eqs, efforts, flows, states)
     end
 end
+function StaticStorageElement(sys::ODESystem)
+    StaticStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
+end
+
 
 """`I` component"""
 struct DynamicStorageElement <: StorageElement
-    sys::ODESystem
-    numports::Int
-    function DynamicStorageElement(sys::ODESystem, numports::Int=1)
-        sys = add_port_connections(sys, numports)
-        new(sys, numports)
+    eqs::Vector{Equation}
+    efforts::Vector
+    flows::Vector
+    states::Vector
+    function DynamicStorageElement(eqs, efforts, flows, states)
+        check_num_ports(efforts, flows)
+        new(eqs, efforts, flows, states)
     end
 end
-
-# TODO make defaults
-res
-eqs = equations(res)
-sys3 = System(equations(res), t; name=res.name)
-
-V, I = unknowns(res)
-R, = ModelingToolkit.parameters(res)
-
-res == sys3
-
-rcomp.element
-@variables y(t)
-
-@named r = Library.Resistor()
-Library.Resistor
+function DynamicStorageElement(sys::ODESystem)
+    DynamicStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
+end
 
 ############################################################
+# TODO update structs with eqs, vars, etc.
 """`Se` component"""
 struct EffortSource <: SourceElement
-    sys::ODESystem
-    function StaticStorageElement(sys::ODESystem)
-        sys = add_port_connections(sys, 1)
-        new(sys)
+    eqs::Vector{Equation}
+    efforts::Vector
+    function EffortSource(eqs, efforts)
+        numports = length(efforts)
+        numports == 1 || error("Must have exactly 1 port ($numports)")
+        new(eqs, efforts)
     end
 end
 
 """`Sf` component"""
 struct FlowSource <: SourceElement
-    sys::ODESystem
-    function FlowSource(sys::ODESystem)
-        sys = add_port_connections(sys, 1)
-        new(sys)
+    eqs::Vector{Equation}
+    flows::Vector
+    function FlowSource(eqs, flows)
+        numports = length(flows)
+        numports == 1 || error("Must have exactly 1 port ($numports)")
+        new(eqs, flows)
     end
 end
 
 """`SS` component"""
 struct SourceSensor <: SourceElement
-    sys::ODESystem
-    function SourceSensor(sys::ODESystem)
-        sys = add_port_connections(sys, 1)
-        new(sys)
+    eqs::Vector{Equation}
+    efforts::Vector
+    flows::Vector
+    function SourceSensor(eqs, efforts, flows)
+        numports = length(efforts)
+        (numports == length(flows) == 1) || error("Must have exactly 1 port ($numports)")
+        new(eqs, efforts, flows)
     end
 end
 
@@ -139,65 +132,59 @@ abstract type NonParametricJunction <: JunctionStructure end
 
 """`TF` component"""
 struct Transformer <: ParametricJunction
-    sys::ODESystem
-    numports::Int
-    function Transformer(sys::ODESystem, numports::Int=2)
-        numports >= 2 || error("Transformer must have at least 2 ports ($N ports given)")
-        sys = add_port_connections(sys, numports)
-        new(sys, numports)
+    eqs::Vector{Equation}
+    efforts::Vector
+    flows::Vector
+    function Transformer(eqs, efforts, flows)
+        numports = length(efforts)
+        numports >= 2 || error("Transformer must have at least 2 ports ($numports ports given)")
+        new(eqs, efforts, flows)
     end
 end
 """`GY` component"""
 struct Gyrator <: ParametricJunction
-    sys::ODESystem
-    numports::Int
-    function Gyrator(sys::ODESystem, numports::Int=2)
-        numports >= 2 || error("Gyrator must have at least 2 ports ($N ports given)")
-        sys = add_port_connections(sys, numports)
-        new(sys, numports)
+    eqs::Vector{Equation}
+    efforts::Vector
+    flows::Vector
+    function Gyrator(eqs, efforts, flows)
+        numports = length(efforts)
+        numports >= 2 || error("Gyrator must have at least 2 ports ($numports ports given)")
+        new(eqs, efforts, flows)
     end
 end
 
 ############################################################
 
-# 0- and 1- junctions start with "empty" systems
+# Since the number of ports is unknown and can change,
+# we instead store functions that map efforts/flows to equations
 """`0`-junction"""
 struct EqualEffort <: NonParametricJunction
-    sys::ODESystem
-    function EqualEffort(; name::Symbol=:j0)
-        new(System(Equation[], t; name=name))
+    effort_fn::Function
+    flow_fn::Function
+    function EqualEffort()
+        effort_fn(es) = [es[1] ~ e for e in es[2:end]]
+        flow_fn(fs) = sum(fs) ~ 0
+        new(effort_fn, flow_fn)
     end
 end
 """`1`-junction"""
 struct EqualFlow <: NonParametricJunction
-    sys::ODESystem
-    function EqualFlow(; name::Symbol=:j1)
-        new(System(Equation[], t; name=name))
+    effort_fn::Function
+    flow_fn::Function
+    function EqualFlow()
+        effort_fn(es) = sum(es) ~ 0
+        flow_fn(fs) = [fs[1] ~ f for f in fs[2:end]]
+        new(effort_fn, flow_fn)
     end
 end
 
-# easy way to construct equtions for given effort/flow inputs
-function (::EqualEffort)(e, f)
-    e_eqs = [e[1] ~ ei for ei in e[2:end]]
-    f_eqs = sum(f) ~ 0
-    [e_eqs; f_eqs]
-end
-function (::EqualFlow)(e, f)
-    f_eqs = [f[1] ~ fi for fi in f[2:end]]
-    e_eqs = sum(e) ~ 0
-    [f_eqs; e_eqs]
-end
-
 ############################################################
-equations(bgv::BondGraphVertex) = equations(bgv.sys)
+equations(bgv::BondGraphVertex) = bgv.eqs
+equations(::NonParametricJunction) = nothing  # FIXME
 
-numports(bgv::BondGraphVertex) = bgv.numports
+numports(bgv::BondGraphVertex) = length(bgv.efforts)
 numports(::SourceElement) = 1
 numports(::NonParametricJunction) = Inf
-
-function getports(be::BondElement)
-    filter(ModelingToolkit.isconnector, ModelingToolkit.get_systems(be.sys))
-end
 
 ############################################################
 # Used when displaying in a graph.
@@ -212,6 +199,9 @@ glyph(::Gyrator) = :GY
 glyph(::JunctionStructure) = :J
 glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
+
+show(io::IO, vertex::T) where {T<:BondGraphVertex} = print(io, "$T{$(numports(vertex))}")
+show(io::IO, ::T) where {T<:NonParametricJunction} = print(io, T)
 
 ############################################################
 struct Port
@@ -240,17 +230,50 @@ end
 
 ############################################################
 # Components now define BG elements and junction structures (may rename)
-struct Component{V<:BondGraphVertex}
-    element::V  # aka component subtype
+struct Component{T<:BondGraphVertex}
+    element::T  # aka component subtype
     name::Symbol
+    sys::ODESystem
     ports::Vector{Port}
 end
-function Component(element::BondElement; name::Symbol)
-    bg_ports = Port.(getports(element), name)
-    Component(element, name, bg_ports)
+function Component(element::BondGraphVertex; name::Symbol)
+    # create MTK System from element definition
+    sys = to_system(element; name)
+    powerports = getports(sys)
+    bg_ports = isempty(powerports) ? Port[] : Port.(powerports, name)
+    Component(element, name, sys, bg_ports)
 end
-function Component(element::JunctionStructure; name::Symbol)
-    Component(element, name, Port[])
+
+##############################
+
+# TODO for sources
+""" General port system constructor for Elements --> systems """
+function to_system(element::BondElement; name::Symbol)
+    # create base system
+    sys = System(equations(element), t; name)
+
+    # create ports and add port connections
+    port_connection_eqs = Equation[]
+    for (i, (e, f)) in enumerate(zip(element.efforts, element.flows))
+        # create N port "systems" and extend the user-given MTK System
+        port = PowerPort(name=Symbol("port_", i))
+        sys = compose(sys, port)
+
+        # add effort/flow connections to newly added port variables (assuming efforts and flows are in the desired order)
+        append!(port_connection_eqs, [e ~ port.e, f ~ port.f])
+    end
+    port_eqs_sys = System(port_connection_eqs, t; name=sys.name)
+
+    return extend(port_eqs_sys, sys)
+end
+
+""" Empty system for 0- and 1- Junctions """
+function to_system(::NonParametricJunction; name::Symbol)
+    System(Equation[], t; name)
+end
+
+function getports(sys)
+    filter(ModelingToolkit.isconnector, ModelingToolkit.get_systems(sys))
 end
 
 ############################################################
@@ -259,32 +282,31 @@ elementtype(::Component{V}) where {V} = V
 show(io::IO, comp::Component{<:BondElement}) = print(io, "$(glyph(comp.element))::$(comp.name)")
 show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.element))")
 
-system(comp::Component) = comp.element.sys
-
 ##############################
-"""System construction for junction components. These systems are composed when called."""
+system(comp::Component) = comp.sys
+
+# System construction for junction components
+# Since the number of ports can change, these systems are composed each time they are called
 function system(junc::Component{<:NonParametricJunction})
     # create base system + port subsystems
-    basesys = junc.element.sys
-    if isempty(junc.ports)
-        return basesys
-    end
+    basesys = junc.sys
+    isempty(junc.ports) && return basesys
+
     # base system without internal connection equations
     portsys = system.(junc.ports, namespaced=false)
     sys = compose(basesys, portsys)
 
-    # TODO cleanup this code (its not very clear)
-    e, f = getefforts(sys), getflows(sys)
-    inner_connection_eqs = junc.element(e, f)
-    extend(System(inner_connection_eqs, t; name=sys.name), sys)
+    # create effort and flow conservation laws
+    effort_eqs = junc.element.effort_fn(getefforts(sys))
+    flow_eqs = junc.element.flow_fn(getflows(sys))
+    extend(System([effort_eqs; flow_eqs], t; name=sys.name), sys)
 end
 
 ##############################
 
-parameters(comp::Component) = ModelingToolkit.parameters(system(comp))
 variables(comp::Component) = ModelingToolkit.get_unknowns(system(comp))  # FIXME should be toplevel only
+parameters(comp::Component) = ModelingToolkit.parameters(system(comp))
 
-# TODO dispatch based on element subtype
 efforts(comp::Component) = getefforts(system(comp))
 flows(comp::Component) = getflows(system(comp))
 
@@ -294,7 +316,10 @@ constitutive_relations(comp::Component) = equations(system(comp))  # FIXME shoul
 hasfreeport(comp::Component) = any(!is_connected, comp.ports)
 hasfreeport(::Component{<:NonParametricJunction}) = true
 
-nextfreeport(comp::Component) = first(filter(!is_connected, comp.ports))
+function nextfreeport(comp::Component)
+    freeports = filter(!is_connected, comp.ports)
+    isempty(freeports) ? nothing : first(freeports)
+end
 function nextfreeport(junc::Component{<:NonParametricJunction})
     # FIXME should only create ports if none are free
     # 0- and 1- junctions have unlimited ports
@@ -302,7 +327,7 @@ function nextfreeport(junc::Component{<:NonParametricJunction})
     index = length(junc.ports) + 1
     portsys = PowerPort(; name=Symbol("port_$index"))
     port = Port(portsys, junc.name)
-    push!(junc.ports, port)
+    push!(junc.ports, port) # add new port to junction
     port
 end
 
@@ -369,13 +394,16 @@ end
 
 components(bg::BondGraph) = [bg.elements; bg.junctions]
 
+# constitutive_relations(comp::Component) = equations(system(comp))  # FIXME should be toplevel only
+
+
 # MTK System converter
 function system(bg::BondGraph; simplify=true)
     comps = components(bg)
     subsyss = system.(comps)
 
     conn_eqns = connection_equation.(bg.bonds)
-    basesys = ODESystem(conn_eqns, t, name=bg.name)
+    basesys = System(conn_eqns, t, name=bg.name)
 
     sys = compose(basesys, subsyss...)
     simplify ? structural_simplify(sys) : sys
