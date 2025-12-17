@@ -53,9 +53,9 @@ struct DissipatorElement <: BondElement
         new(eqs, efforts, flows)
     end
 end
-function DissipatorElement(sys::ODESystem)
-    DissipatorElement(equations(sys), getefforts(sys), getflows(sys))
-end
+# function DissipatorElement(sys::ODESystem)
+#     DissipatorElement(equations(sys), getefforts(sys), getflows(sys))
+# end
 
 
 """`C` component"""
@@ -69,9 +69,9 @@ struct StaticStorageElement <: StorageElement
         new(eqs, efforts, flows, states)
     end
 end
-function StaticStorageElement(sys::ODESystem)
-    StaticStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
-end
+# function StaticStorageElement(sys::ODESystem)
+#     StaticStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
+# end
 
 
 """`I` component"""
@@ -85,31 +85,32 @@ struct DynamicStorageElement <: StorageElement
         new(eqs, efforts, flows, states)
     end
 end
-function DynamicStorageElement(sys::ODESystem)
-    DynamicStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
-end
+# function DynamicStorageElement(sys::ODESystem)
+#     DynamicStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
+# end
 
 ############################################################
-# TODO update structs with eqs, vars, etc.
 """`Se` component"""
 struct EffortSource <: SourceElement
     eqs::Vector{Equation}
     efforts::Vector
-    function EffortSource(eqs, efforts)
+    flows::Vector
+    function EffortSource(eqs, efforts, flows)
         numports = length(efforts)
         numports == 1 || error("Must have exactly 1 port ($numports)")
-        new(eqs, efforts)
+        new(eqs, efforts, flows)
     end
 end
 
 """`Sf` component"""
 struct FlowSource <: SourceElement
     eqs::Vector{Equation}
+    efforts::Vector
     flows::Vector
-    function FlowSource(eqs, flows)
+    function FlowSource(eqs, efforts, flows)
         numports = length(flows)
         numports == 1 || error("Must have exactly 1 port ($numports)")
-        new(eqs, flows)
+        new(eqs, efforts, flows)
     end
 end
 
@@ -122,6 +123,16 @@ struct SourceSensor <: SourceElement
         numports = length(efforts)
         (numports == length(flows) == 1) || error("Must have exactly 1 port ($numports)")
         new(eqs, efforts, flows)
+    end
+end
+
+############################################################
+""" Generic MTK System to BondGraph Element constructor"""
+function (BE::Type{<:BondElement})(sys::ODESystem)
+    if hasfield(BE, :states)
+        return BE(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
+    else
+        return BE(equations(sys), getefforts(sys), getflows(sys))
     end
 end
 
@@ -368,7 +379,7 @@ function connection_equation(b::Bond)
 end
 
 ############################################################
-
+# TODO store System object for reuse
 struct BondGraph
     name::Symbol
     elements::Vector{Component}
@@ -393,9 +404,6 @@ function show(io::IO, bg::BondGraph)
 end
 
 components(bg::BondGraph) = [bg.elements; bg.junctions]
-
-# constitutive_relations(comp::Component) = equations(system(comp))  # FIXME should be toplevel only
-
 
 # MTK System converter
 function system(bg::BondGraph; simplify=true)
@@ -425,8 +433,8 @@ function graph(bg::BondGraph)
         bg_graph[comp.name] = comp
     end
     for bond in bg.bonds
-        src, dst = vertices(bond)
-        bg_graph[src.name, dst.name] = bond
+        srcname, dstname = vertices(bond)
+        bg_graph[srcname, dstname] = bond
     end
     bg_graph
 end

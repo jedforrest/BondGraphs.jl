@@ -52,29 +52,20 @@ sol = solve(prob, Tsit5())
 plot(sol)
 
 #############
-# using Graphs
-# g = graph(bg)
-# incidence_matrix(g)
-# graphplot(bg)
+using Graphs
+g = graph(bg)
+incidence_matrix(g)
+graphplot(bg)
 #############
 
-# TODO CONTINUE FROM HERE
+@named flow = Library.FlowSource()
+A = FlowSource(flow)
 
-Is = Component(FlowSource(), name=:Is)
-add_node!(model, Is)
-connect!(model, Is, kvl)
-plot(model)
+@named fcomp = Component(A)
+b3 = Bond(fcomp, zcomp)
+bg2 = BondGraph("RCA Circuit", [rcomp, ccomp, zcomp, fcomp], [b1, b2, b3])
+graphplot(bg2)
 
-Is.fs = t -> sin(2t)
-constitutive_relations(model; sub_defaults=true)
+bg2_sys = system(bg2; simplify=true)
 
-sol = simulate(model, tspan; u0)
-plot(sol)
-
-using ModelingToolkit
-@register_symbolic f(t)
-Is.fs = t -> f(t)
-
-f(t) = t % 2 <= 1 ? 0 : 1 # repeating square wave
-sol = simulate(model, tspan; u0)
-plot(sol)
+full_equations(bg2_sys)
