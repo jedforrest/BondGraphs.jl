@@ -26,6 +26,7 @@ Manifest.toml
 # Author added folders and files
 /misc
 temp/
+.experiment/
 
 LocalPreferences.toml
 .vscode
