@@ -32,7 +32,7 @@ conn
 ############################################################################
 
 # New bond graph structure
-mutable struct NewBondGraph{I<:Integer} <: AbstractGraph{I}
+mutable struct NewBondGraph{I <: Integer} <: AbstractGraph{I}
     name::AbstractString
     graph::MetaGraph
     sys::ModelingToolkit.AbstractSystem
@@ -41,14 +41,13 @@ function NewBondGraph(name)
     # creating MetaGraph in a constructor keeps it type stable
     metagraph = MetaGraph(
         DiGraph();  # underlying graph structure
-        label_type=Symbol,  # node name
-        vertex_data_type=BondGraphVertex,  # node type
-        edge_data_type=Bond,  # bond
-        graph_data=name,  # tag for the whole graph
-        # TODO add weight function and default weight
+        label_type = Symbol,  # node name
+        vertex_data_type = BondGraphVertex,  # node type
+        edge_data_type = Bond,  # bond
+        graph_data = name  # tag for the whole graph        # TODO add weight function and default weight
     )
     # default "empty" MTK model which is extended with components
-    model = ODESystem(Equation[], t; name=Symbol(name))
+    model = ODESystem(Equation[], t; name = Symbol(name))
     new(name, metagraph, model)
 end
 
@@ -73,7 +72,6 @@ end
 
 ############################################################################
 ############################################################################
-
 
 @named rc_model = NewBondGraph()
 

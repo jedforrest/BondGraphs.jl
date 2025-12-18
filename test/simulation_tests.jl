@@ -32,8 +32,8 @@ end
 end
 
 @testitem "Simulate RC circuit" setup=[Setup] begin
-    r = Component(:R; R=2)
-    c = Component(:C; C=1, q=10)
+    r = Component(:R; R = 2)
+    c = Component(:C; C = 1, q = 10)
     bg = BondGraph(:RC)
 
     add_node!(bg, [c, r])
@@ -44,17 +44,17 @@ end
     tspan = (0.0, 10.0)
     sol = simulate(bg, tspan)
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, 2), atol=1e-5)
+        @test isapprox(sol(t)[1], f(t, 10, 2), atol = 1e-5)
     end
 
-    sol = simulate(bg, tspan; u0=[5.0])
+    sol = simulate(bg, tspan; u0 = [5.0])
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 5, 2), atol=1e-5)
+        @test isapprox(sol(t)[1], f(t, 5, 2), atol = 1e-5)
     end
 
-    sol = simulate(bg, tspan; pmap=[1.0, 3.0])
+    sol = simulate(bg, tspan; pmap = [1.0, 3.0])
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, 3), atol=1e-5)
+        @test isapprox(sol(t)[1], f(t, 10, 3), atol = 1e-5)
     end
 end
 
@@ -65,10 +65,10 @@ end
     C = 3.0
     τ = Req * C
 
-    r1 = Component(:R, :r1; R=R1)
-    r2 = Component(:R, :r2; R=R2)
-    c = Component(:C; C=C, q=10)
-    kcl = EqualFlow(name=:kcl)
+    r1 = Component(:R, :r1; R = R1)
+    r2 = Component(:R, :r2; R = R2)
+    c = Component(:C; C = C, q = 10)
+    kcl = EqualFlow(name = :kcl)
     bg = BondGraph(:RRC)
 
     add_node!(bg, [c, r1, r2, kcl])
@@ -79,30 +79,30 @@ end
     f(x, a, τ) = a * exp(-x / τ)
 
     tspan = (0.0, 10.0)
-    sol = simulate(bg, tspan, abstol=1e-9, reltol=1e-9)
+    sol = simulate(bg, tspan, abstol = 1e-9, reltol = 1e-9)
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, τ), atol=1e-5)
+        @test isapprox(sol(t)[1], f(t, 10, τ), atol = 1e-5)
     end
 end
 
 @testitem "π-filter" setup=[Setup] begin
-    Se = Component(:Se, :Pin; es=t -> 1)
+    Se = Component(:Se, :Pin; es = t -> 1)
 
-    Pa = EqualEffort(name=:Pa)
-    fa = EqualFlow(name=:fa)
-    ca = Component(:C, :Ca; C=1, q=1)
-    rpa = Component(:R, :Rpa; R=1)
+    Pa = EqualEffort(name = :Pa)
+    fa = EqualFlow(name = :fa)
+    ca = Component(:C, :Ca; C = 1, q = 1)
+    rpa = Component(:R, :Rpa; R = 1)
 
-    Pb = EqualEffort(name=:Pb)
-    fb = EqualFlow(name=:fb)
-    cb = Component(:C, :Cb; C=1, q=2)
-    rpb = Component(:R, :Rpb; R=1)
+    Pb = EqualEffort(name = :Pb)
+    fb = EqualFlow(name = :fb)
+    cb = Component(:C, :Cb; C = 1, q = 2)
+    rpb = Component(:R, :Rpb; R = 1)
 
-    fs = EqualFlow(name=:fs)
-    l = Component(:I, :L; L=1, p=1)
-    r = Component(:R, :Rs; R=1)
+    fs = EqualFlow(name = :fs)
+    l = Component(:I, :L; L = 1, p = 1)
+    r = Component(:R, :Rs; R = 1)
 
-    rl = Component(:R, :RL; R=1)
+    rl = Component(:R, :RL; R = 1)
 
     bg = BondGraph(:π_filter)
     add_node!(bg, [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl])
@@ -121,25 +121,25 @@ end
     connect!(bg, Pb, rl)
 
     tspan = (0, 100.0)
-    sol = simulate(bg, tspan; solver=Rosenbrock23(), flag_ODE=false) # Model is a DAE
+    sol = simulate(bg, tspan; solver = Rosenbrock23(), flag_ODE = false) # Model is a DAE
 
     # Need sys states to test solution (states may change order)
     sys = ODESystem(bg)
     (L, Ca, Cb) = (sys.L.p, sys.Ca.q, sys.Cb.q)
 
-    @test (sol[Ca,1] == 1) && (sol[Cb,1] == 2) && (sol[L,1] == 1)
-    @test isapprox(sol[Ca][end], 1.0, atol=1e-5)
-    @test isapprox(sol[Cb][end], 0.5, atol=1e-5)
-    @test isapprox(sol[L][end], 0.5, atol=1e-5)
+    @test (sol[Ca, 1] == 1) && (sol[Cb, 1] == 2) && (sol[L, 1] == 1)
+    @test isapprox(sol[Ca][end], 1.0, atol = 1e-5)
+    @test isapprox(sol[Cb][end], 0.5, atol = 1e-5)
+    @test isapprox(sol[L][end], 0.5, atol = 1e-5)
 end
 
 @testitem "Simulate modular BG" setup=[Setup] begin
-    r = Component(:R; R=1)
-    l = Component(:I; L=1, p=1)
-    c = Component(:C; C=1, q=1)
-    kvl = EqualEffort(name=:kvl)
-    SS1 = SourceSensor(name=:SS1)
-    SS2 = SourceSensor(name=:SS2)
+    r = Component(:R; R = 1)
+    l = Component(:I; L = 1, p = 1)
+    c = Component(:C; C = 1, q = 1)
+    kvl = EqualEffort(name = :kvl)
+    SS1 = SourceSensor(name = :SS1)
+    SS2 = SourceSensor(name = :SS2)
 
     bg1 = BondGraph(:RC)
     add_node!(bg1, [r, c, kvl, SS1])
@@ -169,14 +169,14 @@ end
 
     for t in [0.0, 0.5, 1.0, 5.0, 10.0]
         # sort! so that the order of the output is consistent
-        @test isapprox(sort!(sol(t)), sort!(f(t, τ, ω)), atol=1e-5)
+        @test isapprox(sort!(sol(t)), sort!(f(t, τ, ω)), atol = 1e-5)
     end
 end
 
 @testitem "Driven Filter Circuit" setup=[Setup] begin
     model = BondGraph("RC")
-    C = Component(:C; C=1)
-    R = Component(:R; R=1)
+    C = Component(:C; C = 1)
+    R = Component(:R; R = 1)
     zero_law = EqualEffort()
     C, R, zero_law
     add_node!(model, [C, R, zero_law])
@@ -197,13 +197,13 @@ end
     ODESystem(model)
     constitutive_relations(model)
     sol = simulate(model, tspan; u0)
-    @test isapprox(sol[end], [2.98651], atol=1e-5)
+    @test isapprox(sol[end], [2.98651], atol = 1e-5)
 
     # Case 2: regular forcing function
     f(t) = sin(2t)
     Sf.fs = f
     sol = simulate(model, tspan; u0)
-    @test isapprox(sol[end], [0.23625], atol=1e-5)
+    @test isapprox(sol[end], [0.23625], atol = 1e-5)
 end
 
 @testitem "Simple Biochemical Simulation" setup=[Setup] begin
@@ -216,31 +216,32 @@ end
     sys = ODESystem(bg_abc)
     (A, B, C) = (sys.A.q, sys.B.q, sys.C.q)
 
-    sol = simulate(bg_abc, (0.0, 3.0); u0=[A=>1, B=>2, C=>3])
-    @test isapprox(sol[A][end], 1.23606, atol=1e-5)
-    @test isapprox(sol[B][end], 2.23606, atol=1e-5)
-    @test isapprox(sol[C][end], 2.76393, atol=1e-5)
+    sol = simulate(bg_abc, (0.0, 3.0); u0 = [A=>1, B=>2, C=>3])
+    @test isapprox(sol[A][end], 1.23606, atol = 1e-5)
+    @test isapprox(sol[B][end], 2.23606, atol = 1e-5)
+    @test isapprox(sol[C][end], 2.76393, atol = 1e-5)
 
     # Concentrations cannot be -ve in reality (u0 = -1)
     # This is testing whether simplification worked to remove all log(x)
-    sol = simulate(bg_abc, (0.0, 3.0); u0=[A=>-1, B=>2, C=>3])
-    @test isapprox(sol[A][end], 0.44949, atol=1e-5)
-    @test isapprox(sol[B][end], 3.44949, atol=1e-5)
-    @test isapprox(sol[C][end], 1.55051, atol=1e-5)
+    sol = simulate(bg_abc, (0.0, 3.0); u0 = [A=>-1, B=>2, C=>3])
+    @test isapprox(sol[A][end], 0.44949, atol = 1e-5)
+    @test isapprox(sol[B][end], 3.44949, atol = 1e-5)
+    @test isapprox(sol[C][end], 1.55051, atol = 1e-5)
 end
 
 @testitem "Stoichiometry Simulation" setup=[Setup] begin
     rn = @reaction_network A2B begin
-        1, A --> 2B
+        (1, 1), A <--> 2B
     end
     bg = BondGraph(rn)
 
     sys = ODESystem(bg)
     (A, B) = (sys.A.q, sys.B.q)
+    sol = simulate(bg, (0.0, 1.0); u0 = [A=>1.0, B=>0.0])
 
-    sol = simulate(bg, (0.0, 1.0); u0=[A=>1, B=>0])
-    @test isapprox(sol[A][end], 0.61969, atol=1e-5)
-    @test isapprox(sol[B][end], 0.76062, atol=1e-5)
+    # verified by simulation of rn directly
+    @test isapprox(sol[A, end], 0.61969, atol = 1e-5)
+    @test isapprox(sol[B, end], 0.76062, atol = 1e-5)
 end
 
 @testitem "Reversible Michaelis-Menten" setup=[Setup] begin
@@ -248,15 +249,15 @@ end
         (1, 1), E + S <--> C
         (1, 1), C <--> E + P
     end
-    bg_mm = BondGraph(rn_mm; chemostats=["S", "P"])
+    bg_mm = BondGraph(rn_mm; chemostats = ["S", "P"])
     bg_mm.S.xs = t -> 2
 
     sys = ODESystem(bg_mm)
     (E, C) = (sys.E.q, sys.C.q)
 
-    sol = simulate(bg_mm, (0.0, 3.0); u0=[E=>1, C=>2])
-    @test isapprox(sol[E][end], 1.2, atol=1e-5)
-    @test isapprox(sol[C][end], 1.8, atol=1e-5)
+    sol = simulate(bg_mm, (0.0, 3.0); u0 = [E=>1, C=>2])
+    @test isapprox(sol[E][end], 1.2, atol = 1e-5)
+    @test isapprox(sol[C][end], 1.8, atol = 1e-5)
 end
 
 @testitem "SERCA (stiff equations)" setup=[Setup] begin
@@ -274,7 +275,6 @@ end
 
     chemostats = ["MgATP", "MgADP", "Pi", "H", "Cai", "Casr"]
     bg_serca = BondGraph(rn_serca; chemostats)
-
 
     reaction_rates = [
         :R1 => 0.00053004,
@@ -339,24 +339,30 @@ end
         getproperty(bg_serca, species).q = ic
     end
 
-    tspan = (0., 200.)
-    sol = simulate(bg_serca, tspan; solver=Rosenbrock23())
+    tspan = (0.0, 200.0)
+    sol = simulate(bg_serca, tspan; solver = Rosenbrock23());
 
     # calculated using the same model, verified by plot from BGT tutorial
-    sys = ODESystem(bg_serca, simplify_eqs=false)
+    sys = ODESystem(bg_serca, simplify_eqs = false)
     real_solution = Dict(
-        sys.P1.q  => 4.4404656222265794e-5,
-        sys.P2.q  => 0.09777422826977565,
+        sys.P1.q => 4.4404656222265794e-5,
+        sys.P2.q => 0.09777422826977565,
         sys.P2a.q => 0.8970112784324162,
-        sys.P4.q  => 2.6596475539704174e-9,
-        sys.P5.q  => 0.0009426424413096248,
-        sys.P6.q  => 0.001015195974904865,
-        sys.P8.q  => 0.001212098675876874,
-        sys.P9.q  => 0.0011543788312157496,
-        sys.P10.q => 0.0008357702283899367,
+        sys.P4.q => 2.6596475539704174e-9,
+        sys.P5.q => 0.0009426424413096248,
+        sys.P6.q => 0.001015195974904865,
+        sys.P8.q => 0.001212098675876874,
+        sys.P9.q => 0.0011543788312157496,
+        sys.P10.q => 0.0008357702283899367
     )
 
-    for (var,real_sol) in real_solution
-        @test isapprox(sol[var][end], real_sol, atol=1e-5)
+    for (var, real_sol) in real_solution
+        @test isapprox(sol[var][end], real_sol, atol = 1e-5)
+        # @show var
+        # @show sol[var, end]
+        # @show real_sol
+        # test = isapprox(sol[var,end], real_sol, atol=1e-5)
+        # @show test
+        # println()
     end
 end

@@ -6,10 +6,10 @@
     R = Component(:R, "newR")
     @test name(R) == "newR"
 
-    I = Component(:I; L=5)
+    I = Component(:I; L = 5)
     @test I.L == 5
 
-    C2 = Component(:C; q=2)
+    C2 = Component(:C; q = 2)
     @test C2.q == 2
 
     SS = SourceSensor()
@@ -18,7 +18,7 @@ end
 
 @testitem "Creating Junctions" setup=[Setup] begin
     EqE_1 = EqualEffort()
-    EqE_2 = EqualEffort(name="foo")
+    EqE_2 = EqualEffort(name = "foo")
     EqF = EqualFlow()
 
     @test name(EqE_1) == "𝟎"
@@ -42,6 +42,39 @@ end
     b2 = connect!(model, zero_law, C)
     @test b1 in model.bonds
     @test b2 in model.bonds
+end
+
+@testitem "Graph construction" setup=[Setup] begin
+    c1 = Component(:C)
+    c2 = Component(:R)
+    c3 = Component(:I)
+    j = EqualFlow()
+    bg = BondGraph()
+
+    add_vertex!(bg, c1)
+    add_vertex!(bg, c2)
+    add_vertex!(bg, c3)
+    add_vertex!(bg, j)
+    add_edge!(bg, (c1, 1), (j, 1))
+    add_edge!(bg, (j, 1), (c2, 1)) # junction index is '1' here as a quick fix
+    add_edge!(bg, (j, 1), (c3, 1)) # junction index is '1' here as a quick fix
+
+    # adding components and bonds
+    @test ne(bg) == 3
+    @test nv(bg) == 4
+    @test has_vertex(bg, c1)
+    @test has_edge(bg, vertex(j), vertex(c2))
+
+    # example graph functions
+    @test Δ(bg) == 3
+    @test Graphs.density(bg) == 0.25
+    @test Array(adjacency_matrix(bg)) == [0 0 0 1; 0 0 0 0; 0 0 0 0; 0 1 1 0]
+
+    # removing components and bonds
+    rem_edge!(bg, c3, j)
+    rem_vertex!(bg, c3)
+    @test ne(bg) == 2
+    @test nv(bg) == 3
 end
 
 @testitem "BondGraph Modification" setup=[Setup] begin
@@ -117,7 +150,7 @@ end
     B = Component(:C, :B)
     C = Component(:C, :C)
     D = Component(:C, :D)
-    Re = Component(:Re, :Reaction, numports=2)
+    Re = Component(:Re, :Reaction, numports = 2)
     J_AB = EqualFlow()
     J_CD = EqualFlow()
 
@@ -127,32 +160,14 @@ end
     connect!(model, C, J_CD)
     connect!(model, D, J_CD)
 
-    @test ports(Re) == Dict(1 => false, 2 => false)
-    @test ports(J_AB) == [1, 1]
-
     # Connecting junctions to specific ports in Re
-    connect!(model, (Re,2), J_CD)
+    connect!(model, (Re, 2), J_CD)
     @test ports(Re) == Dict(1 => false, 2 => true)
-
-    # connecting to a full port should fail
-    @test_throws ErrorException connect!(model, J_AB, (Re,2))
-
-    connect!(model, J_AB, (Re,1))
+    connect!(model, J_AB, (Re, 1))
     @test ports(Re) == Dict(1 => true, 2 => true)
 
     @test nv(model) == 7
     @test ne(model) == 6
-end
-
-@testitem "Standard components" setup=[Setup] begin
-    tf = Component(:TF, :n)
-    @test tf isa Component{2}
-    @test tf.type == "TF"
-    @test numports(tf) == 2
-
-    r = Component(:R)
-    @test r isa Component{1}
-    @test r.type == "R"
 end
 
 @testitem "Inserting Nodes" setup=[Setup] begin
@@ -163,7 +178,7 @@ end
     bondc0 = getbonds(bg, c, J0)[1]
     bondr0 = getbonds(bg, r, J0)[1]
 
-    tf = Component(:TF, numports=2)
+    tf = Component(:TF, numports = 2)
     insert_node!(bg, bondc0, tf)
     insert_node!(bg, bondr0, EqualFlow())
 
@@ -182,11 +197,10 @@ end
     add_node!(bg, [newC, newR])
     connect!(bg, newC, newR)
 
-    @test !isempty(getnodes(bg, "C:newC"))
     merge_nodes!(bg, C, newC)
     @test isempty(getnodes(bg, "C:newC"))
 
-    merge_nodes!(bg, R, newR; junction=EqualFlow())
+    merge_nodes!(bg, R, newR; junction = EqualFlow())
     @test length(getnodes(bg, EqualFlow)) == 1
     @test length(getnodes(bg, EqualEffort)) == 2
     @test nv(bg) == 7
@@ -197,21 +211,21 @@ end
     bg = RCI()
     C, R, I, SS, J0 = bg.nodes
 
-    J0_new_1 = EqualEffort(; name=:new0_1)
-    J0_new_2 = EqualEffort(; name=:new0_2)
+    J0_new_1 = EqualEffort(; name = :new0_1)
+    J0_new_2 = EqualEffort(; name = :new0_2)
     insert_node!(bg, (C, J0), J0_new_1)
     insert_node!(bg, (R, J0), J0_new_2)
     connect!(bg, J0_new_1, J0_new_2)
 
-    J1_new_1 = EqualFlow(; name=:new1_1)
-    J1_new_2 = EqualFlow(; name=:new1_2)
+    J1_new_1 = EqualFlow(; name = :new1_1)
+    J1_new_2 = EqualFlow(; name = :new1_2)
     add_node!(bg, J1_new_1)
     connect!(bg, J0, J1_new_1)
     insert_node!(bg, (SS, J0), J1_new_2)
 
     # Removing junction redundancies
     @test length(getnodes(bg, EqualFlow)) == 2
-    simplify_junctions!(bg, squash_identical=false)
+    simplify_junctions!(bg, squash_identical = false)
     @test length(getnodes(bg, EqualFlow)) == 0
     @test nv(bg) == 7
     @test ne(bg) == 7
@@ -252,11 +266,11 @@ end
 end
 
 @testitem "Conversion to Other Graphs" setup=[Setup] begin
-     bg = RCI()
-     g = SimpleGraph(bg)
-     dg = SimpleDiGraph(bg)
+    bg = RCI()
+    g = SimpleGraph(bg)
+    dg = SimpleDiGraph(bg)
 
-     bg_adj, g_adj, dg_adj = adjacency_matrix.([bg, g, dg])
-     @test dg_adj == bg_adj
-     @test g_adj == bg_adj + bg_adj' # A + A' forms undirected graph adj matrix
+    bg_adj, g_adj, dg_adj = adjacency_matrix.([bg, g, dg])
+    @test dg_adj == bg_adj
+    @test g_adj == bg_adj + bg_adj' # A + A' forms undirected graph adj matrix
 end

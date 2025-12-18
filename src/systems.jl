@@ -10,7 +10,7 @@ exponent_rules = [
     @acrule(exp(~x * ~y) => exp(~y)^~x),
     @acrule(log(~x) + log(~y) => log(~x * ~y)),
     @acrule(log((~x)^(~a)) => ~a * log(~x)),
-    @acrule(~a * exp(~b * log(~x)) => (~a) * (~x)^(~b)),
+    @acrule(~a * exp(~b * log(~x)) => (~a) * (~x)^(~b))
 ]
 rw_exp = RestartedChain(exponent_rules)
 rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
@@ -66,10 +66,10 @@ NOTE: This creates a ModelingToolkit.ODESystem of the bond graph and returns onl
 equations. If you want to numerically solve the bond graph equations, either use
 [`simulate`](@ref) or create an ODESystem directly.
 """
-function constitutive_relations(bg::BondGraph; sub_defaults=false)
-    cr = simplify.(full_equations(ODESystem(bg)); expand=true, rewriter)
+function constitutive_relations(bg::BondGraph; sub_defaults = false)
+    cr = simplify.(full_equations(ODESystem(bg)); expand = true, rewriter)
     # TODO: for some reason, must be simplified twice to work
-    cr = simplify.(cr; rewriter=rewriter)
+    cr = simplify.(cr; rewriter = rewriter)
     if sub_defaults
         return _sub_defaults(cr, all_variables(bg))
     else
@@ -82,7 +82,7 @@ end
 
 @connector function MTKPort(; name)
     vars = @variables E(t) F(t) [connect = Flow]
-    ODESystem(Equation[], t, vars, []; name=name)
+    ODESystem(Equation[], t, vars, []; name = name)
 end
 
 function _sub_defaults(eqs, defaults)
@@ -109,9 +109,9 @@ function get_connection_eq(b::Bond, subsystems)
 end
 
 # AbstractNode
-function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
+function ModelingToolkit.ODESystem(n::AbstractNode; name = name(n))
     N = numports(n)
-    ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
+    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
 
     @variables E(t)[1:N] F(t)[1:N]
     e_sub_rules = Dict(E[i] => ps[i].E for i in 1:N)
@@ -127,30 +127,38 @@ function ModelingToolkit.ODESystem(n::AbstractNode; name=name(n))
     _globals = collect(keys(globals(n)))
     _states = collect(keys(states(n)))
 
-    sys = ODESystem(eqs, t, _states, [_params; _globals];
-        name=Symbol(name), defaults=all_variables(n))
+    sys = ODESystem(
+        eqs,
+        t,
+        _states,
+        [_params; _globals];
+        name = Symbol(name),
+        defaults = all_variables(n)
+    )
     return compose(sys, ps...)
 end
 
 # BondGraph
-function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs=true)
+function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
     # TODO check for disconnected ports/nodes
     (subsystems, connections) = get_subsys_and_connections(m)
     sys = compose_bg_model(subsystems, connections, m.name, simplify_eqs)
 end
 
 # BondGraphNode
-function ModelingToolkit.ODESystem(bgn::BondGraphNode; name=name(bgn), simplify_eqs=false)
+function ModelingToolkit.ODESystem(
+        bgn::BondGraphNode;
+        name = name(bgn),
+        simplify_eqs = false
+)
     N = numports(bgn)
-    ps = [MTKPort(name=Symbol("p$i")) for i in 1:N]
+    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
 
     (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
     es = [subsystems[comp].p1.E for comp in exposed(bgn)]
     fs = [subsystems[comp].p1.F for comp in exposed(bgn)]
-    port_eqs = [
-        [0 ~ p.E - E for (E, p) in zip(es, ps)]
-        [0 ~ p.F + F for (F, p) in zip(fs, ps)]
-    ]
+    port_eqs = [[0 ~ p.E - E for (E, p) in zip(es, ps)]
+                [0 ~ p.F + F for (F, p) in zip(fs, ps)]]
     eqs = [connections; port_eqs]
     sys = compose_bg_model(subsystems, eqs, name, simplify_eqs)
     compose(sys, ps...)
@@ -165,15 +173,15 @@ function get_subsys_and_connections(bg::BondGraph)
 end
 
 function compose_bg_model(subsystems, eqs, name, simplify_eqs)
-    @named _model = ODESystem(eqs, t; name=Symbol(name))
+    @named _model = ODESystem(eqs, t; name = Symbol(name))
     model = compose(_model, collect(values(subsystems)))
 
     if simplify_eqs
         # NOTE: this breaks for DAEs
         # Something to do with missing variables from the variable map
         model = structural_simplify(model)
-        neweqs = full_equations(model; simplify=true)
-        neweqs = simplify.(neweqs; expand=true, rewriter=rewriter)
+        neweqs = full_equations(model; simplify = true)
+        neweqs = simplify.(neweqs; expand = true, rewriter = rewriter)
         @set! model.eqs = neweqs
         @set! model.substitutions = nothing
         return model
@@ -182,7 +190,6 @@ function compose_bg_model(subsystems, eqs, name, simplify_eqs)
     end
 end
 
-
 """
     simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=Tsit5(), kwargs...)
 
@@ -190,7 +197,7 @@ Simulate the bond graph model.
 
 The keyword arguments are the same as for `ODEProblem` and `solve` in DifferentialEquations.
 """
-function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=nothing, kwargs...)
+function simulate(bg::BondGraph, tspan; u0 = [], pmap = [], solver = nothing, kwargs...)
     # DAEs break custom model simplification, so skip this step in ODESystem
     sys = ODESystem(bg)
 
@@ -198,5 +205,5 @@ function simulate(bg::BondGraph, tspan; u0=[], pmap=[], solver=nothing, kwargs..
     use_union = has_controls(bg)
 
     prob = ODEProblem(sys, u0, tspan, pmap; use_union, kwargs...)
-    return solve(prob, solver; kwargshandle=KeywordArgSilent)
+    return solve(prob, solver; kwargshandle = KeywordArgSilent)
 end

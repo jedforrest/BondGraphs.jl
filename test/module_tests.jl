@@ -1,7 +1,7 @@
 @testitem "SS component system" setup=[Setup] begin
-    SS = SourceSensor(name=:SS)
+    SS = SourceSensor(name = :SS)
 
-    @test length(freeports(SS)) == 1
+    @test length(ports(SS)) == 1
     @test numports(SS) == 1
     @test length(parameters(SS)) == 0
     @test length(states(SS)) == 0
@@ -9,16 +9,16 @@
     @test length(constitutive_relations(SS)) == 0
 
     sys = ODESystem(SS)
-    @test length(sys.systems) == 1
+    @test length(ModelingToolkit.get_systems(sys)) == 1
     @test sys.p1.E isa Num
     @test sys.p1.F isa Num
 end
 
 @testitem "Expose models" setup=[Setup] begin
     r = Component(:R)
-    kcl = EqualFlow(name=:kcl)
-    SSA = SourceSensor(name=:A)
-    SSB = SourceSensor(name=:B)
+    kcl = EqualFlow(name = :kcl)
+    SSA = SourceSensor(name = :A)
+    SSB = SourceSensor(name = :B)
 
     bg = BondGraph()
     add_node!(bg, [r, kcl, SSA, SSB])
@@ -51,9 +51,9 @@ end
     r = Component(:R)
     l = Component(:I)
     c = Component(:C)
-    kvl = EqualEffort(name=:kvl)
-    SS1 = SourceSensor(name=:SS1)
-    SS2 = SourceSensor(name=:SS2)
+    kvl = EqualEffort(name = :kvl)
+    SS1 = SourceSensor(name = :SS1)
+    SS2 = SourceSensor(name = :SS2)
 
     bg1 = BondGraph(:RC)
     add_node!(bg1, [r, c, kvl, SS1])
@@ -90,8 +90,8 @@ end
 @testitem "Modular reaction" setup=[Setup] begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
-    SSA = SourceSensor(name=:A)
-    SSB = SourceSensor(name=:B)
+    SSA = SourceSensor(name = :A)
+    SSB = SourceSensor(name = :B)
     add_node!(bg1, [SSA, SSB, re])
     connect!(bg1, SSA, (re, 1))
     connect!(bg1, (re, 2), SSB)
@@ -121,8 +121,8 @@ end
 @testitem "Named ports" setup=[Setup] begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
-    SSA = SourceSensor(name=:A)
-    SSB = SourceSensor(name=:B)
+    SSA = SourceSensor(name = :A)
+    SSB = SourceSensor(name = :B)
     add_node!(bg1, [SSA, SSB, re])
     connect!(bg1, SSA, (re, 1))
     connect!(bg1, (re, 2), SSB)

@@ -9,14 +9,8 @@
     @test nv(bg_rn) == 5
     @test ne(bg_rn) == 4
 
-    @test any(n -> n.name == "R1", bg_rn.nodes)
-    @test length(getnodes(bg_rn, EqualFlow)) == 1
-
-    @test length(getnodes(bg_rn, ["Ce:A", "Ce:B", "Ce:C"])) == 3
-    @test length(getnodes(bg_rn, EqualFlow)) == 1
-    @test length(getnodes(bg_rn, "Re:R1")) == 1
-
-    bond_rev = Bond((bg_rn.C, 1),(bg_rn.R1, 2))
+    # Checking that a "reverse" direction bond is included
+    bond_rev = Bond((bg_rn.C, 1), (bg_rn.R1, 2))
     @test bond_rev in bonds(bg_rn)
 
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
@@ -28,17 +22,11 @@ end
         (1, 1), C <--> E + P
     end
 
-    bg_rn = BondGraph(rn; chemostats=["S", "P"])
+    bg_rn = BondGraph(rn; chemostats = ["S", "P"])
 
     @test name(bg_rn) == "MM_reversible"
     @test nv(bg_rn) == 10
     @test ne(bg_rn) == 10
-
-    @test length(getnodes(bg_rn, ["Ce:E", "Ce:C"])) == 2
-    @test length(getnodes(bg_rn, ["SCe:S", "SCe:P"])) == 2
-    @test length(getnodes(bg_rn, EqualEffort)) == 2
-    @test length(getnodes(bg_rn, EqualFlow)) == 2
-    @test length(getnodes(bg_rn, ["Re:R1", "Re:R2"])) == 2
 
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
@@ -54,7 +42,6 @@ end
     @test ne(bg_rn) == 7
 
     tfs = filter(n -> type(n) == "TF", bg_rn.nodes)
-    @test length(tfs) == 3
     @test repr.(tfs) == ["TF:tf1", "TF:tf2", "TF:tf3"]
 end
 

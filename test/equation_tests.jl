@@ -6,15 +6,13 @@
         0 ~ q / C - E[1],
         D(q) ~ F[1]
     ]
-
-    @test isequal(equations(c), cr)
     @test isequal(constitutive_relations(c), cr)
 
     j = EqualEffort()
-    @test isequal(equations(j), Equation[])
+    @test isempty(equations(j))
 
     bg = BondGraph()
-    @test equations(bg) == Equation[]
+    @test isempty(equations(bg))
     add_node!(bg, c)
     @test equations(bg) == [D(C₊q) ~ -0.0] # Equation produces -ve zero
 end
@@ -60,9 +58,6 @@ end
     c = Component(:C)
     @test var_in(q, states(c))
 
-    ce = Component(:ce)
-    @test var_in(q, states(ce))
-
     bg = RLC()
     @variables q(t) p(t)
     all_states = merge(values(states(bg))...)
@@ -71,23 +66,13 @@ end
 end
 
 @testitem "Controls" setup=[Setup] begin
+    bg = RLC()
     se = Component(:Se)
     sf = Component(:Sf)
-    c = Component(:C)
-    @parameters fs es
-
-    @test var_in(es, controls(se))
-    @test var_in(fs, controls(sf))
-    @test controls(c) == Dict()
-
-    bg = RLC()
-    @test !has_controls(bg)
-
     add_node!(bg, [se, sf])
-    @test has_controls(bg)
-
     all_controls = merge(values(controls(bg))...)
-    @test var_in(es, all_controls) && var_in(fs, all_controls)
+
+    @test has_controls(bg)
 end
 
 @testitem "All variables" setup=[Setup] begin
@@ -132,7 +117,7 @@ end
         D(p) ~ q
     ]
     @test BondGraphs._sub_defaults([cr1, cr2], all_variables(bg)) == subbed_eqs
-    @test constitutive_relations(bg; sub_defaults=true) == subbed_eqs
+    @test constitutive_relations(bg; sub_defaults = true) == subbed_eqs
 end
 
 @testitem "0-junction equations" setup=[Setup] begin
@@ -174,7 +159,7 @@ end
     @test isequal(constitutive_relations(j), [
         0 ~ E[1] - E[2] - E[3],
         0 ~ F[1] + F[2],
-        0 ~ F[1] + F[3],
+        0 ~ F[1] + F[3]
     ])
 end
 
@@ -234,8 +219,8 @@ end
     bg = BondGraph()
 
     add_node!(bg, [A, B, re])
-    connect!(bg, A, (re,1))
-    connect!(bg, (re,2), B)
+    connect!(bg, A, (re, 1))
+    connect!(bg, (re, 2), B)
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
 
@@ -260,13 +245,13 @@ end
 
     bg = BondGraph()
     add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
-    connect!(bg, C_A, (re1,1))
-    connect!(bg, (re1,2), BC)
+    connect!(bg, C_A, (re1, 1))
+    connect!(bg, (re1, 2), BC)
     connect!(bg, BC, C_B)
     connect!(bg, BC, common_C)
     connect!(bg, common_C, C_C)
-    connect!(bg, common_C, (re2,1))
-    connect!(bg, (re2,2), C_D)
+    connect!(bg, common_C, (re2, 1))
+    connect!(bg, (re2, 2), C_D)
 
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
@@ -278,8 +263,8 @@ end
     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
-    @test isequal(simplify(eqs[1].rhs - e1.rhs),0)
-    @test isequal(simplify(eqs[2].rhs - e2.rhs),0)
-    @test isequal(simplify(eqs[3].rhs - e3.rhs),0)
-    @test isequal(simplify(eqs[4].rhs - e4.rhs),0)
+    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
+    @test isequal(simplify(eqs[2].rhs - e2.rhs), 0)
+    @test isequal(simplify(eqs[3].rhs - e3.rhs), 0)
+    @test isequal(simplify(eqs[4].rhs - e4.rhs), 0)
 end

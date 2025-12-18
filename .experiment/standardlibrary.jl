@@ -13,12 +13,10 @@ const Effort = ModelingToolkit.Equality
         N = 1
     end
     @variables begin
-        e(t)[1:N] = 0., [connect = Effort]
-        f(t)[1:N] = 0., [connect = Flow]
+        e(t)[1:N] = 0.0, [connect = Effort]
+        f(t)[1:N] = 0.0, [connect = Flow]
     end
 end
-
-@named ps = PowerPort(N=2)
 
 ############################################################
 
@@ -27,11 +25,11 @@ end
         N = 1
     end
     @variables begin
-        e(t)[1:N] = 0., [connect = Effort]
-        f(t)[1:N] = 0., [connect = Flow]
+        e(t)[1:N] = 0.0, [connect = Effort]
+        f(t)[1:N] = 0.0, [connect = Flow]
     end
 end
-@named pv = PowerVars(N=1)
+@named pv = PowerVars(N = 1)
 
 @mtkmodel StaticStorage begin
     @description "Static Storage Element"
@@ -43,20 +41,13 @@ end
         C
     end
     @variables begin
-        q(t)[1:N] = 0.
+        q(t)[1:N] = 0.0
     end
     @equations begin
         D(q) ~ f
         phi(e, q, C)
     end
 end
-
-@named ss = StaticStorage(N=2, C=3)
-equations(ss)
-
-phi2 = (e, q, C) -> q ~ C * e.^2
-@named ss2 = StaticStorage(N=1, C=3, phi=phi2)
-equations(ss2) .|> scalarize
 
 ############################################################
 # Electrical
@@ -137,12 +128,12 @@ end
     end
 end
 
-@named cap = Capacitor(C=1.0)
-@named res = Resistor(R=2.0)
-@named ind = Inductor(L=3.0)
+@named cap = Capacitor(C = 1.0)
+@named res = Resistor(R = 2.0)
+@named ind = Inductor(L = 3.0)
 
-@named esrc = EffortSource(E=5.0)
-@named fsrc = FlowSource(F=2.0)
+@named esrc = EffortSource(E = 5.0)
+@named fsrc = FlowSource(F = 2.0)
 
 ############################################################
 # Junctions
@@ -204,12 +195,11 @@ end
     end
 end
 
+@named tfmr = Transformer(n = 3.0)
+@named gyr = Gyrator(r = 4.0)
 
-@named tfmr = Transformer(n=3.0)
-@named gyr = Gyrator(r=4.0)
-
-@named zjunc = ZeroJunction(N=4)
-@named ojunc = OneJunction(N=10)
+@named zjunc = ZeroJunction(N = 4)
+@named ojunc = OneJunction(N = 10)
 equations(zjunc)
 equations(ojunc)
 
@@ -288,8 +278,8 @@ end
     end
 end
 
-@named ce = ChemicalSpecies(K=2.0)
-@named re = Reaction(r=0.5)
-@named se = ChemicalSource(X=1.0)
+@named ce = ChemicalSpecies(K = 2.0)
+@named re = Reaction(r = 0.5)
+@named se = ChemicalSource(X = 1.0)
 
 end

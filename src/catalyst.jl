@@ -8,8 +8,8 @@ Convert a Catalyst.ReactionSystem into a BondGraph.
 `chemostats` are chemical species with fixed concentrations. In bond graph terms, these are
 "SCe" types (chemical energy sources) instead of "Ce" types (chemical energy store).
 """
-function BondGraph(rs::ReactionSystem; chemostats=[])
-    bg = BondGraph(rs.name)
+function BondGraph(rs::ReactionSystem; chemostats = [])
+    bg = BondGraph(nameof(rs))
 
     re_num = Ref(1)
     tf_num = Ref(1)
@@ -17,15 +17,31 @@ function BondGraph(rs::ReactionSystem; chemostats=[])
     # Create disjoint reaction bondgraphs for each reaction in network
     all_reactions = reactions(rs)
     for (i, reaction) in enumerate(all_reactions)
-        if i > 1 && _is_reverse_off_previous(reaction, all_reactions[i-1])
+        if i > 1 && _is_reverse_off_previous(reaction, all_reactions[i - 1])
             # Skip the second reaction
             continue
         end
 
         Re = Component(:Re, Symbol("R$(re_num[])"))
         add_node!(bg, Re)
-        _half_equation!(bg, reaction.substrates, reaction.substoich, Re, chemostats, tf_num, port=(Re,1))
-        _half_equation!(bg, reaction.products, reaction.prodstoich, Re, chemostats, tf_num, port=(Re,2))
+        _half_equation!(
+            bg,
+            reaction.substrates,
+            reaction.substoich,
+            Re,
+            chemostats,
+            tf_num,
+            port = (Re, 1)
+        )
+        _half_equation!(
+            bg,
+            reaction.products,
+            reaction.prodstoich,
+            Re,
+            chemostats,
+            tf_num,
+            port = (Re, 2)
+        )
 
         re_num[] += 1
     end
@@ -45,9 +61,11 @@ end
 
 # If this reaction is an exact reverse of the previous reaction,
 # then together they form a bi-directional reaction pair.
-_is_reverse_off_previous(r1, r2) = Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
+function _is_reverse_off_previous(r1, r2)
+    Set(r1.substrates) == Set(r2.products) && Set(r2.substrates) == Set(r1.products)
+end
 
-function _half_equation!(bg, species, stoich, Re, chemostats, tf_num; port=Re)
+function _half_equation!(bg, species, stoich, Re, chemostats, tf_num; port = Re)
     species_names = _stringify_species.(species)
 
     if length(species) > 1
@@ -55,7 +73,8 @@ function _half_equation!(bg, species, stoich, Re, chemostats, tf_num; port=Re)
         add_node!(bg, one_junction)
 
         for (i, spcs) in enumerate(species_names)
-            comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
+            comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) :
+                   Component(:Ce, Symbol(spcs))
             add_node!(bg, comp)
             connect!(bg, comp, one_junction)
 
@@ -66,7 +85,8 @@ function _half_equation!(bg, species, stoich, Re, chemostats, tf_num; port=Re)
         connect!(bg, one_junction, port)
     else
         spcs = species_names[1]
-        comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) : Component(:Ce, Symbol(spcs))
+        comp = spcs in chemostats ? Component(:SCe, Symbol(spcs)) :
+               Component(:Ce, Symbol(spcs))
         add_node!(bg, comp)
         connect!(bg, comp, port)
 
@@ -76,7 +96,7 @@ function _half_equation!(bg, species, stoich, Re, chemostats, tf_num; port=Re)
 end
 
 # removes "(t)" from the end of the species name
-_stringify_species(species) = string(species)[1:end-3]
+_stringify_species(species) = string(species)[1:(end - 3)]
 
 function _insert_tf!(bg, node1, node2, n, tf_num)
     tf = Component(:TF, "tf$(tf_num[])"; n)

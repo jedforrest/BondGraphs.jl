@@ -15,7 +15,7 @@ r = DissipatorElement(res)
 # C: e <=> q
 c = StaticStorageElement(cap)
 
-System(equations(r), t, name=:r)
+System(equations(r), t, name = :r)
 
 @named rcomp = Component(r)
 @named ccomp = Component(c)
@@ -34,7 +34,7 @@ system(ccomp)
 sys0 = system(zcomp)
 equations(expand_connections(sys0))
 
-bgsys = system(bg; simplify=false)
+bgsys = system(bg; simplify = false)
 hierarchy(bgsys)
 
 sys2 = structural_simplify(bgsys)  # will become mtkcompile in later update
@@ -46,7 +46,8 @@ full_equations(sys2)
 ModelingToolkit.iscomplete(sys2)
 
 #############
-prob = ODEProblem(sys2, [sys2.ccomp.q => 5], (0., 10.), [sys2.rcomp.R => 2, sys2.ccomp.C => 1])
+prob = ODEProblem(sys2, [sys2.ccomp.q => 5], (0.0, 10.0), [
+    sys2.rcomp.R => 2, sys2.ccomp.C => 1])
 prob.ps
 sol = solve(prob, Tsit5())
 plot(sol)
@@ -66,6 +67,6 @@ b3 = Bond(fcomp, zcomp)
 bg2 = BondGraph("RCA Circuit", [rcomp, ccomp, zcomp, fcomp], [b1, b2, b3])
 graphplot(bg2)
 
-bg2_sys = system(bg2; simplify=true)
+bg2_sys = system(bg2; simplify = true)
 
 full_equations(bg2_sys)

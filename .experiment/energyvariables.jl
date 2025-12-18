@@ -11,7 +11,8 @@ struct EnergyVariables
     p::Num
     q::Num
 end
-function EnergyVariables(e::Symbol=:e, f::Symbol=:f, p::Symbol=:p, q::Symbol=:q; subscript=nothing)
+function EnergyVariables(
+        e::Symbol = :e, f::Symbol = :f, p::Symbol = :p, q::Symbol = :q; subscript = nothing)
     if !isnothing(subscript)
         e = Symbol("$(e)_$subscript")
         f = Symbol("$(f)_$subscript")
@@ -30,7 +31,6 @@ position(ev::EnergyVariables) = ev.q
 show(io::IO, ev::EnergyVariables) = print(io, "<$(ev.e),$(ev.f)>")
 
 equations(ev::EnergyVariables) = [D(ev.p) ~ ev.e, D(ev.q) ~ ev.f]
-
 
 ###
 ev = EnergyVariables(:u, :v)

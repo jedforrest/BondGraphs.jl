@@ -34,7 +34,8 @@ getstates(sys::ODESystem) = [x for x in unknowns(sys) if !hasconnect(x)]
 function check_num_ports(efforts, flows)
     numports = length(efforts)
     numports >= 1 || error("Must have at least 1 port ($numports)")
-    (numports == length(flows)) || error("Number of efforts and flows don't match ($numports)")
+    (numports == length(flows)) ||
+        error("Number of efforts and flows don't match ($numports)")
     return nothing
 end
 
@@ -53,10 +54,6 @@ struct DissipatorElement <: BondElement
         new(eqs, efforts, flows)
     end
 end
-# function DissipatorElement(sys::ODESystem)
-#     DissipatorElement(equations(sys), getefforts(sys), getflows(sys))
-# end
-
 
 """`C` component"""
 struct StaticStorageElement <: StorageElement
@@ -69,10 +66,6 @@ struct StaticStorageElement <: StorageElement
         new(eqs, efforts, flows, states)
     end
 end
-# function StaticStorageElement(sys::ODESystem)
-#     StaticStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
-# end
-
 
 """`I` component"""
 struct DynamicStorageElement <: StorageElement
@@ -85,9 +78,6 @@ struct DynamicStorageElement <: StorageElement
         new(eqs, efforts, flows, states)
     end
 end
-# function DynamicStorageElement(sys::ODESystem)
-#     DynamicStorageElement(equations(sys), getefforts(sys), getflows(sys), getstates(sys))
-# end
 
 ############################################################
 """`Se` component"""
@@ -148,7 +138,8 @@ struct Transformer <: ParametricJunction
     flows::Vector
     function Transformer(eqs, efforts, flows)
         numports = length(efforts)
-        numports >= 2 || error("Transformer must have at least 2 ports ($numports ports given)")
+        numports >= 2 ||
+            error("Transformer must have at least 2 ports ($numports ports given)")
         new(eqs, efforts, flows)
     end
 end
@@ -211,8 +202,8 @@ glyph(::JunctionStructure) = :J
 glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
 
-show(io::IO, vertex::T) where {T<:BondGraphVertex} = print(io, "$T{$(numports(vertex))}")
-show(io::IO, ::T) where {T<:NonParametricJunction} = print(io, T)
+show(io::IO, vertex::T) where {T <: BondGraphVertex} = print(io, "$T{$(numports(vertex))}")
+show(io::IO, ::T) where {T <: NonParametricJunction} = print(io, T)
 
 ############################################################
 struct Port
@@ -227,7 +218,9 @@ end
 Port(sys::ODESystem, parentname::Symbol) = Port(sys.name, sys, parentname)
 
 name(p::Port) = p.name
-system(p::Port; namespaced=true) = namespaced ? ModelingToolkit.renamespace(p.parentname, p.sys) : p.sys
+function system(p::Port; namespaced = true)
+    namespaced ? ModelingToolkit.renamespace(p.parentname, p.sys) : p.sys
+end
 parent(p::Port) = p.parentname
 
 ##############################
@@ -241,7 +234,7 @@ end
 
 ############################################################
 # Components now define BG elements and junction structures (may rename)
-struct Component{T<:BondGraphVertex}
+struct Component{T <: BondGraphVertex}
     element::T  # aka component subtype
     name::Symbol
     sys::ODESystem
@@ -267,13 +260,13 @@ function to_system(element::BondElement; name::Symbol)
     port_connection_eqs = Equation[]
     for (i, (e, f)) in enumerate(zip(element.efforts, element.flows))
         # create N port "systems" and extend the user-given MTK System
-        port = PowerPort(name=Symbol("port_", i))
+        port = PowerPort(name = Symbol("port_", i))
         sys = compose(sys, port)
 
         # add effort/flow connections to newly added port variables (assuming efforts and flows are in the desired order)
         append!(port_connection_eqs, [e ~ port.e, f ~ port.f])
     end
-    port_eqs_sys = System(port_connection_eqs, t; name=sys.name)
+    port_eqs_sys = System(port_connection_eqs, t; name = sys.name)
 
     return extend(port_eqs_sys, sys)
 end
@@ -290,7 +283,9 @@ end
 ############################################################
 elementtype(::Component{V}) where {V} = V
 
-show(io::IO, comp::Component{<:BondElement}) = print(io, "$(glyph(comp.element))::$(comp.name)")
+function show(io::IO, comp::Component{<:BondElement})
+    print(io, "$(glyph(comp.element))::$(comp.name)")
+end
 show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.element))")
 
 ##############################
@@ -304,13 +299,13 @@ function system(junc::Component{<:NonParametricJunction})
     isempty(junc.ports) && return basesys
 
     # base system without internal connection equations
-    portsys = system.(junc.ports, namespaced=false)
+    portsys = system.(junc.ports, namespaced = false)
     sys = compose(basesys, portsys)
 
     # create effort and flow conservation laws
     effort_eqs = junc.element.effort_fn(getefforts(sys))
     flow_eqs = junc.element.flow_fn(getflows(sys))
-    extend(System([effort_eqs; flow_eqs], t; name=sys.name), sys)
+    extend(System([effort_eqs; flow_eqs], t; name = sys.name), sys)
 end
 
 ##############################
@@ -336,7 +331,7 @@ function nextfreeport(junc::Component{<:NonParametricJunction})
     # 0- and 1- junctions have unlimited ports
     # so create a new port if trying to connect
     index = length(junc.ports) + 1
-    portsys = PowerPort(; name=Symbol("port_$index"))
+    portsys = PowerPort(; name = Symbol("port_$index"))
     port = Port(portsys, junc.name)
     push!(junc.ports, port) # add new port to junction
     port
@@ -385,7 +380,7 @@ struct BondGraph
     elements::Vector{Component}
     junctions::Vector{Component}
     bonds::Vector{Bond}
-    function BondGraph(name, elements=[], junctions=[], bonds=[])
+    function BondGraph(name, elements = [], junctions = [], bonds = [])
         new(Symbol(name), elements, junctions, bonds)
     end
 end
@@ -406,12 +401,12 @@ end
 components(bg::BondGraph) = [bg.elements; bg.junctions]
 
 # MTK System converter
-function system(bg::BondGraph; simplify=true)
+function system(bg::BondGraph; simplify = true)
     comps = components(bg)
     subsyss = system.(comps)
 
     conn_eqns = connection_equation.(bg.bonds)
-    basesys = System(conn_eqns, t, name=bg.name)
+    basesys = System(conn_eqns, t, name = bg.name)
 
     sys = compose(basesys, subsyss...)
     simplify ? structural_simplify(sys) : sys
@@ -423,11 +418,10 @@ end
 function graph(bg::BondGraph)
     bg_graph = MetaGraph(
         DiGraph();
-        label_type=Symbol,
-        vertex_data_type=Component,
-        edge_data_type=Bond,
-        graph_data=string(bg.name),
-        # optional: add weight function and default weight
+        label_type = Symbol,
+        vertex_data_type = Component,
+        edge_data_type = Bond,
+        graph_data = string(bg.name)        # optional: add weight function and default weight
     )
     for comp in components(bg)
         bg_graph[comp.name] = comp

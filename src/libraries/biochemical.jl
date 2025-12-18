@@ -31,21 +31,11 @@ Ce_dict = Dict(
       """,
     :numports => 1,
     :variables => Dict(
-        :parameters => Dict(
-            K => 1.0
-        ),
-        :globals => Dict(
-            R => _R,
-            T => _T
-        ),
-        :states => Dict(
-            q => 0.0
-        ),
+        :parameters => Dict(K => 1.0),
+        :globals => Dict(R => _R, T => _T),
+        :states => Dict(q => 0.0)
     ),
-    :equations => [
-        0 ~ R * T * log(K * q) - E[1],
-        D(q) ~ F[1]
-    ],
+    :equations => [0 ~ R * T * log(K * q) - E[1], D(q) ~ F[1]]
 )
 
 # Normalised chemical species (ce)
@@ -60,18 +50,8 @@ ce_dict = Dict(
       q: Molar quantity [0.0]
       """,
     :numports => 1,
-    :variables => Dict(
-        :parameters => Dict(
-            K => 1.0
-        ),
-        :states => Dict(
-            q => 0.0
-        ),
-    ),
-    :equations => [
-        0 ~ log(K * q) - E[1],
-        D(q) ~ F[1]
-    ],
+    :variables => Dict(:parameters => Dict(K => 1.0), :states => Dict(q => 0.0)),
+    :equations => [0 ~ log(K * q) - E[1], D(q) ~ F[1]]
 )
 
 # Chemical reaction (:Re)
@@ -86,19 +66,8 @@ Re_dict = Dict(
     T: Temperature [310]
     """,
     :numports => 2,
-    :variables => Dict(
-        :parameters => Dict(
-            r => 1.0
-        ),
-        :globals => Dict(
-            R => _R,
-            T => _T
-        ),
-    ),
-    :equations => [
-        0 ~ F[1] + F[2],
-        0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))
-    ],
+    :variables => Dict(:parameters => Dict(r => 1.0), :globals => Dict(R => _R, T => _T)),
+    :equations => [0 ~ F[1] + F[2], 0 ~ F[1] - r * (exp(E[1] / R / T) - exp(E[2] / R / T))]
 )
 
 # Normalised chemical reaction (re)
@@ -111,15 +80,8 @@ re_dict = Dict(
       r: Reaction rate [1.0]
       """,
     :numports => 2,
-    :variables => Dict(
-        :parameters => Dict(
-            r => 1.0
-        ),
-    ),
-    :equations => [
-        0 ~ F[1] + F[2],
-        0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))
-    ],
+    :variables => Dict(:parameters => Dict(r => 1.0)),
+    :equations => [0 ~ F[1] + F[2], 0 ~ F[1] - r * (exp(E[1]) - exp(E[2]))]
 )
 
 # Source of (chemical) effort (:SCe)
@@ -136,28 +98,14 @@ SCe_dict = Dict(
       """,
     :numports => 1,
     :variables => Dict(
-        :parameters => Dict(
-            K => 1.0
-        ),
-        :globals => Dict(
-            R => _R,
-            T => _T
-        ),
-        :controls => Dict(
-            xs => (t -> 1.0)
-        ),
+        :parameters => Dict(K => 1.0),
+        :globals => Dict(R => _R, T => _T),
+        :controls => Dict(xs => (t -> 1.0))
     ),
-    :equations => [
-        0 ~ R * T * log(K * xs) - E[1],
-    ],
+    :equations => [0 ~ R * T * log(K * xs) - E[1]]
 )
 
 const biochemical_library = Dict(
-    :Ce => Ce_dict,
-    :ce => ce_dict,
-    :Re => Re_dict,
-    :re => re_dict,
-    :SCe => SCe_dict
-)
+    :Ce => Ce_dict, :ce => ce_dict, :Re => Re_dict, :re => re_dict, :SCe => SCe_dict)
 
 end
