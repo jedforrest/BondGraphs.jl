@@ -128,9 +128,9 @@ end
     (L, Ca, Cb) = (sys.L.p, sys.Ca.q, sys.Cb.q)
 
     @test (sol[Ca, 1] == 1) && (sol[Cb, 1] == 2) && (sol[L, 1] == 1)
-    @test isapprox(sol[Ca][end], 1.0, atol = 1e-5)
-    @test isapprox(sol[Cb][end], 0.5, atol = 1e-5)
-    @test isapprox(sol[L][end], 0.5, atol = 1e-5)
+    @test isapprox(sol[Ca, end], 1.0, atol = 1e-5)
+    @test isapprox(sol[Cb, end], 0.5, atol = 1e-5)
+    @test isapprox(sol[L, end], 0.5, atol = 1e-5)
 end
 
 @testitem "Simulate modular BG" setup=[Setup] begin
@@ -217,16 +217,16 @@ end
     (A, B, C) = (sys.A.q, sys.B.q, sys.C.q)
 
     sol = simulate(bg_abc, (0.0, 3.0); u0 = [A=>1, B=>2, C=>3])
-    @test isapprox(sol[A][end], 1.23606, atol = 1e-5)
-    @test isapprox(sol[B][end], 2.23606, atol = 1e-5)
-    @test isapprox(sol[C][end], 2.76393, atol = 1e-5)
+    @test isapprox(sol[A, end], 1.23606, atol = 1e-5)
+    @test isapprox(sol[B, end], 2.23606, atol = 1e-5)
+    @test isapprox(sol[C, end], 2.76393, atol = 1e-5)
 
     # Concentrations cannot be -ve in reality (u0 = -1)
     # This is testing whether simplification worked to remove all log(x)
     sol = simulate(bg_abc, (0.0, 3.0); u0 = [A=>-1, B=>2, C=>3])
-    @test isapprox(sol[A][end], 0.44949, atol = 1e-5)
-    @test isapprox(sol[B][end], 3.44949, atol = 1e-5)
-    @test isapprox(sol[C][end], 1.55051, atol = 1e-5)
+    @test isapprox(sol[A, end], 0.44949, atol = 1e-5)
+    @test isapprox(sol[B, end], 3.44949, atol = 1e-5)
+    @test isapprox(sol[C, end], 1.55051, atol = 1e-5)
 end
 
 @testitem "Stoichiometry Simulation" setup=[Setup] begin
@@ -256,8 +256,8 @@ end
     (E, C) = (sys.E.q, sys.C.q)
 
     sol = simulate(bg_mm, (0.0, 3.0); u0 = [E=>1, C=>2])
-    @test isapprox(sol[E][end], 1.2, atol = 1e-5)
-    @test isapprox(sol[C][end], 1.8, atol = 1e-5)
+    @test isapprox(sol[E, end], 1.2, atol = 1e-5)
+    @test isapprox(sol[C, end], 1.8, atol = 1e-5)
 end
 
 @testitem "SERCA (stiff equations)" setup=[Setup] begin
@@ -357,12 +357,6 @@ end
     )
 
     for (var, real_sol) in real_solution
-        @test isapprox(sol[var][end], real_sol, atol = 1e-5)
-        # @show var
-        # @show sol[var, end]
-        # @show real_sol
-        # test = isapprox(sol[var,end], real_sol, atol=1e-5)
-        # @show test
-        # println()
+        @test isapprox(sol[var, end], real_sol, atol = 1e-5)
     end
 end

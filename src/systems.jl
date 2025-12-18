@@ -205,5 +205,5 @@ function simulate(bg::BondGraph, tspan; u0 = [], pmap = [], solver = nothing, kw
     use_union = has_controls(bg)
 
     prob = ODEProblem(sys, u0, tspan, pmap; use_union, kwargs...)
-    return solve(prob, solver; kwargshandle = KeywordArgSilent)
+    return solve(prob, solver)
 end
