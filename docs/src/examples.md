@@ -1,7 +1,5 @@
 # Examples
 
-Interactive Jupyter Notebook versions of these tutorials can be found on [GitHub](https://github.com/jedforrest/BondGraphsTutorials).
-
 ```julia
 using BondGraphs
 using Catalyst

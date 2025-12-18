@@ -1,4 +1,5 @@
 [deps]
+BondGraphs = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
