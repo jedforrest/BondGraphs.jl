@@ -3,55 +3,53 @@ eltype(::Type{BondGraph}) = AbstractNode
 eltype(::BondGraph) = AbstractNode
 
 # edgetype
-g.edgetype(::Type{BondGraph}) = g.AbstractSimpleEdge{Integer}
-g.edgetype(::BondGraph) = g.AbstractSimpleEdge{Integer}
+edgetype(::Type{BondGraph}) = Graphs.AbstractSimpleEdge{Int}
+edgetype(::BondGraph) = Graphs.AbstractSimpleEdge{Int}
 
 # edges
-g.edges(bg::BondGraph) = bg.bonds
-g.ne(bg::BondGraph) = length(bg.bonds)
-g.has_edge(bg::BondGraph, bond::Bond) =  any(b -> b === bond, bg.bonds) # strong equality
-g.has_edge(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = g.has_edge(bg, vertex(n1), vertex(n2))
-g.has_edge(bg::BondGraph, s::Int, d::Int) =
-    any(b -> g.src(b) === s && g.dst(b) === d, bg.bonds)
+edges(bg::BondGraph) = bg.bonds
+ne(bg::BondGraph) = length(bg.bonds)
+has_edge(bg::BondGraph, bond::Bond) = any(b -> b === bond, bg.bonds) # strong equality
+function has_edge(bg::BondGraph, n1::AbstractNode, n2::AbstractNode)
+    has_edge(bg, vertex(n1), vertex(n2))
+end
+has_edge(bg::BondGraph, s::Int, d::Int) = any(b -> src(b) === s && dst(b) === d, bg.bonds)
 
 # vertices
-g.vertices(bg::BondGraph) = vertex.(bg.nodes)
-g.nv(bg::BondGraph) = length(bg.nodes)
-g.has_vertex(bg::BondGraph, node::AbstractNode) = any(n -> n === node, bg.nodes) # strong equality
-g.has_vertex(bg::BondGraph, v::Int) = 1 <= v <= length(bg.nodes)
+vertices(bg::BondGraph) = vertex.(bg.nodes)
+nv(bg::BondGraph) = length(bg.nodes)
+has_vertex(bg::BondGraph, node::AbstractNode) = any(n -> n === node, bg.nodes) # strong equality
+has_vertex(bg::BondGraph, v::Int) = 1 <= v <= length(bg.nodes)
 
 # inneighbors, outneighbors
-g.inneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[g.inneighbors(bg, vertex(n))]
-g.inneighbors(bg::BondGraph, v::Int) = [g.src(b) for b in bg.bonds if g.dst(b) == v]
-g.outneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[g.outneighbors(bg, vertex(n))]
-g.outneighbors(bg::BondGraph, v::Int) = [g.dst(b) for b in bg.bonds if g.src(b) == v]
-g.all_neighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[g.all_neighbors(bg, vertex(n))]
+inneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[inneighbors(bg, vertex(n))]
+inneighbors(bg::BondGraph, v::Int) = [src(b) for b in bg.bonds if dst(b) == v]
+outneighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[outneighbors(bg, vertex(n))]
+outneighbors(bg::BondGraph, v::Int) = [dst(b) for b in bg.bonds if src(b) == v]
+all_neighbors(bg::BondGraph, n::AbstractNode) = bg.nodes[all_neighbors(bg, vertex(n))]
 
 # is_directed
-g.is_directed(::Type{BondGraph}) = true
-g.is_directed(::BondGraph) = true
+is_directed(::Type{BondGraph}) = true
+is_directed(::BondGraph) = true
 
 # zero
-g.zero(::Type{BondGraph}) = BondGraph()
-g.zero(::BondGraph) = BondGraph()
+zero(::Type{BondGraph}) = BondGraph()
+zero(::BondGraph) = BondGraph()
 
 # src, dst
-g.src(b::Bond) = vertex(srcnode(b))
-g.dst(b::Bond) = vertex(dstnode(b))
-
-# weights
-# TODO
+src(b::Bond) = vertex(srcnode(b))
+dst(b::Bond) = vertex(dstnode(b))
 
 # Mutations
-function g.add_vertex!(bg::BondGraph, node::AbstractNode)
-    g.has_vertex(bg, node) && return false
+function add_vertex!(bg::BondGraph, node::AbstractNode)
+    has_vertex(bg, node) && return false
     push!(bg.nodes, node)
-    set_vertex!(node, g.nv(bg))
+    set_vertex!(node, nv(bg))
     return true
 end
 
-function g.rem_vertex!(bg::BondGraph, node::AbstractNode)
-    g.has_vertex(bg, node) || return false
+function rem_vertex!(bg::BondGraph, node::AbstractNode)
+    has_vertex(bg, node) || return false
     index = vertex(node)
     deleteat!(bg.nodes, index)
     for n in bg.nodes[index:end]
@@ -60,7 +58,7 @@ function g.rem_vertex!(bg::BondGraph, node::AbstractNode)
     return true
 end
 
-function g.add_edge!(bg::BondGraph, srctuple, dsttuple)
+function add_edge!(bg::BondGraph, srctuple, dsttuple)
     new_bond = Bond(srctuple, dsttuple)
     push!(bg.bonds, new_bond)
 
@@ -73,7 +71,7 @@ function g.add_edge!(bg::BondGraph, srctuple, dsttuple)
     return new_bond
 end
 
-function g.rem_edge!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
+function rem_edge!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
     index = findfirst(b -> node1 in b && node2 in b, bg.bonds)
     isnothing(index) && return false # already disconnected
 

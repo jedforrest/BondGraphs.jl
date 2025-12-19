@@ -23,4 +23,4 @@ using BondGraphs
 ```
 
 ## Tutorials
-For tutorials and examples, refer to the [Examples](@ref) page. For interactive Jupyter Notebook tutorials, refer to [BondGraphsTutorials](https://github.com/jedforrest/BondGraphsTutorials) on GitHub.
+For tutorials and examples, refer to the [Examples](@ref) page.

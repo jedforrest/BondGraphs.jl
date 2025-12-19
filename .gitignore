@@ -26,6 +26,7 @@ Manifest.toml
 # Author added folders and files
 /misc
 temp/
-
+.experiment/
+.DS_Store
 LocalPreferences.toml
-.vscode/settings.json
+.vscode

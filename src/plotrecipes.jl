@@ -1,5 +1,5 @@
 # Plots.jl backend
-@recipe function plot(bg::BondGraph, showtype=false)
+@recipe function plot(bg::BondGraph, showtype = false)
     allnodes = nodes(bg)
 
     # Default attributes
@@ -15,7 +15,7 @@
     GraphRecipes.GraphPlot([bg])
 end
 
-@recipe function plot(bgn::BondGraphNode, showtype=false)
+@recipe function plot(bgn::BondGraphNode, showtype = false)
     bg = bgn.bondgraph
     allnodes = nodes(bg)
 
@@ -46,7 +46,7 @@ function nodecolour(node)
     end
 end
 
-function nodelabel(node, showtype=false)
+function nodelabel(node, showtype = false)
     if node isa EqualEffort
         "0"
     elseif node isa EqualFlow
@@ -57,17 +57,25 @@ function nodelabel(node, showtype=false)
 end
 
 # Makie/GraphMakie backend
-function GraphMakie.graphplot(bg::BondGraph; interactions=true, ongrid=false, showtype=false, kwargs...)
+function GraphMakie.graphplot(
+        bg::BondGraph;
+        interactions = true,
+        ongrid = false,
+        showtype = false,
+        kwargs...
+)
     allnodes = nodes(bg)
-    nodesize = 50 .* [n isa Junction ? 0.75 : 1. for n in allnodes]
+    nodesize = 50 .* [n isa Junction ? 0.75 : 1.0 for n in allnodes]
 
-    fig, ax, p = GraphMakie.graphplot(g.SimpleDiGraph(bg);
-        layout=Stress(),
+    fig, ax,
+    p = GraphMakie.graphplot(
+        SimpleDiGraph(bg);
+        layout = Stress(),
         arrow_shift = :end,
         node_size = nodesize,
         node_color = nodecolour.(allnodes),
         nlabels = nodelabel.(allnodes, showtype),
-        nlabels_align=(:center, :center),
+        nlabels_align = (:center, :center),
         kwargs...
     )
 
@@ -75,7 +83,7 @@ function GraphMakie.graphplot(bg::BondGraph; interactions=true, ongrid=false, sh
         rounded_pos = []
         # try rounding to nearest 0, 0.5, or 0.25 successively
         for digits in 0:2
-            rounded_pos = [round.(pts; base=2, digits) for pts in p.node_pos[]]
+            rounded_pos = [round.(pts; base = 2, digits) for pts in p.node_pos[]]
             allunique(rounded_pos) && break
         end
         # layout must be a function with one argument

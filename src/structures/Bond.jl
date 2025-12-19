@@ -8,7 +8,7 @@ be created between the next available ports in each component.
 
 In most cases it is better to use [`connect!`](@ref) instead.
 """
-struct Bond <: g.AbstractSimpleEdge{Int}
+struct Bond <: Graphs.AbstractSimpleEdge{Int}
     src::Tuple{AbstractNode, Any}
     dst::Tuple{AbstractNode, Any}
 end
@@ -29,4 +29,6 @@ in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
 
-show(io::IO, b::Bond) = print(io, "Bond $(b.src[1])[$(b.src[2])] ⇀ $(b.dst[1])[$(b.dst[2])]")
+function show(io::IO, b::Bond)
+    print(io, "Bond $(b.src[1])[$(b.src[2])] ⇀ $(b.dst[1])[$(b.dst[2])]")
+end

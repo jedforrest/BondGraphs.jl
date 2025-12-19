@@ -14,27 +14,35 @@ graph type. Other properties and equations of available components are defined i
 struct Component{N} <: AbstractNode
     type::AbstractString
     name::AbstractString
-    ports::OrderedDict{Any,Bool}
+    ports::OrderedDict{Any, Bool}
     vertex::RefValue{Int}
-    variables::Dict{Symbol,Dict{Num,Any}}
+    variables::Dict{Symbol, Dict{Num, Any}}
     equations::Vector{Equation}
     function Component{N}(t, n, vx, vars, eq) where {N}
-        ports = Dict(i => false for i in 1:N)
+        ports = OrderedDict(i => false for i in 1:N)
         new(string(t), string(n), ports, Ref(vx), vars, eq)
     end
 end
 
-function Component(type, name=type;
-    vertex::Int=0,
-    library=BondGraphs.DEFAULT_LIBRARY,
-    comp_dict=_get_comp_default(library, type),
-    numports::Int=_get_comp_default(comp_dict, :numports, 1),
-    vars=_get_comp_default(comp_dict, :variables),
-    equations=_get_comp_default(comp_dict, :equations, Equation[]),
-    kwargs...)
+function Component(
+        type,
+        name = type;
+        vertex::Int = 0,
+        library = BondGraphs.DEFAULT_LIBRARY,
+        comp_dict = _get_comp_default(library, type),
+        numports::Int = _get_comp_default(comp_dict, :numports, 1),
+        vars = _get_comp_default(comp_dict, :variables),
+        equations = _get_comp_default(comp_dict, :equations, Equation[]),
+        kwargs...
+)
 
     # add default empty dicts to variables dict
-    vars_empty = Dict(:parameters => Dict(), :globals => Dict(), :states => Dict(), :controls => Dict())
+    vars_empty = Dict(
+        :parameters => Dict(),
+        :globals => Dict(),
+        :states => Dict(),
+        :controls => Dict()
+    )
     vars = deepcopy(merge(vars_empty, vars))
 
     # Actual construction of the component
@@ -48,7 +56,7 @@ function Component(type, name=type;
     comp
 end
 
-_get_comp_default(D, key, default=Dict()) = haskey(D, key) ? D[key] : default
+_get_comp_default(D, key, default = Dict()) = haskey(D, key) ? D[key] : default
 
 """
     SourceSensor <: AbstractNode
@@ -58,13 +66,12 @@ as external ports for [`BondGraphNode`](@ref)s.
 """
 struct SourceSensor <: AbstractNode
     name::AbstractString
-    ports::Dict{Any,Bool} # might be redundant
+    ports::Dict{Any, Bool} # might be redundant
     vertex::RefValue{Int}
-    function SourceSensor(; name="SS", v::Int=0)
+    function SourceSensor(; name = "SS", v::Int = 0)
         new(string(name), Dict(1 => false), Ref(v))
     end
 end
-
 
 # JUNCTION
 abstract type Junction <: AbstractNode end
@@ -78,7 +85,7 @@ struct EqualEffort <: Junction
     name::AbstractString
     ports::Vector{Int} # port number => weight (+1 or -1)
     vertex::RefValue{Int}
-    function EqualEffort(; name="𝟎", v::Int=0)
+    function EqualEffort(; name = "𝟎", v::Int = 0)
         new(string(name), [0], Ref(v))
     end
 end
@@ -92,11 +99,10 @@ struct EqualFlow <: Junction
     name::AbstractString
     ports::Vector{Int} # port number => weight (+1 or -1)
     vertex::RefValue{Int}
-    function EqualFlow(; name="𝟏", v::Int=0)
+    function EqualFlow(; name = "𝟏", v::Int = 0)
         new(string(name), [0], Ref(v))
     end
 end
-
 
 # PROPERTIES
 # Type
@@ -118,7 +124,7 @@ updateport!(n::AbstractNode, label) = ports(n)[label] = !ports(n)[label]
 updateport!(::Junction, ::Int) = nothing # override
 
 port_info(n::AbstractNode) = (n, nextfreeport(n))
-port_info(t::Tuple{AbstractNode,Any}) = t
+port_info(t::Tuple{AbstractNode, Any}) = t
 
 # ports renamed as ports to make purpose clearer
 @deprecate freeports(n::AbstractNode) ports(n::AbstractNode)

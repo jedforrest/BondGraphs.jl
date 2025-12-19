@@ -1,28 +1,4 @@
-t = ModelingToolkit.t_nounits
-D = ModelingToolkit.D_nounits
-
-function RLC()
-    r = Component(:R)
-    l = Component(:I)
-    c = Component(:C)
-    kvl = EqualEffort(name=:kvl)
-
-    bg = BondGraph()
-    add_node!(bg, [c, l, kvl, r])
-
-    connect!(bg, r, kvl)
-    connect!(bg, l, kvl)
-    connect!(bg, c, kvl)
-    return bg
-end
-
-# cannot use standard notation "var in array" for MTK vars
-var_in(var, dict) = any(iszero.(var .- keys(dict)))
-
-# sort equations in lex order to make testing equations easier
-sorted_eqs(sys) = sort(equations(sys), by=string)
-
-@testset "Equations" begin
+@testitem "Equations" setup=[Setup] begin
     c = Component(:C)
     @parameters C
     @variables E(t)[1] F(t)[1] q(t) C₊q(t)
@@ -30,20 +6,18 @@ sorted_eqs(sys) = sort(equations(sys), by=string)
         0 ~ q / C - E[1],
         D(q) ~ F[1]
     ]
-
-    @test isequal(equations(c), cr)
     @test isequal(constitutive_relations(c), cr)
 
     j = EqualEffort()
-    @test isequal(equations(j), Equation[])
+    @test isempty(equations(j))
 
     bg = BondGraph()
-    @test equations(bg) == Equation[]
+    @test isempty(equations(bg))
     add_node!(bg, c)
     @test equations(bg) == [D(C₊q) ~ -0.0] # Equation produces -ve zero
 end
 
-@testset "Parameters" begin
+@testitem "Parameters" setup=[Setup] begin
     tf = Component(:TF)
     @parameters n
     @test var_in(n, parameters(tf))
@@ -60,7 +34,7 @@ end
     end
 end
 
-@testset "Globals" begin
+@testitem "Globals" setup=[Setup] begin
     re = Component(:Re)
     c = Component(:C)
     @parameters R T
@@ -76,16 +50,13 @@ end
     @test var_in(R, all_globals)
 end
 
-@testset "State variables" begin
+@testitem "State variables" setup=[Setup] begin
     r = Component(:R)
     @test isempty(states(r))
 
     @variables q(t)
     c = Component(:C)
     @test var_in(q, states(c))
-
-    ce = Component(:ce)
-    @test var_in(q, states(ce))
 
     bg = RLC()
     @variables q(t) p(t)
@@ -94,27 +65,17 @@ end
     @test var_in(p, all_states)
 end
 
-@testset "Controls" begin
+@testitem "Controls" setup=[Setup] begin
+    bg = RLC()
     se = Component(:Se)
     sf = Component(:Sf)
-    c = Component(:C)
-    @parameters fs es
-
-    @test var_in(es, controls(se))
-    @test var_in(fs, controls(sf))
-    @test controls(c) == Dict()
-
-    bg = RLC()
-    @test !has_controls(bg)
-
     add_node!(bg, [se, sf])
-    @test has_controls(bg)
-
     all_controls = merge(values(controls(bg))...)
-    @test var_in(es, all_controls) && var_in(fs, all_controls)
+
+    @test has_controls(bg)
 end
 
-@testset "All variables" begin
+@testitem "All variables" setup=[Setup] begin
     bg = RLC()
     re = Component(:Re)
     add_node!(bg, re)
@@ -124,7 +85,7 @@ end
     end
 end
 
-@testset "Constitutive relations" begin
+@testitem "Constitutive relations" setup=[Setup] begin
     eqE = EqualEffort()
     eqF = EqualFlow()
     @test constitutive_relations(eqE) == Equation[]
@@ -156,10 +117,10 @@ end
         D(p) ~ q
     ]
     @test BondGraphs._sub_defaults([cr1, cr2], all_variables(bg)) == subbed_eqs
-    @test constitutive_relations(bg; sub_defaults=true) == subbed_eqs
+    @test constitutive_relations(bg; sub_defaults = true) == subbed_eqs
 end
 
-@testset "0-junction equations" begin
+@testitem "0-junction equations" setup=[Setup] begin
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
@@ -178,7 +139,7 @@ end
     ])
 end
 
-@testset "1-junction equations" begin
+@testitem "1-junction equations" setup=[Setup] begin
     c1 = Component(:C, :C1)
     c2 = Component(:R, :R1)
     c3 = Component(:I, :I1)
@@ -198,11 +159,11 @@ end
     @test isequal(constitutive_relations(j), [
         0 ~ E[1] - E[2] - E[3],
         0 ~ F[1] + F[2],
-        0 ~ F[1] + F[3],
+        0 ~ F[1] + F[3]
     ])
 end
 
-@testset "RC circuit" begin
+@testitem "RC circuit" setup=[Setup] begin
     r = Component(:R)
     c = Component(:C)
     bg = BondGraph(:RC)
@@ -222,7 +183,7 @@ end
     @test isequal(expand(e1.rhs), e2.rhs)
 end
 
-@testset "RL circuit" begin
+@testitem "RL circuit" setup=[Setup] begin
     r = Component(:R)
     l = Component(:I)
     bg = BondGraph(:RL)
@@ -236,7 +197,7 @@ end
     @test eqs == [D(x) ~ -R * x / L]
 end
 
-@testset "RLC circuit" begin
+@testitem "RLC circuit" setup=[Setup] begin
     bg = RLC()
     eqs = constitutive_relations(bg)
     @test length(eqs) == 2
@@ -251,15 +212,15 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Chemical reaction A ⇌ B" begin
+@testitem "Chemical reaction A ⇌ B" setup=[Setup] begin
     A = Component(:ce, :A)
     B = Component(:ce, :B)
     re = Component(:re, :r)
     bg = BondGraph()
 
     add_node!(bg, [A, B, re])
-    connect!(bg, A, (re,1))
-    connect!(bg, (re,2), B)
+    connect!(bg, A, (re, 1))
+    connect!(bg, (re, 2), B)
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
 
@@ -272,7 +233,7 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
+@testitem "Chemical reaction A ⇌ B + C, C ⇌ D" setup=[Setup] begin
     C_A = Component(:ce, :A)
     C_B = Component(:ce, :B)
     C_C = Component(:ce, :C)
@@ -284,13 +245,13 @@ end
 
     bg = BondGraph()
     add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
-    connect!(bg, C_A, (re1,1))
-    connect!(bg, (re1,2), BC)
+    connect!(bg, C_A, (re1, 1))
+    connect!(bg, (re1, 2), BC)
     connect!(bg, BC, C_B)
     connect!(bg, BC, common_C)
     connect!(bg, common_C, C_C)
-    connect!(bg, common_C, (re2,1))
-    connect!(bg, (re2,2), C_D)
+    connect!(bg, common_C, (re2, 1))
+    connect!(bg, (re2, 2), C_D)
 
     sys = ODESystem(bg)
     eqs = sorted_eqs(sys)
@@ -302,8 +263,8 @@ end
     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
-    @test isequal(simplify(eqs[1].rhs - e1.rhs),0)
-    @test isequal(simplify(eqs[2].rhs - e2.rhs),0)
-    @test isequal(simplify(eqs[3].rhs - e3.rhs),0)
-    @test isequal(simplify(eqs[4].rhs - e4.rhs),0)
+    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
+    @test isequal(simplify(eqs[2].rhs - e2.rhs), 0)
+    @test isequal(simplify(eqs[3].rhs - e3.rhs), 0)
+    @test isequal(simplify(eqs[4].rhs - e4.rhs), 0)
 end

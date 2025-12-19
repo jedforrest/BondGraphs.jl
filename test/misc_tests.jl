@@ -1,4 +1,4 @@
-@testset "Library Functions" begin
+@testitem "Library Functions" setup=[Setup] begin
     # Standard component
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :C)
     # Biochemical component
@@ -21,7 +21,7 @@
     delete!(BondGraphs.DEFAULT_LIBRARY, :A)
 end
 
-@testset "Graph Attributes" begin
+@testitem "Graph Attributes" setup=[Setup] begin
     nodes = [
         Component(:C),
         Component(:Re, "R1"),
@@ -35,7 +35,7 @@ end
     @test BondGraphs.nodelabel.(nodes) == ["C", "R1", "SS", "1", "0", "testBG"]
 end
 
-@testset "Plotting" begin
+@testitem "Plotting" setup=[Setup] begin
     # See catalyst_tests.jl
     rn = @reaction_network MM_reversible begin
         (1, 1), E + S <--> C
@@ -50,11 +50,3 @@ end
     @test attributes[:title] == "MM_reversible"
     @test attributes[:nodeshape] == :circle
 end
-
-# @testset "Latexify" begin
-#     bg = RLC()
-#     eq = equations(bg)
-#     ltx = repr("text/latex", eq)
-
-#     @test ltx == "\\begin{align}\n\\frac{dC_{+}q(t)}{dt} =& C_{+p1_{+}F}\\left( t \\right) \\\\\n\\frac{dI_{+}p(t)}{dt} =& R_{+p1_{+}E}\\left( t \\right)\n\\end{align}\n"
-# end

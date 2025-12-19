@@ -8,12 +8,12 @@ AbstractGraph type and so will work with
 
 See also [`BondGraphNode`](@ref).
 """
-struct BondGraph <: g.AbstractGraph{Int64}
+struct BondGraph <: AbstractGraph{Int}
     name::AbstractString
-    nodes::Vector{T} where {T<:AbstractNode}
+    nodes::Vector{<:AbstractNode}
     bonds::Vector{Bond}
 end
-function BondGraph(name="BG")
+function BondGraph(name = "BG")
     BondGraph(string(name), AbstractNode[], Bond[])
 end
 
@@ -39,7 +39,7 @@ controls(bg::BondGraph) = _nested_bg_variables(bg, controls)
 
 all_variables(bg::BondGraph) = _nested_bg_variables(bg, all_variables)
 
-function equations(bg::BondGraph; simplify_eqs=true)
+function equations(bg::BondGraph; simplify_eqs = true)
     isempty(bg.nodes) && return Equation[]
     sys = ODESystem(bg; simplify_eqs)
     return equations(sys)
@@ -59,8 +59,12 @@ Return all nodes a particular bond graph type in the bond graph `bg`.
 `type` can be a DataType (e.g. Component{1}), a string (e.g. "C"), or a vector of strings.
 """
 getnodes(bg::BondGraph, T::DataType) = filter(n -> n isa T, bg.nodes)
-getnodes(bg::BondGraph, t::AbstractString) = filter(n -> "$(type(n)):$(name(n))" == t, bg.nodes)
-getnodes(bg::BondGraph, ts::Vector{T} where T <: AbstractString) = vcat((getnodes(bg, t) for t in ts)...)
+function getnodes(bg::BondGraph, t::AbstractString)
+    filter(n -> "$(type(n)):$(name(n))" == t, bg.nodes)
+end
+function getnodes(bg::BondGraph, ts::Vector{T} where {T <: AbstractString})
+    vcat((getnodes(bg, t) for t in ts)...)
+end
 
 """
     getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode)
@@ -69,18 +73,21 @@ getnodes(bg::BondGraph, ts::Vector{T} where T <: AbstractString) = vcat((getnode
 Return the bond in `bg` connecting nodes `n1` and `n2`, if it exists.
 """
 getbonds(bg::BondGraph, t::Tuple) = getbonds(bg, t[1], t[2])
-getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode) = filter(b -> n1 in b && n2 in b, bg.bonds)
-
+function getbonds(bg::BondGraph, n1::AbstractNode, n2::AbstractNode)
+    filter(b -> n1 in b && n2 in b, bg.bonds)
+end
 
 # Base functions
-show(io::IO, bg::BondGraph) = print(io, "BondGraph $(bg.name) ($(g.nv(bg)) Nodes, $(g.ne(bg)) Bonds)")
+function show(io::IO, bg::BondGraph)
+    print(io, "BondGraph $(bg.name) ($(nv(bg)) Nodes, $(ne(bg)) Bonds)")
+end
 
 # Easier referencing systems using a.b notation
 function getproperty(bg::BondGraph, sym::Symbol)
     # Calling getfield explicitly avoids using "a.b" and causing a StackOverflowError
     allnodes = getfield(bg, :nodes)
     names = [getfield(n, :name) for n in allnodes]
-    symnodes = allnodes[names.==string(sym)]
+    symnodes = allnodes[names .== string(sym)]
     if isempty(symnodes)
         return getfield(bg, sym)
     elseif length(symnodes) == 1
@@ -91,8 +98,8 @@ function getproperty(bg::BondGraph, sym::Symbol)
 end
 
 # Conversion to common graph types
-g.SimpleGraph(bg::BondGraph) = g.SimpleGraph(g.SimpleDiGraph(bg))
-g.SimpleDiGraph(bg::BondGraph) = g.SimpleDiGraph(g.adjacency_matrix(bg))
+SimpleGraph(bg::BondGraph) = SimpleGraph(SimpleDiGraph(bg))
+SimpleDiGraph(bg::BondGraph) = SimpleDiGraph(adjacency_matrix(bg))
 
 """
     BondGraphNode(bg::BondGraph, name=name(bg); deep_copy=false)
@@ -107,14 +114,14 @@ struct BondGraphNode <: AbstractNode
     bondgraph::BondGraph
     type::AbstractString
     name::AbstractString
-    ports::OrderedDict{Any,Bool}
+    ports::OrderedDict{Any, Bool}
     vertex::RefValue{Int}
 end
-function BondGraphNode(bg::BondGraph, name=name(bg); vertex::Int=0, deep_copy=false)
+function BondGraphNode(bg::BondGraph, name = name(bg); vertex::Int = 0, deep_copy = false)
     _bg = deep_copy ? deepcopy(bg) : bg
 
     exposed_ports = getnodes(_bg, SourceSensor)
-    ports = Dict(i => false for i in 1:length(exposed_ports))
+    ports = OrderedDict(i => false for i in 1:length(exposed_ports))
 
     BondGraphNode(_bg, "BG", string(name), ports, Ref(vertex))
 end
@@ -131,13 +138,13 @@ end
 
 exposed(bgn::BondGraphNode) = getnodes(bgn.bondgraph, SourceSensor)
 
-function port_info(t::Tuple{BondGraphNode,String})
+function port_info(t::Tuple{BondGraphNode, String})
     pts = [n for n in nodes(t[1].bondgraph) if n isa SourceSensor]
-    for (i,c) in enumerate(pts)
+    for (i, c) in enumerate(pts)
         if (c isa SourceSensor) && (t[2] == c.name)
-            return (t[1],i)
+            return (t[1], i)
         end
     end
     return error("Port $(t[2]) not found.")
 end
-port_info(t::Tuple{BondGraphNode,Symbol}) = port_info((t[1],string(t[2])))
+port_info(t::Tuple{BondGraphNode, Symbol}) = port_info((t[1], string(t[2])))
