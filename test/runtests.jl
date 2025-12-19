@@ -8,6 +8,7 @@ using TestItemRunner
     using ModelingToolkit
     using DifferentialEquations: Rosenbrock23
     using Catalyst
+    using RecipesBase
 
     t = ModelingToolkit.t_nounits
     D = ModelingToolkit.D_nounits
