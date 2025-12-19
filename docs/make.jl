@@ -1,9 +1,9 @@
 using Documenter, BondGraphs, Graphs, Plots, ModelingToolkit, Catalyst, DifferentialEquations, Latexify
 
 makedocs(
-    sitename = "BondGraphs.jl",
-    modules = [BondGraphs],
-    pages = [
+    sitename="BondGraphs.jl",
+    modules=[BondGraphs],
+    pages=[
         "index.md",
         "gettingstarted.md",
         "examples.md",
@@ -12,5 +12,5 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/jedforrest/BondGraphs.jl.git",
+    repo="github.com/jedforrest/BondGraphs.jl.git",
 )

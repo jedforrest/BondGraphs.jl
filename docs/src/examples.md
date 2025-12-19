@@ -174,9 +174,9 @@ bg_serca = BondGraph(rn_serca; chemostats)
 plot(bg_serca, size=(600,600), fontsize=10)
 ```
 
-For this example we need to set the parameter values for the reaction rates $r$, the species affinities $K$, the chemostat concentrations $x_s$, and the initial concentrations for all $P_i$.
+For this example we need to set the parameter values for the reaction rates ``r``, the species affinities ``K``, the chemostat concentrations ``x_s``, and the initial concentrations for all ``P_i``.
 
-We also set let the calcium concentration increase over time with $[\text{Ca}^{2+}] = 0.05 + 0.01t$
+We also set let the calcium concentration increase over time with ``[\text{Ca}^{2+}] = 0.05 + 0.01t``
 
 ```@example serca
 reaction_rates = [
@@ -254,7 +254,7 @@ A multiphysics bond graph example that combines biochemical reactions with elect
 
 [^3]: Cudmore et al., _Analysing and simulating energy-based models in biology using BondGraphTools_ (2021)
 
-For this example we are modelling three ion pore channels for $\mathrm{Na}^+$, $\mathrm{Cl}^-$ and $\mathrm{K}^+$. It is a good idea to define a function that returns an ion pore base model.
+For this example we are modelling three ion pore channels for ``\mathrm{Na}^+``, ``\mathrm{Cl}^-`` and ``\mathrm{K}^+``. It is a good idea to define a function that returns an ion pore base model.
 
 ```@setup iontransport
 using BondGraphs
@@ -379,9 +379,9 @@ ReMM[:equations]
 ```
 
 We will create a bond graph with these new equations.
-$$
+```math
 A \rightleftharpoons B \rightleftharpoons C
-$$
+```
 
 ```@example enzyme
 rn_enzyme = @reaction_network EnzymeNetwork begin
@@ -400,13 +400,3 @@ swap!(bg, bg.R2, MM2)
 
 plot(bg)
 ```
-
-```@example enzyme
-constitutive_relations(bg; sub_defaults=true)
-```
-
-```@example enzyme
-sol = simulate(bg, (0., 20.); u0=[200,50,100])
-plot(sol, lw=2)
-```
-

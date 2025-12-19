@@ -27,6 +27,6 @@ Manifest.toml
 /misc
 temp/
 .experiment/
-
+.DS_Store
 LocalPreferences.toml
 .vscode
