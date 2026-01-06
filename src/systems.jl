@@ -1,4 +1,40 @@
-t = ModelingToolkit.t_nounits
+const Effort = ModelingToolkit.Equality
+
+@connector function PowerPort(; name, e=:e, f=:f)
+    vars = @variables begin
+        $(Symbol(e))(t), [connect = Effort]
+        $(Symbol(f))(t), [connect = Flow]
+    end
+    return System(Equation[], t, vars, []; name)
+end
+
+############################################################
+""" General port system constructor for Elements --> Systems """
+function system(element::BondElement; name::Symbol)
+    # create base system
+    sys = System(equations(element), t; name)
+
+    # create ports and add port connections
+    port_connection_eqs = Equation[]
+    for (i, (e, f)) in enumerate(zip(element.efforts, element.flows))
+        # create N port "systems" and extend the user-given MTK System
+        port = PowerPort(name = Symbol("port_", i))
+        sys = compose(sys, port)
+
+        # add effort/flow connections to newly added port variables (assuming efforts and flows are in the desired order)
+        append!(port_connection_eqs, [e ~ port.e, f ~ port.f])
+    end
+    port_eqs_sys = System(port_connection_eqs, t; name = nameof(sys))
+
+    return extend(port_eqs_sys, sys)
+end
+
+""" Empty system for 0- and 1- Junctions """
+function system(::NonParametricJunction; name::Symbol)
+    System(Equation[], t; name)
+end
+
+############################################################
 
 # New simplification rules
 #TODO: enable threaded simplifier option

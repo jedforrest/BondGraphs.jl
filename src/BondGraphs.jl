@@ -24,8 +24,8 @@ import Graphs:
                rem_edge!
 import ModelingToolkit: parameters, equations, controls
 
-# using StaticArrays
 using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
 using DifferentialEquations
 using SymbolicUtils, SymbolicUtils.Rewriters
 using OrderedCollections
@@ -90,8 +90,10 @@ include("libraries/biochemical.jl")
 include("libraries/standard.jl")
 include("libraries/libraryfunctions.jl")
 
-# Types used by BondGraphs
-include("structures/AbstractNode.jl")
+# Structures
+include("structures/AbstractElement.jl")
+# include("structures/AbstractNode.jl")
+include("structures/Component.jl")
 include("structures/Bond.jl")
 include("structures/BondGraph.jl")
 
