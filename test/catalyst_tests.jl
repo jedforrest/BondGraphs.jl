@@ -1,4 +1,4 @@
-@testitem "Simple Reaction System" setup=[Setup] begin
+@testset "Simple Reaction System" #= setup=[Setup] =# begin
     rn = @reaction_network ABC begin
         1, A + B --> C
     end
@@ -16,7 +16,7 @@
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
 end
 
-@testitem "Reversible MM" setup=[Setup] begin
+@testset "Reversible MM" #= setup=[Setup] =# begin
     rn = @reaction_network MM_reversible begin
         (1, 1), E + S <--> C
         (1, 1), C <--> E + P
@@ -31,7 +31,7 @@ end
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
 
-@testitem "Stoichiometry Test" setup=[Setup] begin
+@testset "Stoichiometry Test" #= setup=[Setup] =# begin
     rn = @reaction_network Stoichiometry begin
         1, 3A + 2B --> 5C
     end
@@ -45,7 +45,7 @@ end
     @test repr.(tfs) == ["TF:tf1", "TF:tf2", "TF:tf3"]
 end
 
-@testitem "SERCA" setup=[Setup] begin
+@testset "SERCA" #= setup=[Setup] =# begin
     rn = @reaction_network SERCA begin
         (1, 1), P1 + MgATP <--> P2
         (1, 1), P2 + H <--> P2a

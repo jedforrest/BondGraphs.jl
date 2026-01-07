@@ -12,102 +12,102 @@ abstract type SourceElement <: BondElement end
 
 """`C` component"""
 struct StaticStorageElement <: StorageElement
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
     states::Vector
-    function StaticStorageElement(eqs, efforts, flows, states)
+    function StaticStorageElement(sys::System, efforts, flows, states)
         check_num_ports(efforts, flows)
-        new(eqs, efforts, flows, states)
+        new(sys, efforts, flows, states)
     end
 end
 
 """`I` component"""
 struct DynamicStorageElement <: StorageElement
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
     states::Vector
-    function DynamicStorageElement(eqs, efforts, flows, states)
+    function DynamicStorageElement(sys::System, efforts, flows, states)
         check_num_ports(efforts, flows)
-        new(eqs, efforts, flows, states)
+        new(sys, efforts, flows, states)
     end
 end
 
 """`R` component"""
 struct DissipatorElement <: BondElement
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
-    function DissipatorElement(eqs, efforts, flows)
+    function DissipatorElement(sys::System, efforts, flows)
         check_num_ports(efforts, flows)
-        new(eqs, efforts, flows)
+        new(sys, efforts, flows)
     end
 end
 
 ############################################################
 """`Se` component"""
 struct EffortSource <: SourceElement
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
-    function EffortSource(eqs, efforts, flows)
+    function EffortSource(sys::System, efforts, flows)
         numports = length(efforts)
         numports == 1 || error("Must have exactly 1 port ($numports)")
-        new(eqs, efforts, flows)
+        new(sys, efforts, flows)
     end
 end
 
 """`Sf` component"""
 struct FlowSource <: SourceElement
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
-    function FlowSource(eqs, efforts, flows)
+    function FlowSource(sys::System, efforts, flows)
         numports = length(flows)
         numports == 1 || error("Must have exactly 1 port ($numports)")
-        new(eqs, efforts, flows)
+        new(sys, efforts, flows)
     end
 end
 
 """`SS` component"""
 struct SourceSensor <: SourceElement
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
-    function SourceSensor(eqs, efforts, flows)
+    function SourceSensor(sys::System, efforts, flows)
         numports = length(efforts)
         (numports == length(flows) == 1) || error("Must have exactly 1 port ($numports)")
-        new(eqs, efforts, flows)
+        new(sys, efforts, flows)
     end
 end
 
 ############################################################
-abstract type JunctionStructure <: BondGraphVertex end
+abstract type JunctionStructure <: AbstractElement end
 abstract type ParametricJunction <: JunctionStructure end
 abstract type NonParametricJunction <: JunctionStructure end
 
 """`TF` component"""
 struct Transformer <: ParametricJunction
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
-    function Transformer(eqs, efforts, flows)
+    function Transformer(sys::System, efforts, flows)
         numports = length(efforts)
         numports >= 2 ||
             error("Transformer must have at least 2 ports ($numports ports given)")
-        new(eqs, efforts, flows)
+        new(sys, efforts, flows)
     end
 end
 """`GY` component"""
 struct Gyrator <: ParametricJunction
-    eqs::Vector{Equation}
+    sys::System
     efforts::Vector
     flows::Vector
-    function Gyrator(eqs, efforts, flows)
+    function Gyrator(sys::System, efforts, flows)
         numports = length(efforts)
         numports >= 2 || error("Gyrator must have at least 2 ports ($numports ports given)")
-        new(eqs, efforts, flows)
+        new(sys, efforts, flows)
     end
 end
 
@@ -136,6 +136,16 @@ struct EqualFlow <: NonParametricJunction
 end
 ############################################################
 
+""" Generic BondGraph Element constructor from a vector of equations"""
+function (E::Type{<:AbstractElement})(eqs::Vector{Equation}, efforts, flows, states=[])
+    sys = System(eqs, t; name=Symbol(E))
+    if hasfield(E, :states)
+        return E(sys, efforts, flows, states)
+    else
+        return E(sys, efforts, flows)
+    end
+end
+
 function check_num_ports(efforts, flows)
     numports = length(efforts)
     numports >= 1 || error("Must have at least 1 port ($numports)")
@@ -144,10 +154,10 @@ function check_num_ports(efforts, flows)
     return nothing
 end
 
-# equations(bgv::BondGraphVertex) = bgv.eqs
-# equations(::NonParametricJunction) = nothing  # FIXME
+equations(elem::AbstractElement) = equations(elem.sys)
+equations(::NonParametricJunction) = nothing  # FIXME
 
-numports(bgv::BondGraphVertex) = length(bgv.efforts)
+numports(elem::AbstractElement) = length(elem.efforts)
 numports(::SourceElement) = 1
 numports(::NonParametricJunction) = Inf
 
@@ -164,9 +174,10 @@ glyph(::JunctionStructure) = :J
 glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
 
-function Base.show(io::IO, vertex::T) where {T <: BondGraphVertex}
-    print_str = "$T{$(numports(vertex))}"
-    print_str *= isempty(vertex.eqs) ? "" : "\n  $(join(vertex.eqs,"\n  "))"
+function Base.show(io::IO, elem::T) where {T <: AbstractElement}
+    eqs = equations(elem)
+    print_str = "$T{$(numports(elem))}"
+    print_str *= isempty(eqs) ? "" : "\n  $(join(eqs,"\n  "))"
     print(io, print_str)
 end
 Base.show(io::IO, ::T) where {T <: NonParametricJunction} = print(io, T)

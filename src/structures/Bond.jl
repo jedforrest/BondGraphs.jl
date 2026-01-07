@@ -30,10 +30,10 @@ end
 ports(b::Bond) = b.src, b.dst
 vertices(b::Bond) = parent(b.src), parent(b.dst)
 
-function Base.show(io::IO, b::Bond)
-    src, dst = vertices(b)
-    print(io, "$src ⇀ $dst")
-end
+# function Base.show(io::IO, b::Bond)
+#     src, dst = vertices(b)
+#     print(io, "$src ⇀ $dst")
+# end
 
 # MTK system connector
 function connection_equation(b::Bond)

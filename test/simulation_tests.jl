@@ -1,4 +1,4 @@
-@testitem "Setting variables" setup=[Setup] begin
+@testset "Setting variables" #= setup=[Setup] =# begin
     c = Component(:C)
     re = Component(:Re)
 
@@ -13,7 +13,7 @@
     @test re.T == 200
 end
 
-@testitem "Setting non-numeric control variables" setup=[Setup] begin
+@testset "Setting non-numeric control variables" #= setup=[Setup] =# begin
     f(t) = sin(2t) # forcing function
 
     sf = Component(:Sf)
@@ -24,14 +24,14 @@ end
     @test sf.fs(1) ≈ f(1)
 end
 
-@testitem "Incompatible variables fail" setup=[Setup] begin
+@testset "Incompatible variables fail" #= setup=[Setup] =# begin
     re = Component(:Re)
     c = Component(:C)
     @test_throws ErrorException re.s = 1
     @test_throws ErrorException c.p = 2
 end
 
-@testitem "Simulate RC circuit" setup=[Setup] begin
+@testset "Simulate RC circuit" #= setup=[Setup] =# begin
     r = Component(:R; R = 2)
     c = Component(:C; C = 1, q = 10)
     bg = BondGraph(:RC)
@@ -58,7 +58,7 @@ end
     end
 end
 
-@testitem "Equivalent resistance (DAE)" setup=[Setup] begin
+@testset "Equivalent resistance (DAE)" #= setup=[Setup] =# begin
     R1 = 1.0
     R2 = 2.0
     Req = R1 + R2
@@ -85,7 +85,7 @@ end
     end
 end
 
-@testitem "π-filter" setup=[Setup] begin
+@testset "π-filter" #= setup=[Setup] =# begin
     Se = Component(:Se, :Pin; es = t -> 1)
 
     Pa = EqualEffort(name = :Pa)
@@ -133,7 +133,7 @@ end
     @test isapprox(sol[L, end], 0.5, atol = 1e-5)
 end
 
-@testitem "Simulate modular BG" setup=[Setup] begin
+@testset "Simulate modular BG" #= setup=[Setup] =# begin
     r = Component(:R; R = 1)
     l = Component(:I; L = 1, p = 1)
     c = Component(:C; C = 1, q = 1)
@@ -173,7 +173,7 @@ end
     end
 end
 
-@testitem "Driven Filter Circuit" setup=[Setup] begin
+@testset "Driven Filter Circuit" #= setup=[Setup] =# begin
     model = BondGraph("RC")
     C = Component(:C; C = 1)
     R = Component(:R; R = 1)
@@ -206,7 +206,7 @@ end
     @test isapprox(sol[end], [0.23625], atol = 1e-5)
 end
 
-@testitem "Simple Biochemical Simulation" setup=[Setup] begin
+@testset "Simple Biochemical Simulation" #= setup=[Setup] =# begin
     rn_abc = @reaction_network ABC begin
         1, A + B --> C
     end
@@ -229,7 +229,7 @@ end
     @test isapprox(sol[C, end], 1.55051, atol = 1e-5)
 end
 
-@testitem "Stoichiometry Simulation" setup=[Setup] begin
+@testset "Stoichiometry Simulation" #= setup=[Setup] =# begin
     rn = @reaction_network A2B begin
         (1, 1), A <--> 2B
     end
@@ -244,7 +244,7 @@ end
     @test isapprox(sol[B, end], 0.76062, atol = 1e-5)
 end
 
-@testitem "Reversible Michaelis-Menten" setup=[Setup] begin
+@testset "Reversible Michaelis-Menten" #= setup=[Setup] =# begin
     rn_mm = @reaction_network MM_reversible begin
         (1, 1), E + S <--> C
         (1, 1), C <--> E + P
@@ -260,7 +260,7 @@ end
     @test isapprox(sol[C, end], 1.8, atol = 1e-5)
 end
 
-@testitem "SERCA (stiff equations)" setup=[Setup] begin
+@testset "SERCA (stiff equations)" #= setup=[Setup] =# begin
     rn_serca = @reaction_network SERCA begin
         (1, 1), P1 + MgATP <--> P2
         (1, 1), P2 + H <--> P2a

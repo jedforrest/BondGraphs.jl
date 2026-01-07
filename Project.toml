@@ -3,6 +3,9 @@ uuid = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
 version = "0.5.1"
 authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
 
+[workspace]
+projects = ["test", "docs"]
+
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
@@ -29,6 +32,3 @@ RecipesBase = "1"
 Setfield = "0.8, 1"
 SymbolicUtils = "3"
 julia = "1"
-
-[workspace]
-projects = ["test", "docs"]

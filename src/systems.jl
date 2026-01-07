@@ -1,39 +1,25 @@
+# TODO move to another file power variable section to another file
 const Effort = ModelingToolkit.Equality
 
-@connector function PowerPort(; name, e=:e, f=:f)
-    vars = @variables begin
+function power_variables(;
+        e = :e,
+        f = :f,
+        p = :p,
+        q = :q)
+    @variables begin
         $(Symbol(e))(t), [connect = Effort]
         $(Symbol(f))(t), [connect = Flow]
+        $(Symbol(p))(t)
+        $(Symbol(q))(t)
     end
-    return System(Equation[], t, vars, []; name)
+end
+ModelingToolkit.get_connection_type
+@connector function PowerPort(; name, e=:e, f=:f)
+    e, f, = power_variables(; e, f)
+    return System(Equation[], t, [e, f], []; name)
 end
 
 ############################################################
-""" General port system constructor for Elements --> Systems """
-function system(element::BondElement; name::Symbol)
-    # create base system
-    sys = System(equations(element), t; name)
-
-    # create ports and add port connections
-    port_connection_eqs = Equation[]
-    for (i, (e, f)) in enumerate(zip(element.efforts, element.flows))
-        # create N port "systems" and extend the user-given MTK System
-        port = PowerPort(name = Symbol("port_", i))
-        sys = compose(sys, port)
-
-        # add effort/flow connections to newly added port variables (assuming efforts and flows are in the desired order)
-        append!(port_connection_eqs, [e ~ port.e, f ~ port.f])
-    end
-    port_eqs_sys = System(port_connection_eqs, t; name = nameof(sys))
-
-    return extend(port_eqs_sys, sys)
-end
-
-""" Empty system for 0- and 1- Junctions """
-function system(::NonParametricJunction; name::Symbol)
-    System(Equation[], t; name)
-end
-
 ############################################################
 
 # New simplification rules
@@ -112,9 +98,9 @@ function constitutive_relations(bg::BondGraph; sub_defaults = false)
         return cr
     end
 end
-function constitutive_relations(bgn::BondGraphNode)
-    return constitutive_relations(bgn.bondgraph)
-end
+# function constitutive_relations(bgn::BondGraphNode)
+#     return constitutive_relations(bgn.bondgraph)
+# end
 
 @connector function MTKPort(; name)
     vars = @variables E(t) F(t) [connect = Flow]
@@ -182,23 +168,23 @@ function ModelingToolkit.ODESystem(m::BondGraph; simplify_eqs = true)
 end
 
 # BondGraphNode
-function ModelingToolkit.ODESystem(
-        bgn::BondGraphNode;
-        name = name(bgn),
-        simplify_eqs = false
-)
-    N = numports(bgn)
-    ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
+# function ModelingToolkit.ODESystem(
+#         bgn::BondGraphNode;
+#         name = name(bgn),
+#         simplify_eqs = false
+# )
+#     N = numports(bgn)
+#     ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
 
-    (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
-    es = [subsystems[comp].p1.E for comp in exposed(bgn)]
-    fs = [subsystems[comp].p1.F for comp in exposed(bgn)]
-    port_eqs = [[0 ~ p.E - E for (E, p) in zip(es, ps)]
-                [0 ~ p.F + F for (F, p) in zip(fs, ps)]]
-    eqs = [connections; port_eqs]
-    sys = compose_bg_model(subsystems, eqs, name, simplify_eqs)
-    compose(sys, ps...)
-end
+#     (subsystems, connections) = get_subsys_and_connections(bgn.bondgraph)
+#     es = [subsystems[comp].p1.E for comp in exposed(bgn)]
+#     fs = [subsystems[comp].p1.F for comp in exposed(bgn)]
+#     port_eqs = [[0 ~ p.E - E for (E, p) in zip(es, ps)]
+#                 [0 ~ p.F + F for (F, p) in zip(fs, ps)]]
+#     eqs = [connections; port_eqs]
+#     sys = compose_bg_model(subsystems, eqs, name, simplify_eqs)
+#     compose(sys, ps...)
+# end
 
 function get_subsys_and_connections(bg::BondGraph)
     # Collect constitutive relations from components

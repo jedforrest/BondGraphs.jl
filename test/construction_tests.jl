@@ -1,22 +1,53 @@
-@testitem "Creating Components" setup=[Setup] begin
-    C = Component(:C)
-    @test type(C) == "C"
-    @test name(C) == "C"
+using Test
+using BondGraphs
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
 
-    R = Component(:R, "newR")
-    @test name(R) == "newR"
+@variables e(t) f(t) p(t) q(t)
+@parameters R C L
 
-    I = Component(:I; L = 5)
-    @test I.L == 5
+@testset "power variables" begin
+    using ModelingToolkit: get_connection_type
 
-    C2 = Component(:C; q = 2)
-    @test C2.q == 2
+    e, f, _ = power_variables()
+    @test get_connection_type(e) == Effort
+    @test get_connection_type(f) == Flow
 
-    SS = SourceSensor()
-    @test type(SS) == "SS"
+    vars = power_variables(e="F", f="v", p="p", q="x")
+    @test tosymbol.(vars, escape=false) == [:F, :v, :p, :x]
 end
 
-@testitem "Creating Junctions" setup=[Setup] begin
+@testset "AbstractElements" #= setup=[Setup] =# begin
+
+    r_element = DissipatorElement([e ~ R * f], [e], [f])
+    c_element = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
+    i_element = DynamicStorageElement([D(p) ~ e, p ~ L * f], [e], [f], [p])
+
+    @test isequal(r_element.efforts, [e])
+    @test isequal(c_element.states, [q])
+    @test isequal(equations(i_element.sys), [D(p) ~ e, p ~ L * f])
+end
+
+@testset "Creating Components" #= setup=[Setup] =# begin
+    @variables e(t) f(t) p(t) q(t)
+    @parameters R C L
+
+    c_element = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
+    r_element = DissipatorElement([e ~ R * f], [e], [f])
+
+    @named c_comp = Component(c_element; q = 2)
+    @named r_comp = Component(r_element; R = 5)
+
+    @test elementtype(c_comp) == StaticStorageElement
+    @test name(c_comp) == :c_comp
+    @test repr(c_comp) == "C::c_comp"
+
+    @test isequal(collect(defaults(c_comp.sys)), [q => 2])
+    @test isequal(collect(defaults(r_comp.sys)), [R => 5])
+end
+
+# TODO CONTINUE FROM HERE
+@testset "Creating Junctions" #= setup=[Setup] =# begin
     EqE_1 = EqualEffort()
     EqE_2 = EqualEffort(name = "foo")
     EqF = EqualFlow()
@@ -26,8 +57,7 @@ end
     @test name(EqF) == "𝟏"
 end
 
-# Based on https://bondgraphtools.readthedocs.io/en/latest/tutorials/RC.html
-@testitem "BondGraph Construction" setup=[Setup] begin
+@testset "BondGraph Construction" #= setup=[Setup] =# begin
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
@@ -44,7 +74,7 @@ end
     @test b2 in model.bonds
 end
 
-@testitem "Graph construction" setup=[Setup] begin
+@testset "Graph construction" #= setup=[Setup] =# begin
     c1 = Component(:C)
     c2 = Component(:R)
     c3 = Component(:I)
@@ -77,7 +107,7 @@ end
     @test nv(bg) == 3
 end
 
-@testitem "BondGraph Modification" setup=[Setup] begin
+@testset "BondGraph Modification" #= setup=[Setup] =# begin
     model = BondGraph(:RCI)
     C = Component(:C)
     R = Component(:R)
@@ -117,7 +147,7 @@ end
     @test outneighbors(model, one_law) == [I]
 end
 
-@testitem "Construction Failure" setup=[Setup] begin
+@testset "Construction Failure" #= setup=[Setup] =# begin
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
@@ -144,7 +174,7 @@ end
     @test has_edge(model, bond)
 end
 
-@testitem "Chemical reaction" setup=[Setup] begin
+@testset "Chemical reaction" #= setup=[Setup] =# begin
     model = BondGraph(:Chemical)
     A = Component(:C, :A)
     B = Component(:C, :B)
@@ -170,7 +200,7 @@ end
     @test ne(model) == 6
 end
 
-@testitem "Inserting Nodes" setup=[Setup] begin
+@testset "Inserting Nodes" #= setup=[Setup] =# begin
     bg = RCI()
 
     c, r, J0 = bg.nodes[[1, 2, 5]]
@@ -187,7 +217,7 @@ end
     @test ne(bg) == 6
 end
 
-@testitem "Merging components" setup=[Setup] begin
+@testset "Merging components" #= setup=[Setup] =# begin
     bg = RCI()
     C = bg.C
     R = bg.R
@@ -207,7 +237,7 @@ end
     @test ne(bg) == 7
 end
 
-@testitem "Simplifying Junctions" setup=[Setup] begin
+@testset "Simplifying Junctions" #= setup=[Setup] =# begin
     bg = RCI()
     C, R, I, SS, J0 = bg.nodes
 
@@ -237,7 +267,7 @@ end
     @test ne(bg) == 4
 end
 
-@testitem "BondGraphNodes" setup=[Setup] begin
+@testset "BondGraphNodes" #= setup=[Setup] =# begin
     C = Component(:C, "C")
     bg1 = BondGraph("first")
     bg2 = BondGraph("second")
@@ -265,7 +295,7 @@ end
     @test main.third.second.first.C == [C, C2]
 end
 
-@testitem "Conversion to Other Graphs" setup=[Setup] begin
+@testset "Conversion to Other Graphs" #= setup=[Setup] =# begin
     bg = RCI()
     g = SimpleGraph(bg)
     dg = SimpleDiGraph(bg)

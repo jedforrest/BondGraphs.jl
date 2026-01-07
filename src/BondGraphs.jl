@@ -1,3 +1,5 @@
+__precompile__(false)
+
 module BondGraphs
 
 import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!
@@ -44,7 +46,7 @@ export AbstractNode,
        SourceSensor,
        Bond,
        BondGraph,
-       BondGraphNode,
+    #    BondGraphNode,
        type,
        name,
        id,
@@ -83,7 +85,21 @@ export AbstractNode,
        simulate,
        addlibrary!,
        description,
-       bgplot
+       bgplot,
+       # NEW
+       Effort,
+       StaticStorageElement,
+       DynamicStorageElement,
+       DissipatorElement,
+       EffortSource,
+       FlowSource,
+       SourceSensor,
+       Transformer,
+       Gyrator,
+       EqualEffort,
+       EqualFlow,
+       power_variables,
+       elementtype
 
 # Component libraries
 include("libraries/biochemical.jl")
@@ -92,8 +108,7 @@ include("libraries/libraryfunctions.jl")
 
 # Structures
 include("structures/AbstractElement.jl")
-# include("structures/AbstractNode.jl")
-include("structures/Component.jl")
+include("structures/AbstractNode.jl")
 include("structures/Bond.jl")
 include("structures/BondGraph.jl")
 
@@ -103,5 +118,8 @@ include("construction.jl")
 include("systems.jl")
 include("catalyst.jl")
 include("plotrecipes.jl")
+
+# NEW
+include("libraries/electrical.jl")
 
 end

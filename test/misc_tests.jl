@@ -1,4 +1,4 @@
-@testitem "Library Functions" setup=[Setup] begin
+@testset "Library Functions" #= setup=[Setup] =# begin
     # Standard component
     @test haskey(BondGraphs.DEFAULT_LIBRARY, :C)
     # Biochemical component
@@ -21,7 +21,7 @@
     delete!(BondGraphs.DEFAULT_LIBRARY, :A)
 end
 
-@testitem "Graph Attributes" setup=[Setup] begin
+@testset "Graph Attributes" #= setup=[Setup] =# begin
     nodes = [
         Component(:C),
         Component(:Re, "R1"),
@@ -35,7 +35,7 @@ end
     @test BondGraphs.nodelabel.(nodes) == ["C", "R1", "SS", "1", "0", "testBG"]
 end
 
-@testitem "Plotting" setup=[Setup] begin
+@testset "Plotting" #= setup=[Setup] =# begin
     # See catalyst_tests.jl
     rn = @reaction_network MM_reversible begin
         (1, 1), E + S <--> C
