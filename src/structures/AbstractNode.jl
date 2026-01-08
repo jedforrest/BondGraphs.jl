@@ -1,29 +1,3 @@
-struct Port
-    name::Symbol
-    sys::System  # port subsys
-    parentname::Symbol
-    connected::Ref{Bool}
-    function Port(name, sys, parentname)
-        new(name, sys, parentname, Ref(false))
-    end
-end
-Port(sys::System, parentname::Symbol) = Port(nameof(sys), sys, parentname)
-
-name(p::Port) = p.name
-function system(p::Port; namespaced = true)
-    namespaced ? ModelingToolkit.renamespace(p.parentname, p.sys) : p.sys
-end
-parent(p::Port) = p.parentname
-
-is_connected(p::Port) = p.connected[]
-connect!(p::Port) = p.connected[] = true
-
-function Base.show(io::IO, port::Port)
-    connection_state = is_connected(port) ? "⬤" : "◯"
-    print(io, "$(port.parentname).$(port.name) $connection_state")
-end
-
-############################################################
 abstract type AbstractNode end
 
 """
@@ -37,7 +11,7 @@ Components have a `N` fixed ports when generated. This is usually determined by 
 graph type. Other properties and equations of available components are defined in
 `BondGraphs.DEFAULT_LIBRARY` (see  [`description`](@ref)).
 """
-struct Component{T<:BondElement} <: AbstractNode
+struct Component{T<:AbstractElement} <: AbstractNode
     element::T
     name::Symbol
     sys::System
@@ -69,35 +43,19 @@ function Component(element::BondElement; name::Symbol, kwargs...)
     bg_ports = isempty(powerports) ? Port[] : Port.(powerports, name)
 
     # kwargs are used to set default parameter values
-    for (k, v) in kwargs
-        setproperty!(sys, k, v)
+    for (key, val) in kwargs
+        setproperty!(sys, key, val)
     end
 
     Component(element, name, sys, bg_ports)
 end
 
-
-
-############################################################
-
-struct Junction{T<:JunctionStructure} <: AbstractNode
-    element::T
-    name::Symbol
-    sys::System
-    ports::Vector{Port}
+function Component(element::NonParametricJunction; name::Symbol)
+    sys = System(Equation[], t; name)
+    Component(element, name, sys, Port[])
 end
 
-"""
-    EqualEffort <: Junction
-
-Efforts are all equal, flows sum to zero (0-junction). Has an unlimited number of ports.
-"""
-
-"""
-    EqualFlow <: Junction
-
-Flows are all equal, efforts sum to zero (1-junction). Has an unlimited number of ports.
-"""
+# TODO parametric junction
 
 ############################################################
 # PROPERTIES
@@ -239,19 +197,15 @@ Base.show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(com
 
 
 # Easier referencing systems using a.b notation
-# TODO: rearrange so that getfield() is checked first with isdefined()
-# function getproperty(comp::Component, sym::Symbol)
-
-#     defaults(comp.sys)[sym]
-
-#     if p in keys(all_vars)
-#         return all_vars[p]
-#     elseif x in keys(all_vars)
-#         return all_vars[x]
-#     else
-#         getfield(n, sym)
-#     end
-# end
+function getproperty(comp::Component, name::Symbol)
+    if isdefined(comp, name)
+        return getfield(comp, name)
+    else
+        # get default value for variable/parameter if it exists
+        sym = getproperty(comp.sys, name; namespace=false)
+        return get(defaults(comp.sys), sym, nothing)
+    end
+end
 
 # # TODO: this can overrite global variables unintentionally by creating a new local copy
 # function setproperty!(n::Component, sym::Symbol, val)

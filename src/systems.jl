@@ -1,27 +1,3 @@
-# TODO move to another file power variable section to another file
-const Effort = ModelingToolkit.Equality
-
-function power_variables(;
-        e = :e,
-        f = :f,
-        p = :p,
-        q = :q)
-    @variables begin
-        $(Symbol(e))(t), [connect = Effort]
-        $(Symbol(f))(t), [connect = Flow]
-        $(Symbol(p))(t)
-        $(Symbol(q))(t)
-    end
-end
-ModelingToolkit.get_connection_type
-@connector function PowerPort(; name, e=:e, f=:f)
-    e, f, = power_variables(; e, f)
-    return System(Equation[], t, [e, f], []; name)
-end
-
-############################################################
-############################################################
-
 # New simplification rules
 #TODO: enable threaded simplifier option
 #TODO: create tests for rule rewriting
@@ -46,34 +22,34 @@ Return the constitutive relations (equations) for node `n`.
 If `n` is a Junction, the flow and effort constraints are generated from its connections.
 """
 constitutive_relations(n::AbstractNode) = equations(n)
-function constitutive_relations(n::EqualEffort)
-    if all(==(0), ports(n)) # all ports are empty
-        return Equation[]
-    end
+# function constitutive_relations(n::EqualEffort)
+#     if all(==(0), ports(n)) # all ports are empty
+#         return Equation[]
+#     end
 
-    N = numports(n)
-    @variables E(t)[1:N] F(t)[1:N]
+#     N = numports(n)
+#     @variables E(t)[1:N] F(t)[1:N]
 
-    flow_constraint = [0 ~ sum(collect(F))]
-    effort_constraints = [0 ~ E[1] - e for e in collect(E[2:end])]
-    return vcat(flow_constraint, effort_constraints)
-end
-function constitutive_relations(n::EqualFlow)
-    if all(==(0), ports(n)) # all ports are empty
-        return Equation[]
-    end
+#     flow_constraint = [0 ~ sum(collect(F))]
+#     effort_constraints = [0 ~ E[1] - e for e in collect(E[2:end])]
+#     return vcat(flow_constraint, effort_constraints)
+# end
+# function constitutive_relations(n::EqualFlow)
+#     if all(==(0), ports(n)) # all ports are empty
+#         return Equation[]
+#     end
 
-    N = numports(n)
-    @variables E(t)[1:N] F(t)[1:N]
+#     N = numports(n)
+#     @variables E(t)[1:N] F(t)[1:N]
 
-    W = weights(n)
-    weighted_e = W .* collect(E)
-    weighted_f = W .* collect(F)
+#     W = weights(n)
+#     weighted_e = W .* collect(E)
+#     weighted_f = W .* collect(F)
 
-    effort_constraint = [0 ~ sum(weighted_e)]
-    flow_constraints = [0 ~ weighted_f[1] - f for f in collect(weighted_f[2:end])]
-    return vcat(effort_constraint, flow_constraints)
-end
+#     effort_constraint = [0 ~ sum(weighted_e)]
+#     flow_constraints = [0 ~ weighted_f[1] - f for f in collect(weighted_f[2:end])]
+#     return vcat(effort_constraint, flow_constraints)
+# end
 
 """
     constitutive_relations(bg::BondGraph; sub_defaults=false)

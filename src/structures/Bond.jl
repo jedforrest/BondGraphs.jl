@@ -30,10 +30,10 @@ end
 ports(b::Bond) = b.src, b.dst
 vertices(b::Bond) = parent(b.src), parent(b.dst)
 
-# function Base.show(io::IO, b::Bond)
-#     src, dst = vertices(b)
-#     print(io, "$src ⇀ $dst")
-# end
+function Base.show(io::IO, b::Bond)
+    src, dst = vertices(b)
+    print(io, "$src ⇀ $dst")
+end
 
 # MTK system connector
 function connection_equation(b::Bond)
@@ -55,6 +55,6 @@ in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
 
-function show(io::IO, b::Bond)
-    print(io, "Bond $(b.src[1])[$(b.src[2])] ⇀ $(b.dst[1])[$(b.dst[2])]")
-end
+# function show(io::IO, b::Bond)
+#     print(io, "Bond $(b.src[1])[$(b.src[2])] ⇀ $(b.dst[1])[$(b.dst[2])]")
+# end

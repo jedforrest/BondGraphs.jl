@@ -2,7 +2,7 @@ __precompile__(false)
 
 module BondGraphs
 
-import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!
+import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!, getindex
 import Graphs:
                SimpleGraph,
                SimpleDiGraph,
@@ -40,7 +40,7 @@ using GraphMakie, GraphMakie.NetworkLayout
 
 export AbstractNode,
        Component,
-       Junction,
+    #    Junction,
        EqualEffort,
        EqualFlow,
        SourceSensor,
@@ -87,6 +87,7 @@ export AbstractNode,
        description,
        bgplot,
        # NEW
+       Port,
        Effort,
        StaticStorageElement,
        DynamicStorageElement,
@@ -99,7 +100,15 @@ export AbstractNode,
        EqualEffort,
        EqualFlow,
        power_variables,
-       elementtype
+       elementtype,
+       efforts,
+       flows,
+       states,
+       system,
+       is_connected,
+       connect!,
+       effort,
+       flow
 
 # Component libraries
 include("libraries/biochemical.jl")
@@ -107,6 +116,7 @@ include("libraries/standard.jl")
 include("libraries/libraryfunctions.jl")
 
 # Structures
+include("structures/Port.jl")
 include("structures/AbstractElement.jl")
 include("structures/AbstractNode.jl")
 include("structures/Bond.jl")
@@ -114,12 +124,12 @@ include("structures/BondGraph.jl")
 
 # Core functionality
 include("graphfunctions.jl")
-include("construction.jl")
+# include("construction.jl")
 include("systems.jl")
 include("catalyst.jl")
 include("plotrecipes.jl")
 
 # NEW
-include("libraries/electrical.jl")
+# include("libraries/electrical.jl")
 
 end

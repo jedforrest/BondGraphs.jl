@@ -3,75 +3,108 @@ using BondGraphs
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
-@variables e(t) f(t) p(t) q(t)
-@parameters R C L
 
 @testset "power variables" begin
-    using ModelingToolkit: get_connection_type
-
     e, f, _ = power_variables()
-    @test get_connection_type(e) == Effort
-    @test get_connection_type(f) == Flow
+    @test ModelingToolkit.get_connection_type(e) == Effort
+    @test ModelingToolkit.get_connection_type(f) == Flow
 
     vars = power_variables(e="F", f="v", p="p", q="x")
     @test tosymbol.(vars, escape=false) == [:F, :v, :p, :x]
 end
 
 @testset "AbstractElements" #= setup=[Setup] =# begin
+    @variables e(t) f(t) p(t) q(t)
+    @parameters R C L
 
     r_element = DissipatorElement([e ~ R * f], [e], [f])
     c_element = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
     i_element = DynamicStorageElement([D(p) ~ e, p ~ L * f], [e], [f], [p])
 
-    @test isequal(r_element.efforts, [e])
-    @test isequal(c_element.states, [q])
-    @test isequal(equations(i_element.sys), [D(p) ~ e, p ~ L * f])
+    @test isequal(efforts(r_element), [e])
+    @test isequal(flows(c_element), [f])
+    @test isequal(states(c_element), [q])
+    @test isequal(constitutive_relations(i_element), [D(p) ~ e, p ~ L * f])
+end
+
+@testset "Ports" begin
+    port = Port(:port_1, :parent, e=:V, f=:I)
+
+    @test nameof(system(port)) == :parent₊port_1
+    @test nameof(system(port, namespaced=false)) == :port_1
+
+    @test is_connected(port) == false
+    connect!(port)
+    @test is_connected(port) == true
+
+    @test repr(effort(port)) == "port_1₊V(t)"
+    @test repr(flow(port)) == "port_1₊I(t)"
 end
 
 @testset "Creating Components" #= setup=[Setup] =# begin
-    @variables e(t) f(t) p(t) q(t)
-    @parameters R C L
+    @variables e(t) f(t) q(t)
+    @parameters C
+    eqs = [D(q) ~ f, q ~ C * e]
 
-    c_element = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
-    r_element = DissipatorElement([e ~ R * f], [e], [f])
+    @named capacitor = StaticStorageElement(eqs, [e], [f], [q]; q = 2, C = 5)
 
-    @named c_comp = Component(c_element; q = 2)
-    @named r_comp = Component(r_element; R = 5)
+    @test typeof(capacitor) == StaticStorageElement
+    @test name(capacitor) == :capacitor
+    @test repr(capacitor) == "C::capacitor"
 
-    @test elementtype(c_comp) == StaticStorageElement
-    @test name(c_comp) == :c_comp
-    @test repr(c_comp) == "C::c_comp"
+    @test capacitor.q == 2
+    @test capacitor.C == 5
 
-    @test isequal(collect(defaults(c_comp.sys)), [q => 2])
-    @test isequal(collect(defaults(r_comp.sys)), [R => 5])
+    port = capacitor.ports[1]
+    @test capacitor[1] == port
+    @test capacitor[:port_1] == port
+end
+
+@testset "Creating Junctions" #= setup=[Setup] =# begin
+    j0 = EqualEffort()
+    j1 = EqualFlow()
+    @test repr(j0) == "EqualEffort"
+    @test repr(j1) == "EqualFlow"
+
+    @test name(j0) == :𝟎
+    @test name(j1) == :𝟏
+
+    @test length(ports(j0)) == length(ports(j1)) == 0
+
+    for i in 1:3
+        push!(j0.ports, Port(Symbol("p$i"), :j0))
+    end
+
+    cr = constitutive_relations(j0)
+    @test repr(cr[1]) == "p1₊e(t) ~ p2₊e(t)"
+    @test repr(cr[2]) == "p1₊e(t) ~ p3₊e(t)"
+    @test repr(cr[3]) == "p3₊f(t) + p2₊f(t) + p1₊f(t) ~ 0"
 end
 
 # TODO CONTINUE FROM HERE
-@testset "Creating Junctions" #= setup=[Setup] =# begin
-    EqE_1 = EqualEffort()
-    EqE_2 = EqualEffort(name = "foo")
-    EqF = EqualFlow()
-
-    @test name(EqE_1) == "𝟎"
-    @test name(EqE_2) == "foo"
-    @test name(EqF) == "𝟏"
-end
-
 @testset "BondGraph Construction" #= setup=[Setup] =# begin
-    model = BondGraph(:RC)
-    C = Component(:C)
-    R = Component(:R)
-    zero_law = EqualEffort()
+    # imported from library
+    using BondGraphs: resistor, capacitor, zerojunction
 
-    add_node!(model, [R, C, zero_law])
-    @test R in model.nodes
-    @test C in model.nodes
-    @test zero_law in model.nodes
+    @named rcomp = Component(resistor)
+    @named ccomp = Component(capacitor)
+    @named zcomp = Component(zerojunction)
+    rcomp, ccomp, zcomp
 
-    b1 = connect!(model, R, zero_law)
-    b2 = connect!(model, zero_law, C)
-    @test b1 in model.bonds
-    @test b2 in model.bonds
+    # model = BondGraph(:RC)
+    # C = Component(:C)
+    # R = Component(:R)
+    # zero_law = EqualEffort()
+
+    # add_node!(model, [R, C, zero_law])
+    # @test R in model.nodes
+    # @test C in model.nodes
+    # @test zero_law in model.nodes
+
+    # b1 = connect!(model, R, zero_law)
+    # b2 = connect!(model, zero_law, C)
+    # @test b1 in model.bonds
+    # @test b2 in model.bonds
 end
 
 @testset "Graph construction" #= setup=[Setup] =# begin

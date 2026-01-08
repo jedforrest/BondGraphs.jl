@@ -5,160 +5,228 @@
 
 ############################################################
 abstract type AbstractElement end
-
 abstract type BondElement <: AbstractElement end
+
+"""`R` component"""
+struct DissipatorElement <: BondElement
+    name::Symbol
+    sys::System
+    efforts::Vector
+    flows::Vector
+    ports::Vector{Port}
+end
+
+#########################
 abstract type StorageElement <: BondElement end
-abstract type SourceElement <: BondElement end
 
 """`C` component"""
 struct StaticStorageElement <: StorageElement
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
     states::Vector
-    function StaticStorageElement(sys::System, efforts, flows, states)
-        check_num_ports(efforts, flows)
-        new(sys, efforts, flows, states)
-    end
+    ports::Vector{Port}
 end
 
 """`I` component"""
 struct DynamicStorageElement <: StorageElement
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
     states::Vector
-    function DynamicStorageElement(sys::System, efforts, flows, states)
-        check_num_ports(efforts, flows)
-        new(sys, efforts, flows, states)
-    end
-end
-
-"""`R` component"""
-struct DissipatorElement <: BondElement
-    sys::System
-    efforts::Vector
-    flows::Vector
-    function DissipatorElement(sys::System, efforts, flows)
-        check_num_ports(efforts, flows)
-        new(sys, efforts, flows)
-    end
+    ports::Vector{Port}
 end
 
 ############################################################
+abstract type SourceElement <: BondElement end
+
 """`Se` component"""
 struct EffortSource <: SourceElement
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
-    function EffortSource(sys::System, efforts, flows)
-        numports = length(efforts)
-        numports == 1 || error("Must have exactly 1 port ($numports)")
-        new(sys, efforts, flows)
-    end
+    ports::Vector{Port}
 end
 
 """`Sf` component"""
 struct FlowSource <: SourceElement
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
-    function FlowSource(sys::System, efforts, flows)
-        numports = length(flows)
-        numports == 1 || error("Must have exactly 1 port ($numports)")
-        new(sys, efforts, flows)
-    end
+    ports::Vector{Port}
 end
 
 """`SS` component"""
 struct SourceSensor <: SourceElement
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
-    function SourceSensor(sys::System, efforts, flows)
-        numports = length(efforts)
-        (numports == length(flows) == 1) || error("Must have exactly 1 port ($numports)")
-        new(sys, efforts, flows)
+    ports::Vector{Port}
+end
+
+############################################################
+
+function (TBE::Type{<:BondElement})(sys::System, efforts, flows, states=[]; name::Symbol=nameof(sys), kwargs...)
+    check_num_ports(efforts, flows)
+
+    # make new port subsystems that expose the effort and flow variables
+
+    # create ports and add port connections
+    ports = Port[]
+    portsystems = System[]
+    port_connection_eqs = Equation[]
+    for (i, (e, f)) in enumerate(zip(efforts, flows))
+        # create N port subsystems and extend the user-given MTK System
+        port = Port(Symbol("port_", i), name)
+        portsys = system(port, namespaced=false)
+
+        # add effort/flow connections to newly added port variables
+        # (assuming efforts and flows are in the correct order)
+        port_conn_eq = [
+            ParentScope(e) ~ ParentScope(portsys.e),
+            ParentScope(f) ~ ParentScope(portsys.f)
+        ]
+
+        push!(ports, port)
+        push!(portsystems, portsys)
+        append!(port_connection_eqs, port_conn_eq)
     end
+    sys = compose(sys, portsystems)
+    sys = compose(sys, System(port_connection_eqs, t; name))
+
+    # kwargs are used to set default parameter values
+    for (key, val) in kwargs
+        setproperty!(sys, key, val)
+    end
+
+    if hasfield(TBE, :states)
+        return TBE(name, sys, efforts, flows, states, ports)
+    else
+        return TBE(name, sys, efforts, flows, ports)
+    end
+end
+
+""" Generic BondGraph Element constructor from a vector of equations"""
+function (TE::Type{<:AbstractElement})(eqs::Vector{Equation}, args...; kwargs...)
+    sys = System(eqs, t; name=Symbol(TE))
+    TE(sys, args...; kwargs...)
 end
 
 ############################################################
 abstract type JunctionStructure <: AbstractElement end
 abstract type ParametricJunction <: JunctionStructure end
-abstract type NonParametricJunction <: JunctionStructure end
+
+# Junctions are a power-conserving transformation between the effort/flows of each port
 
 """`TF` component"""
 struct Transformer <: ParametricJunction
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
-    function Transformer(sys::System, efforts, flows)
-        numports = length(efforts)
-        numports >= 2 ||
-            error("Transformer must have at least 2 ports ($numports ports given)")
-        new(sys, efforts, flows)
-    end
+    ports::Vector{Port}
+    # function Transformer(sys::System, efforts, flows)
+    #     numports = length(efforts)
+    #     numports >= 2 ||
+    #         error("Transformer must have at least 2 ports ($numports ports given)")
+    #     new(sys, efforts, flows)
+    # end
 end
 """`GY` component"""
 struct Gyrator <: ParametricJunction
+    name::Symbol
     sys::System
     efforts::Vector
     flows::Vector
-    function Gyrator(sys::System, efforts, flows)
-        numports = length(efforts)
-        numports >= 2 || error("Gyrator must have at least 2 ports ($numports ports given)")
-        new(sys, efforts, flows)
-    end
+    ports::Vector{Port}
+    # function Gyrator(sys::System, efforts, flows)
+    #     numports = length(efforts)
+    #     numports >= 2 || error("Gyrator must have at least 2 ports ($numports ports given)")
+    #     new(sys, efforts, flows)
+    # end
 end
 
 ############################################################
+abstract type NonParametricJunction <: JunctionStructure end
+
 # Since the number of ports is unknown and can change,
-# we instead store functions that map efforts/flows to equations
+# we instead store functions that map efforts and flows to equations
 """`0`-junction"""
 struct EqualEffort <: NonParametricJunction
-    effort_fn::Function
-    flow_fn::Function
-    function EqualEffort()
-        effort_fn(es) = [es[1] ~ e for e in es[2:end]]
-        flow_fn(fs) = sum(fs) ~ 0
-        new(effort_fn, flow_fn)
+    name::Symbol
+    sys::System
+    relation::Function
+    ports::Vector{Port}
+    function EqualEffort(; name=:𝟎)
+        sys = System(Equation[], t; name)
+        relation_fn(es, fs) = [
+            [es[1] ~ e for e in es[2:end]];
+            sum(fs) ~ 0
+        ]
+        new(name, sys, relation_fn, Port[])
     end
 end
 """`1`-junction"""
 struct EqualFlow <: NonParametricJunction
-    effort_fn::Function
-    flow_fn::Function
-    function EqualFlow()
-        effort_fn(es) = sum(es) ~ 0
-        flow_fn(fs) = [fs[1] ~ f for f in fs[2:end]]
-        new(effort_fn, flow_fn)
+    name::Symbol
+    sys::System
+    relation::Function
+    ports::Vector{Port}
+    function EqualFlow(; name=:𝟏)
+        sys = System(Equation[], t; name)
+        relation_fn(es, fs) = [
+            sum(es) ~ 0;
+            [fs[1] ~ f for f in fs[2:end]]
+        ]
+        new(name, sys, relation_fn, Port[])
     end
 end
+
+# function (TNPJ::Type{<:NonParametricJunction})(; name=Symbol(TNPJ))
+#     sys = System(Equation[], t; name)
+#     TNPJ(name, sys)
+# end
+
 ############################################################
 
-""" Generic BondGraph Element constructor from a vector of equations"""
-function (E::Type{<:AbstractElement})(eqs::Vector{Equation}, efforts, flows, states=[])
-    sys = System(eqs, t; name=Symbol(E))
-    if hasfield(E, :states)
-        return E(sys, efforts, flows, states)
-    else
-        return E(sys, efforts, flows)
-    end
-end
 
 function check_num_ports(efforts, flows)
     numports = length(efforts)
-    numports >= 1 || error("Must have at least 1 port ($numports)")
     (numports == length(flows)) ||
         error("Number of efforts and flows don't match ($numports)")
+    numports >= 1 || error("Must have at least 1 port ($numports)")
     return nothing
 end
 
-equations(elem::AbstractElement) = equations(elem.sys)
-equations(::NonParametricJunction) = nothing  # FIXME
+############################################################
 
-numports(elem::AbstractElement) = length(elem.efforts)
-numports(::SourceElement) = 1
+name(elem::AbstractElement) = elem.name
+
+efforts(elem::BondElement) = elem.efforts
+efforts(junc::JunctionStructure) = effort.(ports(junc))
+flows(elem::BondElement) = elem.flows
+flows(junc::JunctionStructure) = flow.(ports(junc))
+
+states(elem::StorageElement) = elem.states
+
+equations(elem::AbstractElement) = equations(elem.sys)
+
+ports(elem::AbstractElement) = elem.ports
+
+# excludes equation relating to port connections
+function constitutive_relations(elem::BondElement)
+    ModelingToolkit.equations_toplevel(elem.sys)
+end
+function constitutive_relations(junc::JunctionStructure)
+    junc.relation(efforts(junc), flows(junc))
+end
+
+numports(elem::AbstractElement) = length(elem.ports)
 numports(::NonParametricJunction) = Inf
 
 # Used when displaying in a graph.
@@ -174,10 +242,31 @@ glyph(::JunctionStructure) = :J
 glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
 
+############################################################
+# Overloading Base
+
 function Base.show(io::IO, elem::T) where {T <: AbstractElement}
-    eqs = equations(elem)
-    print_str = "$T{$(numports(elem))}"
-    print_str *= isempty(eqs) ? "" : "\n  $(join(eqs,"\n  "))"
+    print_str = "$(glyph(elem))::$(name(elem))"
     print(io, print_str)
 end
 Base.show(io::IO, ::T) where {T <: NonParametricJunction} = print(io, T)
+
+# Easier referencing systems using a.b notation
+function Base.getproperty(elem::AbstractElement, name::Symbol)
+    if isdefined(elem, name)
+        return getfield(elem, name)
+    else
+        # get default value for variable/parameter if it exists
+        sym = getproperty(elem.sys, name; namespace=false)
+        return get(defaults(elem.sys), sym, nothing)
+    end
+end
+
+# index referencing for ports
+Base.getindex(elem::AbstractElement, index::Int) = elem.ports[index]
+
+function Base.getindex(elem::AbstractElement, key::Symbol)
+    ports = elem.ports
+    port_index = findfirst(x -> x.name == key, ports)
+    !isnothing(port_index) ? ports[port_index] : error("No such port: $key")
+end
