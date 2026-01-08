@@ -81,33 +81,33 @@ end
     @test repr(cr[3]) == "p3₊f(t) + p2₊f(t) + p1₊f(t) ~ 0"
 end
 
-# TODO CONTINUE FROM HERE
 @testset "BondGraph Construction" #= setup=[Setup] =# begin
     # imported from library
-    using BondGraphs: resistor, capacitor, zerojunction
+    using BondGraphs: resistor, capacitor, KCL
 
-    @named rcomp = Component(resistor)
-    @named ccomp = Component(capacitor)
-    @named zcomp = Component(zerojunction)
-    rcomp, ccomp, zcomp
+    @named rcomp = resistor()
+    @named ccomp = capacitor()
+    @named kcl = KCL()
 
-    # model = BondGraph(:RC)
-    # C = Component(:C)
-    # R = Component(:R)
-    # zero_law = EqualEffort()
+    b1 = Bond(rcomp, kcl)
+    b2 = Bond(ccomp, kcl)
 
-    # add_node!(model, [R, C, zero_law])
-    # @test R in model.nodes
-    # @test C in model.nodes
-    # @test zero_law in model.nodes
+    bg = BondGraph([rcomp, ccomp, kcl], [b1, b2], name="RC Circuit")
 
-    # b1 = connect!(model, R, zero_law)
-    # b2 = connect!(model, zero_law, C)
-    # @test b1 in model.bonds
-    # @test b2 in model.bonds
+    @test name(bg) == Symbol("RC Circuit")
+    @test components(bg) == [rcomp, ccomp, kcl]
+    @test elements(bg) == [rcomp, ccomp]
+    @test junctions(bg) == [kcl]
+    @test bonds(bg) == [b1, b2]
+
+    # compare to bonds only construction
+    # bg2 = BondGraph([b1, b2], name="RC Circuit")
+    # TODO
+
 end
 
-@testset "Graph construction" #= setup=[Setup] =# begin
+# TODO CONTINUE FROM HERE
+@testset "Graph functions" #= setup=[Setup] =# begin
     c1 = Component(:C)
     c2 = Component(:R)
     c3 = Component(:I)

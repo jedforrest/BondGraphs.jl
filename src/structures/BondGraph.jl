@@ -9,30 +9,34 @@ AbstractGraph type and so will work with
 See also [`BondGraphNode`](@ref).
 """
 # TODO store System object for reuse
-# TODO using MetaGraph Type annotation (https://github.com/JuliaGraphs/MetaGraphsNext.jl/issues/95)
+# TODO (optional) use MetaGraph Type annotation (https://github.com/JuliaGraphs/MetaGraphsNext.jl/issues/95)
 struct BondGraph <: AbstractGraph{Int64}
     name::Symbol
-    components::Vector{Component}
+    components::Vector{AbstractElement}
     bonds::Vector{Bond}
-    function BondGraph(name, elements = [], junctions = [], bonds = [])
-        new(Symbol(name), elements, junctions, bonds)
+    function BondGraph(components::Vector{AbstractElement}, bonds::Vector{Bond} = Bond[]; name = :BondGraph)
+        new(Symbol(name), components, bonds)
     end
 end
-# 3 argument constructor
-function BondGraph(name, elements_junctions, bonds)
-    elements = filter(x -> x.element isa BondElement, elements_junctions)
-    junctions = filter(x -> x.element isa JunctionStructure, elements_junctions)
-    BondGraph(Symbol(name), elements, junctions, bonds)
+# 2 argument constructor
+function BondGraph(name, bonds::Vector{Bond})
+    # TODO constuct from bonds only
+
+    BondGraph(Symbol(name), components, bonds)
 end
 
-# maybe not as the default "show" option (summary print instead)
 function Base.show(io::IO, bg::BondGraph)
-    print_str = "BondGraph \"$(bg.name)\""
-    print_str *= isempty(bg.bonds) ? "" : "\n$(join(bg.bonds,"\n"))"
+    print_str = "$(bg.name)"
+    print_str *= isempty(bg.bonds) ? "" : "\n  $(join(bg.bonds,"\n  "))"
     print(io, print_str)
 end
 
-components(bg::BondGraph) = [bg.elements; bg.junctions]
+############################################################################################
+name(bg::BondGraph) = bg.name
+components(bg::BondGraph) = bg.components
+elements(bg::BondGraph) = filter(x -> x isa BondElement, bg.components)
+junctions(bg::BondGraph) = filter(x -> x isa JunctionStructure, bg.components)
+bonds(bg::BondGraph) = bg.bonds
 
 # MTK System converter
 function system(bg::BondGraph; simplify = true)

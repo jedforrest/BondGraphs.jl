@@ -108,7 +108,9 @@ export AbstractNode,
        is_connected,
        connect!,
        effort,
-       flow
+       flow,
+       elements,
+       junctions
 
 # Component libraries
 include("libraries/biochemical.jl")
@@ -130,6 +132,6 @@ include("catalyst.jl")
 include("plotrecipes.jl")
 
 # NEW
-# include("libraries/electrical.jl")
+include("libraries/electrical.jl")
 
 end

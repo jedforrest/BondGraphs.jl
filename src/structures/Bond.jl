@@ -19,7 +19,7 @@ struct Bond
         new(srcport, dstport)
     end
 end
-function Bond(srccomp::Component, dstcomp::Component)
+function Bond(srccomp::AbstractElement, dstcomp::AbstractElement)
     hasfreeport(srccomp) || error("$srccomp has no free ports")
     hasfreeport(dstcomp) || error("$dstcomp has no free ports")
     srcport = nextfreeport(srccomp)
@@ -28,7 +28,7 @@ function Bond(srccomp::Component, dstcomp::Component)
 end
 
 ports(b::Bond) = b.src, b.dst
-vertices(b::Bond) = parent(b.src), parent(b.dst)
+components(b::Bond) = parentname(b.src), parentname(b.dst)
 
 function Base.show(io::IO, b::Bond)
     src, dst = vertices(b)
@@ -55,6 +55,9 @@ in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
 
-# function show(io::IO, b::Bond)
-#     print(io, "Bond $(b.src[1])[$(b.src[2])] ⇀ $(b.dst[1])[$(b.dst[2])]")
-# end
+
+# get unique components from a vector of bonds
+# FIXME return full components instead of just names
+function unique_components(bonds::Vector{Bond})
+    return Set(components(b) for b in bonds)
+end

@@ -270,3 +270,21 @@ function Base.getindex(elem::AbstractElement, key::Symbol)
     port_index = findfirst(x -> x.name == key, ports)
     !isnothing(port_index) ? ports[port_index] : error("No such port: $key")
 end
+
+############################################################
+hasfreeport(elem::AbstractElement) = any(!is_connected, elem.ports)
+hasfreeport(::NonParametricJunction) = true
+
+function nextfreeport(elem::AbstractElement)
+    freeports = filter(!is_connected, elem.ports)
+    isempty(freeports) ? nothing : first(freeports)
+end
+function nextfreeport(junc::NonParametricJunction)
+    # FIXME should only create ports if none are free
+    # 0- and 1- junctions have unlimited ports
+    # so create a new port if trying to connect
+    index = length(junc.ports) + 1
+    port = Port(Symbol("port_$index"), junc.name)
+    push!(junc.ports, port) # add new port to junction
+    port
+end
