@@ -2,10 +2,8 @@ __precompile__(false)
 
 module BondGraphs
 
-import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!, getindex
+import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!, getindex, setindex!
 import Graphs:
-               SimpleGraph,
-               SimpleDiGraph,
                edgetype,
                edges,
                ne,
@@ -26,6 +24,7 @@ import Graphs:
                rem_edge!
 import ModelingToolkit: parameters, equations, controls
 
+using Graphs: SimpleGraph, SimpleDiGraph, SimpleEdge
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using DifferentialEquations
@@ -37,6 +36,7 @@ using RecipesBase, GraphRecipes
 using Latexify
 using Graphs
 using GraphMakie, GraphMakie.NetworkLayout
+using MetaGraphsNext
 
 export AbstractNode,
        Component,
@@ -63,23 +63,23 @@ export AbstractNode,
        all_variables,
        constitutive_relations,
        has_controls,
-       srcnode,
-       dstnode,
+       srccomp,
+       dstcomp,
        srclabel,
        dstlabel,
-       nodes,
+       comps,
        bonds,
        components,
        junctions,
-       getnodes,
+       getcomps,
        getbonds,
-       add_node!,
-       remove_node!,
+       add_comp!,
+       remove_comp!,
        connect!,
        disconnect!,
        swap!,
-       insert_node!,
-       merge_nodes!,
+       insert_comp!,
+       merge_comps!,
        simplify_junctions!,
        expose,
        simulate,
@@ -110,7 +110,8 @@ export AbstractNode,
        effort,
        flow,
        elements,
-       junctions
+       junctions,
+       componentnames
 
 # Component libraries
 include("libraries/biochemical.jl")
@@ -125,8 +126,8 @@ include("structures/Bond.jl")
 include("structures/BondGraph.jl")
 
 # Core functionality
-include("graphfunctions.jl")
-# include("construction.jl")
+# include("graphfunctions.jl")
+include("construction.jl")
 include("systems.jl")
 include("catalyst.jl")
 include("plotrecipes.jl")

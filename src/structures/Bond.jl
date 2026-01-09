@@ -28,10 +28,10 @@ function Bond(srccomp::AbstractElement, dstcomp::AbstractElement)
 end
 
 ports(b::Bond) = b.src, b.dst
-components(b::Bond) = parentname(b.src), parentname(b.dst)
+componentnames(b::Bond) = parentname(b.src), parentname(b.dst)
 
 function Base.show(io::IO, b::Bond)
-    src, dst = vertices(b)
+    src, dst = componentnames(b)
     print(io, "$src ⇀ $dst")
 end
 
@@ -55,9 +55,12 @@ in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
 
+# src, dst (from Graphs)
+src(b::Bond) = vertex(srcnode(b))
+dst(b::Bond) = vertex(dstnode(b))
 
 # get unique components from a vector of bonds
 # FIXME return full components instead of just names
 function unique_components(bonds::Vector{Bond})
-    return Set(components(b) for b in bonds)
+    return Set(componentnames(b) for b in bonds)
 end

@@ -1,3 +1,16 @@
+# Type definition alias for MetaGraphs stored within Bond Graphs
+# See https://github.com/JuliaGraphs/MetaGraphsNext.jl/issues/95#issuecomment-3572905564
+const BondGraphMeta = MetaGraph{
+    Int64,  # Code
+    SimpleDiGraph{Int64},  # Graph
+    Symbol,  # VertexLabel
+    AbstractElement,  # VertexData
+    Bond,  # EdgeData
+    String  # GraphData
+}
+
+############################################################################################
+
 """
     BondGraph(name="BG") <: Graphs.AbstractGraph{Int64}
     BondGraph(name, nodes::Vector{AbstractNode}, bonds::Vector{Bond})
@@ -10,37 +23,44 @@ See also [`BondGraphNode`](@ref).
 """
 # TODO store System object for reuse
 # TODO (optional) use MetaGraph Type annotation (https://github.com/JuliaGraphs/MetaGraphsNext.jl/issues/95)
-struct BondGraph <: AbstractGraph{Int64}
+struct BondGraph <: AbstractGraph{Int}
     name::Symbol
-    components::Vector{AbstractElement}
-    bonds::Vector{Bond}
-    function BondGraph(components::Vector{AbstractElement}, bonds::Vector{Bond} = Bond[]; name = :BondGraph)
-        new(Symbol(name), components, bonds)
+    # components::Vector{<:AbstractElement}
+    # bonds::Vector{Bond}
+    graph::MetaGraph
+    function BondGraph(
+            components::Vector{AbstractElement} = AbstractElement[],
+            bonds::Vector{Bond} = Bond[];
+            name = :BondGraph
+        )
+        graph = metagraph(components, bonds, name)
+        new(Symbol(name), graph)
     end
 end
-# 2 argument constructor
+
 function BondGraph(name, bonds::Vector{Bond})
     # TODO constuct from bonds only
-
-    BondGraph(Symbol(name), components, bonds)
+    BondGraph(Symbol(name), componentnames, bonds)
 end
 
 function Base.show(io::IO, bg::BondGraph)
-    print_str = "$(bg.name)"
-    print_str *= isempty(bg.bonds) ? "" : "\n  $(join(bg.bonds,"\n  "))"
+    print_str = "$(name(bg))"
+    print_str *= isempty(bonds(bg)) ? "" : "\n  $(join(bonds(bg),"\n  "))"
     print(io, print_str)
 end
 
 ############################################################################################
 name(bg::BondGraph) = bg.name
-components(bg::BondGraph) = bg.components
-elements(bg::BondGraph) = filter(x -> x isa BondElement, bg.components)
-junctions(bg::BondGraph) = filter(x -> x isa JunctionStructure, bg.components)
-bonds(bg::BondGraph) = bg.bonds
+
+# components and edges are derived from the graph structure
+components(bg::BondGraph) = [getindex(bg.graph, c) for c in labels(bg.graph)]
+elements(bg::BondGraph) = filter(x -> x isa BondElement, components(bg))
+junctions(bg::BondGraph) = filter(x -> x isa JunctionStructure, components(bg))
+bonds(bg::BondGraph) = [getindex(bg.graph, s, d) for (s, d) in edge_labels(bg.graph)]
 
 # MTK System converter
 function system(bg::BondGraph; simplify = true)
-    comps = components(bg)
+    comps = componentnames(bg)
     subsyss = system.(comps)
 
     conn_eqns = connection_equation.(bg.bonds)
@@ -51,6 +71,77 @@ function system(bg::BondGraph; simplify = true)
 end
 
 ############################################################################################
+
+function metagraph(components::Vector{AbstractElement}, bonds::Vector{Bond}, name)
+    graph = MetaGraph(
+        DiGraph();
+        label_type = Symbol,
+        vertex_data_type = AbstractElement,
+        edge_data_type = Bond,
+        graph_data = string(name)
+    )
+    # vertices
+    for comp in components
+        graph[comp.name] = comp
+    end
+    # edges
+    for bond in bonds
+        srcname, dstname = componentnames(bond)
+        graph[srcname, dstname] = bond
+    end
+    graph
+end
+
+
+############################################################################################
+# Graph functions
+# Most graph functions are passed on to the graph field within the bond graph struct
+
+# eltype
+eltype(::Type{BondGraph}) = Int
+eltype(::BondGraph) = Int
+
+# edgetype TODO check if correct
+edgetype(::Type{BondGraph}) = SimpleEdge{Int}
+edgetype(::BondGraph) = SimpleEdge{Int}
+
+# edges
+edges(bg::BondGraph) = edges(bg.graph)
+has_edge(bg::BondGraph, src, dst) = has_edge(bg.graph, src, dst)
+ne(bg::BondGraph) = ne(bg.graph)
+
+# vertices
+vertices(bg::BondGraph) = vertices(bg.graph)
+has_vertex(bg::BondGraph, v) = has_vertex(bg.graph, v)
+nv(bg::BondGraph) = nv(bg.graph)
+
+# neighbors
+outneighbors(bg::BondGraph, v) = outneighbors(bg.graph, v)
+inneighbors(bg::BondGraph, v) = inneighbors(bg.graph, v)
+
+# directed
+is_directed(bg::Type{BondGraph}) = true
+is_directed(bg::BondGraph) = true
+
+# metagraph indexing
+getindex(bg::BondGraph) = getindex(bg.graph)
+getindex(bg::BondGraph, v) = getindex(bg.graph, v)
+getindex(bg::BondGraph, s, d) = getindex(bg.graph, s, d)
+
+setindex!(bg::BondGraph, data) = setindex!(bg.graph, data)
+setindex!(bg::BondGraph, data, v) = setindex!(bg.graph, data, v)
+setindex!(bg::BondGraph, data, s, d) = setindex!(bg.graph, data, s, d)
+
+# graph mutations TODO? may not be necessary
+
+# add_vertex!
+# rem_vertex!
+# add_edge!
+# rem_edge!
+
+############################################################################################
+
+
 # struct BondGraph <: AbstractGraph{Int}
 #     name::AbstractString
 #     nodes::Vector{<:AbstractNode}

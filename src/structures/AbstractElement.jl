@@ -262,6 +262,8 @@ function Base.getproperty(elem::AbstractElement, name::Symbol)
     end
 end
 
+############################
+
 # index referencing for ports
 Base.getindex(elem::AbstractElement, index::Int) = elem.ports[index]
 

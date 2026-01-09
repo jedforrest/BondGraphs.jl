@@ -2,7 +2,7 @@ using Test
 using BondGraphs
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-
+using Graphs, MetaGraphsNext
 
 @testset "power variables" begin
     e, f, _ = power_variables()
@@ -88,10 +88,8 @@ end
     @named rcomp = resistor()
     @named ccomp = capacitor()
     @named kcl = KCL()
-
     b1 = Bond(rcomp, kcl)
     b2 = Bond(ccomp, kcl)
-
     bg = BondGraph([rcomp, ccomp, kcl], [b1, b2], name="RC Circuit")
 
     @test name(bg) == Symbol("RC Circuit")
@@ -103,30 +101,31 @@ end
     # compare to bonds only construction
     # bg2 = BondGraph([b1, b2], name="RC Circuit")
     # TODO
-
 end
 
-# TODO CONTINUE FROM HERE
 @testset "Graph functions" #= setup=[Setup] =# begin
-    c1 = Component(:C)
-    c2 = Component(:R)
-    c3 = Component(:I)
-    j = EqualFlow()
-    bg = BondGraph()
+    using BondGraphs: resistor, capacitor, inductor, KVL
+    @named r = resistor()
+    @named c = capacitor()
+    @named i = inductor()
+    @named kvl = KVL()
+    b1 = Bond(c, kvl)
+    b2 = Bond(kvl, r)
+    b3 = Bond(kvl, i)
+    bg = BondGraph([c, r, i, kvl], [b1, b2, b3], name=:RCI)
 
-    add_vertex!(bg, c1)
-    add_vertex!(bg, c2)
-    add_vertex!(bg, c3)
-    add_vertex!(bg, j)
-    add_edge!(bg, (c1, 1), (j, 1))
-    add_edge!(bg, (j, 1), (c2, 1)) # junction index is '1' here as a quick fix
-    add_edge!(bg, (j, 1), (c3, 1)) # junction index is '1' here as a quick fix
+    @test eltype(BondGraph) == Int
+    @test eltype(bg) == Int
+    @test edgetype(BondGraph) == Graphs.SimpleEdge{Int}
+    @test edgetype(bg) == Graphs.SimpleEdge{Int}
 
-    # adding components and bonds
+    @test is_directed(bg)
+
+    @test collect(labels(bg.graph)) == [:c, :r, :i, :kvl]
+    @test collect(edge_labels(bg.graph)) == [(:c, :kvl), (:kvl, :r), (:kvl, :i)]
+
     @test ne(bg) == 3
     @test nv(bg) == 4
-    @test has_vertex(bg, c1)
-    @test has_edge(bg, vertex(j), vertex(c2))
 
     # example graph functions
     @test Δ(bg) == 3
@@ -134,26 +133,42 @@ end
     @test Array(adjacency_matrix(bg)) == [0 0 0 1; 0 0 0 0; 0 0 0 0; 0 1 1 0]
 
     # removing components and bonds
-    rem_edge!(bg, c3, j)
-    rem_vertex!(bg, c3)
+    rem_edge!(bg.graph, 1, 4)  # c, kvl
+    rem_vertex!(bg.graph, 1)  # c
     @test ne(bg) == 2
     @test nv(bg) == 3
+
+    # metagraph getindex
+    @test bg[] == "RCI"
+    @test bg[:r] == r
+    @test bg[:kvl, :i] == b3
 end
 
-@testset "BondGraph Modification" #= setup=[Setup] =# begin
-    model = BondGraph(:RCI)
-    C = Component(:C)
-    R = Component(:R)
-    I = Component(:I)
-    SS = Component(:SS)
-    zero_law = EqualEffort()
-    one_law = EqualFlow()
+# TODO CONTINUE FROM HERE
+# @testset "BondGraph Modification" #= setup=[Setup] =# begin
+    using BondGraphs: resistor, capacitor, inductor, voltagesource, KCL, KVL
+    @named r = resistor()
+    @named c = capacitor()
+    @named i = inductor()
+    @named v = voltagesource()
+    @named kcl = KCL()  # 0-junction
+    @named kvl = KVL()  # 1-junction
+    @named model = BondGraph()
 
-    add_node!(model, [C, R, I, SS, zero_law, one_law])
-    remove_node!(model, [SS, one_law])
-    @test !(SS in model.nodes)
-    @test !(one_law in model.nodes)
+    model[:r] = r
+    model[:c] = c
+    model[:i] = v
+    for newcomp in [v, kcl, kvl]
+        add_comp!(model, newcomp)
+    end
+    @test nv(model) == 6
 
+    model[:kvl, :kcl] = Bond(kvl, kcl)
+    @test remove_comp!(model, kvl)
+    @test nv(model) == 5
+    @test ne(model) == 0
+
+    ### TODO CONTINUE FROM HERE
     connect!(model, R, zero_law)
     connect!(model, C, zero_law)
 
@@ -178,7 +193,7 @@ end
     @test one_law in nodes(model)
     @test inneighbors(model, one_law) == [R, C]
     @test outneighbors(model, one_law) == [I]
-end
+# end
 
 @testset "Construction Failure" #= setup=[Setup] =# begin
     model = BondGraph(:RC)

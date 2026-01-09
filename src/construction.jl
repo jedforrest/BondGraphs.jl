@@ -1,218 +1,214 @@
 """
-    add_node!(bg::BondGraph, nodes)
+    add_comp!(bg::BondGraph, comps)
 
-Add a node to a bond graph `bg`. Can add a single node or list of nodes.
+Add a comp to a bond graph `bg`.
 """
-function add_node!(bg::BondGraph, nodes)
-    for node in nodes
-        add_node!(bg, node)
+function add_comp!(bg::BondGraph, comp::AbstractElement)
+    compname = name(comp)
+    add_vertex!(bg.graph, compname, comp) || @warn "Component '$compname' already in model"
+end
+
+"""
+    remove_comp!(bg::BondGraph, comps)
+
+Remove a comp to a bond graph `bg`.
+"""
+function remove_comp!(bg::BondGraph, comp::AbstractElement)
+    compname = name(comp)
+    if !haskey(bg.graph, compname)
+        @warn "Component '$compname' not in model"
+        return false
     end
-end
-
-function add_node!(bg::BondGraph, node::AbstractNode)
-    add_vertex!(bg, node) || @warn "Node '$(name(node))' already in model"
-end
-
-"""
-    remove_node!(bg::BondGraph, nodes)
-
-Remove a node to a bond graph `bg`. Can remove a single node or list of nodes.
-"""
-function remove_node!(bg::BondGraph, nodes)
-    for node in nodes
-        remove_node!(bg, node)
-    end
-end
-
-function remove_node!(bg::BondGraph, node::AbstractNode)
-    rem_vertex!(bg, node) || @warn "Node '$(name(node))' not in model"
-    for bond in filter(bond -> node in bond, bg.bonds)
-        rem_edge!(bg, srcnode(bond), dstnode(bond))
-    end
+    vertex = code_for(bg.graph, compname)
+    rem_vertex!(bg.graph, vertex)
+    # for bond in filter(bond -> comp in bond, bonds(bg))
+    #     rem_edge!(bg.graph, srccomp(bond), dstcomp(bond))
+    # end
 end
 
 """
-    connect!(bg::BondGraph, source_node, destination_node)
-    connect!(bg::BondGraph, (source_node, port_label), (destination_node, port_label))
+    connect!(bg::BondGraph, source_comp, destination_comp)
+    connect!(bg::BondGraph, (source_comp, port_label), (destination_comp, port_label))
 
 Connect two components together in the same bond graph. The bond direction is always from
-`source_node` to `destination_node`. The port index of `source_node` and `destination_node`
+`source_comp` to `destination_comp`. The port index of `source_comp` and `destination_comp`
 can be optionally set.
 """
+# TODO CONTINUE FROM HERE
 function connect!(bg::BondGraph, src, dst)
-    (srcnode, srcport) = port_info(src)
-    (dstnode, dstport) = port_info(dst)
+    (srccomp, srcport) = port_info(src)
+    (dstcomp, dstport) = port_info(dst)
 
-    srcnode in nodes(bg) || error("$srcnode not found in bond graph")
-    dstnode in nodes(bg) || error("$dstnode not found in bond graph")
-    isnothing(srcport) && error("$srcnode has no free ports")
-    isnothing(dstport) && error("$dstnode has no free ports")
-    isconnected(srcnode, srcport) &&
-        error("Port '$srcport' in $srcnode is already connected")
-    isconnected(dstnode, dstport) &&
-        error("Port '$dstport' in $dstnode is already connected")
+    srccomp in comps(bg) || error("$srccomp not found in bond graph")
+    dstcomp in comps(bg) || error("$dstcomp not found in bond graph")
+    isnothing(srcport) && error("$srccomp has no free ports")
+    isnothing(dstport) && error("$dstcomp has no free ports")
+    isconnected(srccomp, srcport) &&
+        error("Port '$srcport' in $srccomp is already connected")
+    isconnected(dstcomp, dstport) &&
+        error("Port '$dstport' in $dstcomp is already connected")
 
-    return add_edge!(bg, (srcnode, srcport), (dstnode, dstport))
+    return add_edge!(bg, (srccomp, srcport), (dstcomp, dstport))
 end
 
-"""
-    disconnect!(bg::BondGraph, node1, node2)
+# """
+#     disconnect!(bg::BondGraph, comp1, comp2)
 
-Remove the bond connecting `node1` and `node2`. The order of nodes does not matter.
-"""
-function disconnect!(bg::BondGraph, node1::AbstractNode, node2::AbstractNode)
-    # rem_edge! removes the bond regardless of the direction of the bond
-    return rem_edge!(bg, node1, node2)
-end
+# Remove the bond connecting `comp1` and `comp2`. The order of comps does not matter.
+# """
+# function disconnect!(bg::BondGraph, comp1::Abstractcomp, comp2::Abstractcomp)
+#     # rem_edge! removes the bond regardless of the direction of the bond
+#     return rem_edge!(bg, comp1, comp2)
+# end
 
-"""
-    swap!(bg::BondGraph, oldnode, newnode)
+# """
+#     swap!(bg::BondGraph, oldcomp, newcomp)
 
-Remove `oldnode` from bond graph `bg` and replace it with `newnode`. The new node
-will have the same connections (bonds) as the original model.
+# Remove `oldcomp` from bond graph `bg` and replace it with `newcomp`. The new comp
+# will have the same connections (bonds) as the original model.
 
-`newnode` must have a greater or equal number of ports as `oldnode`.
-"""
-function swap!(bg::BondGraph, oldnode::AbstractNode, newnode::AbstractNode)
-    _check_port_number(oldnode, newnode)
+# `newcomp` must have a greater or equal number of ports as `oldcomp`.
+# """
+# function swap!(bg::BondGraph, oldcomp::AbstractElement, newcomp::AbstractElement)
+#     _check_port_number(oldcomp, newcomp)
 
-    # may be a redundant check
-    if !has_vertex(bg, newnode)
-        add_node!(bg, newnode)
-    end
+#     # may be a redundant check
+#     if !has_vertex(bg, newcomp)
+#         add_comp!(bg, newcomp)
+#     end
 
-    srcnodes = inneighbors(bg, oldnode)
-    dstnodes = outneighbors(bg, oldnode)
-    remove_node!(bg, oldnode)
+#     srccomps = inneighbors(bg, oldcomp)
+#     dstcomps = outneighbors(bg, oldcomp)
+#     remove_comp!(bg, oldcomp)
 
-    for src in srcnodes
-        connect!(bg, src, newnode)
-    end
-    for dst in dstnodes
-        connect!(bg, newnode, dst)
-    end
-end
+#     for src in srccomps
+#         connect!(bg, src, newcomp)
+#     end
+#     for dst in dstcomps
+#         connect!(bg, newcomp, dst)
+#     end
+# end
 
-function _check_port_number(oldnode::AbstractNode, newnode::AbstractNode)
-    numports(newnode) >= numports(oldnode) ||
-        error("New node must have a greater or equal number of ports to the old node")
-end
-_check_port_number(oldnode::AbstractNode, newnode::Junction) = true
+# function _check_port_number(oldcomp::AbstractElement, newcomp::AbstractElement)
+#     numports(newcomp) >= numports(oldcomp) ||
+#         error("New comp must have a greater or equal number of ports to the old comp")
+# end
+# _check_port_number(oldcomp::AbstractElement, newcomp::Junction) = true
 
-"""
-    insert_node!(bg::BondGraph, bond, newnode)
-    insert_node!(bg::BondGraph, (node1, node2), newnode)
+# """
+#     insert_comp!(bg::BondGraph, bond, newcomp)
+#     insert_comp!(bg::BondGraph, (comp1, comp2), newcomp)
 
-Inserts `newnode` between two existing connected nodes. The direction of the original bond
-is preserved.
+# Inserts `newcomp` between two existing connected comps. The direction of the original bond
+# is preserved.
 
-Supply either the two nodes as a tuple, or the bond that connects them in `bg`.
-"""
-function insert_node!(bg::BondGraph, bond::Bond, newnode::AbstractNode)
-    src = srcnode(bond)
-    dst = dstnode(bond)
+# Supply either the two comps as a tuple, or the bond that connects them in `bg`.
+# """
+# function insert_comp!(bg::BondGraph, bond::Bond, newcomp::AbstractElement)
+#     src = srccomp(bond)
+#     dst = dstcomp(bond)
 
-    disconnect!(bg, src, dst)
+#     disconnect!(bg, src, dst)
 
-    try
-        add_node!(bg, newnode)
-        connect!(bg, src, newnode)
-        connect!(bg, newnode, dst)
-    catch e
-        # if connection fails, reconnect original bond
-        disconnect!(bg, src, newnode)
-        disconnect!(bg, newnode, dst)
-        connect!(bg, src, dst)
-        error(e)
-    end
-end
-function insert_node!(bg::BondGraph, tuple::Tuple, newnode::AbstractNode)
-    bonds = getbonds(bg, tuple)
-    isempty(bonds) && error("$(tuple[1]) and $(tuple[2]) are not connected")
-    insert_node!(bg, bonds[1], newnode)
-end
+#     try
+#         add_comp!(bg, newcomp)
+#         connect!(bg, src, newcomp)
+#         connect!(bg, newcomp, dst)
+#     catch e
+#         # if connection fails, reconnect original bond
+#         disconnect!(bg, src, newcomp)
+#         disconnect!(bg, newcomp, dst)
+#         connect!(bg, src, dst)
+#         error(e)
+#     end
+# end
+# function insert_comp!(bg::BondGraph, tuple::Tuple, newcomp::AbstractElement)
+#     bonds = getbonds(bg, tuple)
+#     isempty(bonds) && error("$(tuple[1]) and $(tuple[2]) are not connected")
+#     insert_comp!(bg, bonds[1], newcomp)
+# end
 
-"""
-    merge_nodes!(bg::BondGraph, node1, node2; junction=EqualEffort())
+# """
+#     merge_comps!(bg::BondGraph, comp1, comp2; junction=EqualEffort())
 
-Combine two copies of the same component in `bg` by adding a `junction` and connecting the
-neighbours of `node1` and `node2` to the new junction.
+# Combine two copies of the same component in `bg` by adding a `junction` and connecting the
+# neighbours of `comp1` and `comp2` to the new junction.
 
-Merging nodes this way means there is only one component representing a system element, and
-all other nodes connect to the component via the new junction.
-"""
-function merge_nodes!(
-        bg::BondGraph,
-        node1::AbstractNode,
-        node2::AbstractNode;
-        junction = EqualEffort()
-)
-    node1.type == node2.type ||
-        error("$(node1.name) must be the same type as $(node2.name)")
+# Merging comps this way means there is only one component representing a system compent, and
+# all other comps connect to the component via the new junction.
+# """
+# function merge_comps!(
+#         bg::BondGraph,
+#         comp1::Abstractcomp,
+#         comp2::Abstractcomp;
+#         junction = EqualEffort()
+# )
+#     comp1.type == comp2.type ||
+#         error("$(comp1.name) must be the same type as $(comp2.name)")
 
-    # node1 taken as the node to keep
-    for nb in all_neighbors(bg, node1)
-        junc = deepcopy(junction)
-        bond = getbonds(bg, node1, nb)[1]
-        insert_node!(bg, bond, junc)
-        swap!(bg, node2, junc)
-    end
-end
-function merge_nodes!(bg::BondGraph, node1::Junction, node2::Junction)
-    # node1 taken as the node to keep
-    # remove conflicting connections between junctions if they exist
-    disconnect!(bg, node1, node2)
-    shared_neighbors = intersect(all_neighbors(bg, node1), all_neighbors(bg, node2))
-    for shared_neighbor in shared_neighbors
-        disconnect!(bg, node2, shared_neighbor)
-    end
-    swap!(bg, node2, node1)
-end
+#     # comp1 taken as the comp to keep
+#     for nb in all_neighbors(bg, comp1)
+#         junc = deepcopy(junction)
+#         bond = getbonds(bg, comp1, nb)[1]
+#         insert_comp!(bg, bond, junc)
+#         swap!(bg, comp2, junc)
+#     end
+# end
+# function merge_comps!(bg::BondGraph, comp1::Junction, comp2::Junction)
+#     # comp1 taken as the comp to keep
+#     # remove conflicting connections between junctions if they exist
+#     disconnect!(bg, comp1, comp2)
+#     shared_neighbors = intersect(all_neighbors(bg, comp1), all_neighbors(bg, comp2))
+#     for shared_neighbor in shared_neighbors
+#         disconnect!(bg, comp2, shared_neighbor)
+#     end
+#     swap!(bg, comp2, comp1)
+# end
 
-"""
-    simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
+# """
+#     simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
 
-Remove unnecessary or redundant Junctions from bond graph `bg`.
+# Remove unnecessary or redundant Junctions from bond graph `bg`.
 
-If `remove_redundant` is true, junctions that have zero or one neighbours are removed, and
-junctions with two neighbours are squashed (connected components remain connected).
+# If `remove_redundant` is true, junctions that have zero or one neighbours are removed, and
+# junctions with two neighbours are squashed (connected components remain connected).
 
-If `squash_identical` is true, connected junctions of the same type are squashed into a
-single junction.
-"""
-function simplify_junctions!(
-        bg::BondGraph;
-        remove_redundant = true,
-        squash_identical = true
-)
-    junctions = filter(n -> n isa Junction, bg.nodes)
+# If `squash_identical` is true, connected junctions of the same type are squashed into a
+# single junction.
+# """
+# function simplify_junctions!(
+#         bg::BondGraph;
+#         remove_redundant = true,
+#         squash_identical = true
+# )
+#     junctions = filter(n -> n isa Junction, bg.comps)
 
-    # Removes junctions with 2 or less connected ports
-    if remove_redundant
-        for j in junctions
-            n_nbrs = length(all_neighbors(bg, j))
-            if n_nbrs == 2
-                #srcnode = inneighbors(bg, j)[1]
-                #dstnode = outneighbors(bg, j)[1]
-                node1, node2 = all_neighbors(bg, j)
-                remove_node!(bg, j)
-                # bond direction may not be preserved here
-                connect!(bg, node1, node2)
-            elseif n_nbrs < 2
-                remove_node!(bg, j)
-            end
-        end
-    end
+#     # Removes junctions with 2 or less connected ports
+#     if remove_redundant
+#         for j in junctions
+#             n_nbrs = length(all_neighbors(bg, j))
+#             if n_nbrs == 2
+#                 #srccomp = inneighbors(bg, j)[1]
+#                 #dstcomp = outneighbors(bg, j)[1]
+#                 comp1, comp2 = all_neighbors(bg, j)
+#                 remove_comp!(bg, j)
+#                 # bond direction may not be preserved here
+#                 connect!(bg, comp1, comp2)
+#             elseif n_nbrs < 2
+#                 remove_comp!(bg, j)
+#             end
+#         end
+#     end
 
-    # Squashes identical copies of the same junction type into one junction
-    if squash_identical
-        for j in junctions, nbr in all_neighbors(bg, j)
+#     # Squashes identical copies of the same junction type into one junction
+#     if squash_identical
+#         for j in junctions, nbr in all_neighbors(bg, j)
 
-            has_vertex(bg, j) || continue # in case j was removed
-            if type(j) == type(nbr)
-                merge_nodes!(bg, j, nbr)
-            end
-        end
-    end
-    bg
-end
+#             has_vertex(bg, j) || continue # in case j was removed
+#             if type(j) == type(nbr)
+#                 merge_comps!(bg, j, nbr)
+#             end
+#         end
+#     end
+#     bg
+# end
