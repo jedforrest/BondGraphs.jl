@@ -1,4 +1,4 @@
-@testset "SS component system" #= setup=[Setup] =# begin
+@testset "SS component system" begin
     SS = SourceSensor(name = :SS)
 
     @test length(ports(SS)) == 1
@@ -14,7 +14,7 @@
     @test sys.p1.F isa Num
 end
 
-@testset "Expose models" #= setup=[Setup] =# begin
+@testset "Expose models" begin
     r = Component(:R)
     kcl = EqualFlow(name = :kcl)
     SSA = SourceSensor(name = :A)
@@ -47,7 +47,7 @@ end
     @test (0 ~ F2 + BF) in eqns
 end
 
-@testset "Modular RLC circuit" #= setup=[Setup] =# begin
+@testset "Modular RLC circuit" begin
     r = Component(:R)
     l = Component(:I)
     c = Component(:C)
@@ -87,7 +87,7 @@ end
     @test qC / C in eqs_rhs
 end
 
-@testset "Modular reaction" #= setup=[Setup] =# begin
+@testset "Modular reaction" begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
     SSA = SourceSensor(name = :A)
@@ -118,7 +118,7 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Named ports" #= setup=[Setup] =# begin
+@testset "Named ports" begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
     SSA = SourceSensor(name = :A)

@@ -19,11 +19,12 @@ function remove_comp!(bg::BondGraph, comp::AbstractElement)
         @warn "Component '$compname' not in model"
         return false
     end
+    # disconnect edge/bond before removing vertex
+    for bond in filter(bond -> comp in bond, bonds(bg))
+        disconnect!(bond)
+    end
     vertex = code_for(bg.graph, compname)
     rem_vertex!(bg.graph, vertex)
-    # for bond in filter(bond -> comp in bond, bonds(bg))
-    #     rem_edge!(bg.graph, srccomp(bond), dstcomp(bond))
-    # end
 end
 
 """
@@ -34,66 +35,68 @@ Connect two components together in the same bond graph. The bond direction is al
 `source_comp` to `destination_comp`. The port index of `source_comp` and `destination_comp`
 can be optionally set.
 """
-# TODO CONTINUE FROM HERE
-function connect!(bg::BondGraph, src, dst)
-    (srccomp, srcport) = port_info(src)
-    (dstcomp, dstport) = port_info(dst)
-
-    srccomp in comps(bg) || error("$srccomp not found in bond graph")
-    dstcomp in comps(bg) || error("$dstcomp not found in bond graph")
-    isnothing(srcport) && error("$srccomp has no free ports")
-    isnothing(dstport) && error("$dstcomp has no free ports")
-    isconnected(srccomp, srcport) &&
-        error("Port '$srcport' in $srccomp is already connected")
-    isconnected(dstcomp, dstport) &&
-        error("Port '$dstport' in $dstcomp is already connected")
-
-    return add_edge!(bg, (srccomp, srcport), (dstcomp, dstport))
+function connect!(bg::BondGraph, src::Union{Port,AbstractElement}, dst::Union{Port,AbstractElement})
+    srcname = src isa Port ? parentname(src) : name(src)
+    dstname = dst isa Port ? parentname(dst) : name(dst)
+    haskey(bg.graph, srcname, dstname) && return true
+    srcname in labels(bg.graph) || error("Component '$srcname' not found in bond graph")
+    dstname in labels(bg.graph) || error("Component '$dstname' not found in bond graph")
+    bond = Bond(src, dst)
+    add_edge!(bg.graph, srcname, dstname, bond)
 end
 
-# """
-#     disconnect!(bg::BondGraph, comp1, comp2)
+"""
+    disconnect!(bg::BondGraph, comp1, comp2)
 
-# Remove the bond connecting `comp1` and `comp2`. The order of comps does not matter.
-# """
-# function disconnect!(bg::BondGraph, comp1::Abstractcomp, comp2::Abstractcomp)
-#     # rem_edge! removes the bond regardless of the direction of the bond
-#     return rem_edge!(bg, comp1, comp2)
-# end
+Remove the bond connecting `comp1` and `comp2`
+"""
+function disconnect!(bg::BondGraph, src::AbstractElement, dst::AbstractElement)
+    srcname = name(src)
+    dstname = name(dst)
+    bond = bg[srcname, dstname]
+    srcvertex = code_for(bg.graph, srcname)
+    dstvertex = code_for(bg.graph, dstname)
+    removed = rem_edge!(bg.graph, srcvertex, dstvertex)
+    if removed
+        disconnect!(bond)
+    end
+    removed
+end
 
-# """
-#     swap!(bg::BondGraph, oldcomp, newcomp)
+"""
+    swap!(bg::BondGraph, oldcomp, newcomp)
 
-# Remove `oldcomp` from bond graph `bg` and replace it with `newcomp`. The new comp
-# will have the same connections (bonds) as the original model.
+Remove `oldcomp` from bond graph `bg` and replace it with `newcomp`. The new comp
+will have the same connections (bonds) as the original model.
 
-# `newcomp` must have a greater or equal number of ports as `oldcomp`.
-# """
-# function swap!(bg::BondGraph, oldcomp::AbstractElement, newcomp::AbstractElement)
-#     _check_port_number(oldcomp, newcomp)
+`newcomp` must have a greater or equal number of ports as `oldcomp`.
+"""
+function swap!(bg::BondGraph, oldcomp::AbstractElement, newcomp::AbstractElement)
 
-#     # may be a redundant check
-#     if !has_vertex(bg, newcomp)
-#         add_comp!(bg, newcomp)
-#     end
+    if numports(newcomp) < numports(oldcomp)
+        @warn("New comp must have a greater or equal number of ports than the old comp")
+        return false
+    end
 
-#     srccomps = inneighbors(bg, oldcomp)
-#     dstcomps = outneighbors(bg, oldcomp)
-#     remove_comp!(bg, oldcomp)
+    # add new component to bond graph if not present already
+    if !(newcomp in components(bg))
+        add_comp!(bg, newcomp)
+    end
 
-#     for src in srccomps
-#         connect!(bg, src, newcomp)
-#     end
-#     for dst in dstcomps
-#         connect!(bg, newcomp, dst)
-#     end
-# end
+    in_nbrs = inneighbor_comps(bg, oldcomp)
+    out_nbrs = outneighbor_comps(bg, oldcomp)
+    remove_comp!(bg, oldcomp)
 
-# function _check_port_number(oldcomp::AbstractElement, newcomp::AbstractElement)
-#     numports(newcomp) >= numports(oldcomp) ||
-#         error("New comp must have a greater or equal number of ports to the old comp")
-# end
-# _check_port_number(oldcomp::AbstractElement, newcomp::Junction) = true
+    for i in in_nbrs
+        in_comp = bg[i]
+        connect!(bg, in_comp, newcomp)
+    end
+    for j in out_nbrs
+        out_comp = bg[j]
+        connect!(bg, newcomp, out_comp)
+    end
+    true
+end
 
 # """
 #     insert_comp!(bg::BondGraph, bond, newcomp)

@@ -50,7 +50,7 @@ end
 # dstlabel(b::Bond) = b.dst[2]
 
 # Base functions
-in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
+Base.in(n::AbstractElement, b::Bond) = name(n) in componentnames(b)
 
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
@@ -64,3 +64,5 @@ dst(b::Bond) = vertex(dstnode(b))
 function unique_components(bonds::Vector{Bond})
     return Set(componentnames(b) for b in bonds)
 end
+
+disconnect!(b::Bond) = disconnect!.(ports(b))

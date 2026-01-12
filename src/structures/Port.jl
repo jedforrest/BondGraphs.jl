@@ -44,6 +44,7 @@ end
 
 is_connected(p::Port) = p.connected[]
 connect!(p::Port) = p.connected[] = true
+disconnect!(p::Port) = p.connected[] = false
 
 function effort(p::Port)
     e = filter(x -> get_connection_type(x) == Effort, unknowns(p.sys))[]

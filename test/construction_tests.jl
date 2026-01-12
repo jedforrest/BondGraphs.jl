@@ -1,5 +1,6 @@
 using Test
 using BondGraphs
+using BondGraphs: is_connected
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using Graphs, MetaGraphsNext
@@ -13,7 +14,7 @@ using Graphs, MetaGraphsNext
     @test tosymbol.(vars, escape=false) == [:F, :v, :p, :x]
 end
 
-@testset "AbstractElements" #= setup=[Setup] =# begin
+@testset "AbstractElements" begin
     @variables e(t) f(t) p(t) q(t)
     @parameters R C L
 
@@ -41,7 +42,7 @@ end
     @test repr(flow(port)) == "port_1₊I(t)"
 end
 
-@testset "Creating Components" #= setup=[Setup] =# begin
+@testset "Creating Components" begin
     @variables e(t) f(t) q(t)
     @parameters C
     eqs = [D(q) ~ f, q ~ C * e]
@@ -60,7 +61,7 @@ end
     @test capacitor[:port_1] == port
 end
 
-@testset "Creating Junctions" #= setup=[Setup] =# begin
+@testset "Creating Junctions" begin
     j0 = EqualEffort()
     j1 = EqualFlow()
     @test repr(j0) == "EqualEffort"
@@ -69,22 +70,20 @@ end
     @test name(j0) == :𝟎
     @test name(j1) == :𝟏
 
-    @test length(ports(j0)) == length(ports(j1)) == 0
+    @test length(ports(j0)) == length(ports(j1)) == 1
 
-    for i in 1:3
-        push!(j0.ports, Port(Symbol("p$i"), :j0))
-    end
+    push!(j0.ports, Port(:port_2, :j0))
+    push!(j0.ports, Port(:port_3, :j0))
 
     cr = constitutive_relations(j0)
-    @test repr(cr[1]) == "p1₊e(t) ~ p2₊e(t)"
-    @test repr(cr[2]) == "p1₊e(t) ~ p3₊e(t)"
-    @test repr(cr[3]) == "p3₊f(t) + p2₊f(t) + p1₊f(t) ~ 0"
+    @test repr(cr[1]) == "port_1₊e(t) ~ port_2₊e(t)"
+    @test repr(cr[2]) == "port_1₊e(t) ~ port_3₊e(t)"
+    @test repr(cr[3]) == "port_3₊f(t) + port_1₊f(t) + port_2₊f(t) ~ 0"
 end
 
-@testset "BondGraph Construction" #= setup=[Setup] =# begin
+@testset "BondGraph Construction" begin
     # imported from library
     using BondGraphs: resistor, capacitor, KCL
-
     @named rcomp = resistor()
     @named ccomp = capacitor()
     @named kcl = KCL()
@@ -103,7 +102,7 @@ end
     # TODO
 end
 
-@testset "Graph functions" #= setup=[Setup] =# begin
+@testset "Graph functions" begin
     using BondGraphs: resistor, capacitor, inductor, KVL
     @named r = resistor()
     @named c = capacitor()
@@ -145,7 +144,7 @@ end
 end
 
 # TODO CONTINUE FROM HERE
-# @testset "BondGraph Modification" #= setup=[Setup] =# begin
+@testset "BondGraph Modification" begin
     using BondGraphs: resistor, capacitor, inductor, voltagesource, KCL, KVL
     @named r = resistor()
     @named c = capacitor()
@@ -157,72 +156,85 @@ end
 
     model[:r] = r
     model[:c] = c
-    model[:i] = v
+    model[:i] = i
     for newcomp in [v, kcl, kvl]
         add_comp!(model, newcomp)
     end
     @test nv(model) == 6
 
     model[:kvl, :kcl] = Bond(kvl, kcl)
+    @test length(kcl.ports) == 1 && is_connected(kcl[1])
+
     @test remove_comp!(model, kvl)
+    @test length(kcl.ports) == 1 && !is_connected(kcl[1])
     @test nv(model) == 5
     @test ne(model) == 0
 
-    ### TODO CONTINUE FROM HERE
-    connect!(model, R, zero_law)
-    connect!(model, C, zero_law)
-
-    I_port_info = BondGraphs.port_info(I)
-    @test I_port_info == (I, 1)
-    @test I_port_info == BondGraphs.port_info(I_port_info)
-
-    @test ports(I) == Dict(1 => false)
-    b1 = connect!(model, zero_law, I)
+    connect!(model, r, kcl)
+    connect!(model, c, kcl)
+    connect!(model, kcl, i)
     @test ne(model) == 3
-    @test b1 in bonds(model)
-    @test ports(I) == Dict(1 => true)
+    @test length(kcl.ports) == 3 && all(is_connected, kcl.ports)
 
-    disconnect!(model, I, zero_law) # tests disconnect when node order is swapped
+    disconnect!(model, kcl, i)
     @test ne(model) == 2
-    @test !(b1 in bonds(model))
-    @test I.ports == Dict(1 => false)
+    @test length(kcl.ports) == 3 && !is_connected(kcl[3])
+    connect!(model, kcl, i)
 
-    connect!(model, zero_law, I)
-    swap!(model, zero_law, one_law)
-    @test ports(I) == Dict(1 => true)
-    @test one_law in nodes(model)
-    @test inneighbors(model, one_law) == [R, C]
-    @test outneighbors(model, one_law) == [I]
-# end
-
-@testset "Construction Failure" #= setup=[Setup] =# begin
-    model = BondGraph(:RC)
-    C = Component(:C)
-    R = Component(:R)
-    zero_law = EqualEffort()
-
-    add_node!(model, [R, C, zero_law])
-    @test_logs (:warn, "Node 'R' already in model") add_node!(model, R)
-    @test_logs (:warn, "Node '𝟎_3' already in model") add_node!(model, zero_law)
-
-    bond = connect!(model, R, zero_law)
-    @test_throws ErrorException connect!(model, R, zero_law)
-    @test_throws ErrorException connect!(model, C, R)
-
-    one_law = EqualFlow()
-    @test_logs (:warn, "Node '𝟏' not in model") remove_node!(model, one_law)
-
-    tf = Component(:TF)
-    add_node!(model, tf)
-    @test_throws ErrorException swap!(model, tf, C)
-
-    # if inserting a node fails, the original nodes should still remain connected
-    @test has_edge(model, bond)
-    @test_throws ErrorException insert_node!(model, bond, Component(:I))
-    @test has_edge(model, bond)
+    swap!(model, kcl, kvl)
+    @test (kvl in components(model)) && !(kcl in components(model))
+    @test ne(model) == 3
+    @test inneighbor_comps(model, kvl) == [:r, :c]
+    @test outneighbor_comps(model, kvl) == [:i]
 end
 
-@testset "Chemical reaction" #= setup=[Setup] =# begin
+### TODO CONTINUE FROM HERE
+@testset "Inserting Nodes" begin
+    bg = RCI()
+
+    c, r, J0 = bg.nodes[[1, 2, 5]]
+
+    bondc0 = getbonds(bg, c, J0)[1]
+    bondr0 = getbonds(bg, r, J0)[1]
+
+    tf = Component(:TF, numports = 2)
+    insert_node!(bg, bondc0, tf)
+    insert_node!(bg, bondr0, EqualFlow())
+
+    @test tf in bg.nodes
+    @test nv(bg) == 7
+    @test ne(bg) == 6
+end
+
+@testset "Construction Failure" begin
+    using BondGraphs: resistor, capacitor, KVL
+    @named rcomp = resistor()
+    @named ccomp = capacitor()
+    @named kvl = KVL()
+    b1 = Bond(rcomp, kvl)
+    b2 = Bond(ccomp, kvl)
+    bg = BondGraph([rcomp, ccomp, kvl], [b1, b2], name="RC")
+
+    @test_logs (:warn, "Component 'rcomp' already in model") add_comp!(bg, rcomp)
+
+    @named v = voltagesource()
+    @test_throws ErrorException connect!(bg, v, kvl)
+    @test_throws ErrorException connect!(bg, ccomp, rcomp)
+
+    @test_logs (:warn, "Component 'v' not in model") remove_comp!(bg, v)
+
+    # FIXME
+    # tf = Component(:TF)
+    # add_node!(model, tf)
+    # @test_throws ErrorException swap!(model, tf, C)
+
+    # # if inserting a node fails, the original nodes should still remain connected
+    # @test has_edge(model, bond)
+    # @test_throws ErrorException insert_node!(model, bond, Component(:I))
+    # @test has_edge(model, bond)
+end
+
+@testset "Chemical reaction" begin
     model = BondGraph(:Chemical)
     A = Component(:C, :A)
     B = Component(:C, :B)
@@ -248,24 +260,8 @@ end
     @test ne(model) == 6
 end
 
-@testset "Inserting Nodes" #= setup=[Setup] =# begin
-    bg = RCI()
 
-    c, r, J0 = bg.nodes[[1, 2, 5]]
-
-    bondc0 = getbonds(bg, c, J0)[1]
-    bondr0 = getbonds(bg, r, J0)[1]
-
-    tf = Component(:TF, numports = 2)
-    insert_node!(bg, bondc0, tf)
-    insert_node!(bg, bondr0, EqualFlow())
-
-    @test tf in bg.nodes
-    @test nv(bg) == 7
-    @test ne(bg) == 6
-end
-
-@testset "Merging components" #= setup=[Setup] =# begin
+@testset "Merging components" begin
     bg = RCI()
     C = bg.C
     R = bg.R
@@ -285,7 +281,7 @@ end
     @test ne(bg) == 7
 end
 
-@testset "Simplifying Junctions" #= setup=[Setup] =# begin
+@testset "Simplifying Junctions" begin
     bg = RCI()
     C, R, I, SS, J0 = bg.nodes
 
@@ -315,7 +311,7 @@ end
     @test ne(bg) == 4
 end
 
-@testset "BondGraphNodes" #= setup=[Setup] =# begin
+@testset "BondGraphNodes" begin
     C = Component(:C, "C")
     bg1 = BondGraph("first")
     bg2 = BondGraph("second")
@@ -343,7 +339,7 @@ end
     @test main.third.second.first.C == [C, C2]
 end
 
-@testset "Conversion to Other Graphs" #= setup=[Setup] =# begin
+@testset "Conversion to Other Graphs" begin
     bg = RCI()
     g = SimpleGraph(bg)
     dg = SimpleDiGraph(bg)

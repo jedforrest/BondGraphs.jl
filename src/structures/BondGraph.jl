@@ -116,14 +116,14 @@ has_vertex(bg::BondGraph, v) = has_vertex(bg.graph, v)
 nv(bg::BondGraph) = nv(bg.graph)
 
 # neighbors
-outneighbors(bg::BondGraph, v) = outneighbors(bg.graph, v)
 inneighbors(bg::BondGraph, v) = inneighbors(bg.graph, v)
+outneighbors(bg::BondGraph, v) = outneighbors(bg.graph, v)
 
 # directed
 is_directed(bg::Type{BondGraph}) = true
 is_directed(bg::BondGraph) = true
 
-# metagraph indexing
+# MetaGraph indexing
 getindex(bg::BondGraph) = getindex(bg.graph)
 getindex(bg::BondGraph, v) = getindex(bg.graph, v)
 getindex(bg::BondGraph, s, d) = getindex(bg.graph, s, d)
@@ -132,7 +132,7 @@ setindex!(bg::BondGraph, data) = setindex!(bg.graph, data)
 setindex!(bg::BondGraph, data, v) = setindex!(bg.graph, data, v)
 setindex!(bg::BondGraph, data, s, d) = setindex!(bg.graph, data, s, d)
 
-# graph mutations TODO? may not be necessary
+# graph mutations TODO
 
 # add_vertex!
 # rem_vertex!
@@ -141,6 +141,10 @@ setindex!(bg::BondGraph, data, s, d) = setindex!(bg.graph, data, s, d)
 
 ############################################################################################
 
+inneighbor_comps(bg::BondGraph, elem::AbstractElement) = collect(inneighbor_labels(bg.graph, name(elem)))
+outneighbor_comps(bg::BondGraph, elem::AbstractElement) = collect(outneighbor_labels(bg.graph, name(elem)))
+
+############################################################################################
 
 # struct BondGraph <: AbstractGraph{Int}
 #     name::AbstractString

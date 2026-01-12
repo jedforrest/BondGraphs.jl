@@ -1,4 +1,4 @@
-@testset "Equations" #= setup=[Setup] =# begin
+@testset "Equations" begin
     c = Component(:C)
     @parameters C
     @variables E(t)[1] F(t)[1] q(t) C₊q(t)
@@ -17,7 +17,7 @@
     @test equations(bg) == [D(C₊q) ~ -0.0] # Equation produces -ve zero
 end
 
-@testset "Parameters" #= setup=[Setup] =# begin
+@testset "Parameters" begin
     tf = Component(:TF)
     @parameters n
     @test var_in(n, parameters(tf))
@@ -34,7 +34,7 @@ end
     end
 end
 
-@testset "Globals" #= setup=[Setup] =# begin
+@testset "Globals" begin
     re = Component(:Re)
     c = Component(:C)
     @parameters R T
@@ -50,7 +50,7 @@ end
     @test var_in(R, all_globals)
 end
 
-@testset "State variables" #= setup=[Setup] =# begin
+@testset "State variables" begin
     r = Component(:R)
     @test isempty(states(r))
 
@@ -65,7 +65,7 @@ end
     @test var_in(p, all_states)
 end
 
-@testset "Controls" #= setup=[Setup] =# begin
+@testset "Controls" begin
     bg = RLC()
     se = Component(:Se)
     sf = Component(:Sf)
@@ -75,7 +75,7 @@ end
     @test has_controls(bg)
 end
 
-@testset "All variables" #= setup=[Setup] =# begin
+@testset "All variables" begin
     bg = RLC()
     re = Component(:Re)
     add_node!(bg, re)
@@ -85,7 +85,7 @@ end
     end
 end
 
-@testset "Constitutive relations" #= setup=[Setup] =# begin
+@testset "Constitutive relations" begin
     eqE = EqualEffort()
     eqF = EqualFlow()
     @test constitutive_relations(eqE) == Equation[]
@@ -120,7 +120,7 @@ end
     @test constitutive_relations(bg; sub_defaults = true) == subbed_eqs
 end
 
-@testset "0-junction equations" #= setup=[Setup] =# begin
+@testset "0-junction equations" begin
     model = BondGraph(:RC)
     C = Component(:C)
     R = Component(:R)
@@ -139,7 +139,7 @@ end
     ])
 end
 
-@testset "1-junction equations" #= setup=[Setup] =# begin
+@testset "1-junction equations" begin
     c1 = Component(:C, :C1)
     c2 = Component(:R, :R1)
     c3 = Component(:I, :I1)
@@ -163,7 +163,7 @@ end
     ])
 end
 
-@testset "RC circuit" #= setup=[Setup] =# begin
+@testset "RC circuit" begin
     r = Component(:R)
     c = Component(:C)
     bg = BondGraph(:RC)
@@ -183,7 +183,7 @@ end
     @test isequal(expand(e1.rhs), e2.rhs)
 end
 
-@testset "RL circuit" #= setup=[Setup] =# begin
+@testset "RL circuit" begin
     r = Component(:R)
     l = Component(:I)
     bg = BondGraph(:RL)
@@ -197,7 +197,7 @@ end
     @test eqs == [D(x) ~ -R * x / L]
 end
 
-@testset "RLC circuit" #= setup=[Setup] =# begin
+@testset "RLC circuit" begin
     bg = RLC()
     eqs = constitutive_relations(bg)
     @test length(eqs) == 2
@@ -212,7 +212,7 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Chemical reaction A ⇌ B" #= setup=[Setup] =# begin
+@testset "Chemical reaction A ⇌ B" begin
     A = Component(:ce, :A)
     B = Component(:ce, :B)
     re = Component(:re, :r)
@@ -233,7 +233,7 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testset "Chemical reaction A ⇌ B + C, C ⇌ D" #= setup=[Setup] =# begin
+@testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
     C_A = Component(:ce, :A)
     C_B = Component(:ce, :B)
     C_C = Component(:ce, :C)

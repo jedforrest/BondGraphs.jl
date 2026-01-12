@@ -111,7 +111,10 @@ export AbstractNode,
        flow,
        elements,
        junctions,
-       componentnames
+       componentnames,
+       is_connected,
+       inneighbor_comps,
+       outneighbor_comps
 
 # Component libraries
 include("libraries/biochemical.jl")

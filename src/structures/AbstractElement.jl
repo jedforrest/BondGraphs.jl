@@ -168,7 +168,7 @@ struct EqualEffort <: NonParametricJunction
             [es[1] ~ e for e in es[2:end]];
             sum(fs) ~ 0
         ]
-        new(name, sys, relation_fn, Port[])
+        new(name, sys, relation_fn, [Port(:port_1, name)])
     end
 end
 """`1`-junction"""
@@ -183,7 +183,7 @@ struct EqualFlow <: NonParametricJunction
             sum(es) ~ 0;
             [fs[1] ~ f for f in fs[2:end]]
         ]
-        new(name, sys, relation_fn, Port[])
+        new(name, sys, relation_fn, [Port(:port_1, name)])
     end
 end
 
@@ -245,11 +245,11 @@ glyph(::EqualFlow) = :𝟏
 ############################################################
 # Overloading Base
 
-function Base.show(io::IO, elem::T) where {T <: AbstractElement}
+function Base.show(io::IO, elem::AbstractElement)
     print_str = "$(glyph(elem))::$(name(elem))"
     print(io, print_str)
 end
-Base.show(io::IO, ::T) where {T <: NonParametricJunction} = print(io, T)
+Base.show(io::IO, junc::NonParametricJunction) = print(io, name(junc))
 
 # Easier referencing systems using a.b notation
 function Base.getproperty(elem::AbstractElement, name::Symbol)
@@ -282,11 +282,15 @@ function nextfreeport(elem::AbstractElement)
     isempty(freeports) ? nothing : first(freeports)
 end
 function nextfreeport(junc::NonParametricJunction)
-    # FIXME should only create ports if none are free
     # 0- and 1- junctions have unlimited ports
-    # so create a new port if trying to connect
-    index = length(junc.ports) + 1
-    port = Port(Symbol("port_$index"), junc.name)
-    push!(junc.ports, port) # add new port to junction
-    port
+    # so create a new port if none are free
+    freeportindex = findfirst(!is_connected, junc.ports)
+    if isnothing(freeportindex)
+        index = length(junc.ports) + 1
+        port = Port(Symbol("port_$index"), junc.name)
+        push!(junc.ports, port) # add new port to junction
+        return port
+    else
+        return junc.ports[freeportindex]
+    end
 end
