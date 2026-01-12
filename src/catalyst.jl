@@ -1,6 +1,28 @@
 #TODO: include reaction rates in forming the bondgraph
 
 """
+    merge_comps!(bg::BondGraph, comp1, comp2; junction=EqualEffort())
+
+Combine two copies of the same component in `bg` by adding a `junction` and connecting the
+neighbours of `comp1` and `comp2` to the new junction.
+
+Merging comps this way means there is only one component representing a system component, and
+all other comps connect to the component via the new junction.
+"""
+# FIXME this is mainly useful for catalyst/chemical bond graphs
+function merge_comps!(bg::BondGraph, comp1::T, comp2::T; junction = EqualEffort()) where {T <: AbstractElement}
+    comp1.type == comp2.type || error("Components must have the same type")
+
+    # comp1 taken as the comp to keep
+    for nb in all_neighbors(bg, comp1)
+        junc = deepcopy(junction)
+        bond = getbonds(bg, comp1, nb)[1]
+        insert_comp!(bg, bond, junc)
+        swap!(bg, comp2, junc)
+    end
+end
+
+"""
     BondGraph(rs::ReactionSystem; chemostats=[])
 
 Convert a Catalyst.ReactionSystem into a BondGraph.

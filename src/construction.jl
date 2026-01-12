@@ -53,6 +53,7 @@ Remove the bond connecting `comp1` and `comp2`
 function disconnect!(bg::BondGraph, src::AbstractElement, dst::AbstractElement)
     srcname = name(src)
     dstname = name(dst)
+    !haskey(bg.graph, srcname, dstname) && return false
     bond = bg[srcname, dstname]
     srcvertex = code_for(bg.graph, srcname)
     dstvertex = code_for(bg.graph, dstname)
@@ -98,120 +99,107 @@ function swap!(bg::BondGraph, oldcomp::AbstractElement, newcomp::AbstractElement
     true
 end
 
-# """
-#     insert_comp!(bg::BondGraph, bond, newcomp)
-#     insert_comp!(bg::BondGraph, (comp1, comp2), newcomp)
+"""
+    insert_comp!(bg::BondGraph, bond, newcomp)
+    insert_comp!(bg::BondGraph, (comp1, comp2), newcomp)
 
-# Inserts `newcomp` between two existing connected comps. The direction of the original bond
-# is preserved.
+Inserts `newcomp` between two existing connected comps. The direction of the original bond
+is preserved.
 
-# Supply either the two comps as a tuple, or the bond that connects them in `bg`.
-# """
-# function insert_comp!(bg::BondGraph, bond::Bond, newcomp::AbstractElement)
-#     src = srccomp(bond)
-#     dst = dstcomp(bond)
+Supply either the two comps as a tuple, or the bond that connects them in `bg`.
+"""
+function insert_comp!(bg::BondGraph, bond::Bond, newcomp::AbstractElement)
+    srcname, dstname = componentnames(bond)
+    src = bg[srcname]
+    dst = bg[dstname]
 
-#     disconnect!(bg, src, dst)
+    disconnect!(bg, src, dst)
 
-#     try
-#         add_comp!(bg, newcomp)
-#         connect!(bg, src, newcomp)
-#         connect!(bg, newcomp, dst)
-#     catch e
-#         # if connection fails, reconnect original bond
-#         disconnect!(bg, src, newcomp)
-#         disconnect!(bg, newcomp, dst)
-#         connect!(bg, src, dst)
-#         error(e)
-#     end
-# end
-# function insert_comp!(bg::BondGraph, tuple::Tuple, newcomp::AbstractElement)
-#     bonds = getbonds(bg, tuple)
-#     isempty(bonds) && error("$(tuple[1]) and $(tuple[2]) are not connected")
-#     insert_comp!(bg, bonds[1], newcomp)
-# end
+    try
+        add_comp!(bg, newcomp)
+        connect!(bg, src, newcomp)
+        connect!(bg, newcomp, dst)
+    catch e
+        # if connection fails, reconnect original bond
+        disconnect!(bg, src, newcomp)
+        disconnect!(bg, newcomp, dst)
+        connect!(bg, src, dst)
+        error(e)
+    end
+end
+function insert_comp!(bg::BondGraph, tuple::Tuple{AbstractElement, AbstractElement}, newcomp::AbstractElement)
+    srcname, dstname = name.(tuple)
+    if !haskey(bg.graph, srcname, dstname)
+        error("'$(srcname)' and '$(dstname)' are not connected")
+    end
+    insert_comp!(bg, bg[srcname, dstname], newcomp)
+end
 
-# """
-#     merge_comps!(bg::BondGraph, comp1, comp2; junction=EqualEffort())
+# TODO extend for ParametricJunction
+function merge_junctions!(bg::BondGraph, comp1::T, comp2::T) where {T <: NonParametricJunction}
+    # comp1 taken as the comp to keep
+    # remove conflicting connections between junctions if they exist
+    disconnect!(bg, comp1, comp2)
+    all_nbrs1 = all_neighbor_labels(bg.graph, name(comp1))
+    all_nbrs2 = all_neighbor_labels(bg.graph, name(comp2))
+    shared_neighbors = intersect(all_nbrs1, all_nbrs2)
+    for shared_neighbor in shared_neighbors
+        shared_nbr_comp = bg[shared_neighbor]
+        disconnect!(bg, comp2, shared_nbr_comp)
+    end
+    swap!(bg, comp2, comp1)
+end
 
-# Combine two copies of the same component in `bg` by adding a `junction` and connecting the
-# neighbours of `comp1` and `comp2` to the new junction.
+"""
+    simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
 
-# Merging comps this way means there is only one component representing a system compent, and
-# all other comps connect to the component via the new junction.
-# """
-# function merge_comps!(
-#         bg::BondGraph,
-#         comp1::Abstractcomp,
-#         comp2::Abstractcomp;
-#         junction = EqualEffort()
-# )
-#     comp1.type == comp2.type ||
-#         error("$(comp1.name) must be the same type as $(comp2.name)")
+Remove unnecessary or redundant Junctions from bond graph `bg`.
 
-#     # comp1 taken as the comp to keep
-#     for nb in all_neighbors(bg, comp1)
-#         junc = deepcopy(junction)
-#         bond = getbonds(bg, comp1, nb)[1]
-#         insert_comp!(bg, bond, junc)
-#         swap!(bg, comp2, junc)
-#     end
-# end
-# function merge_comps!(bg::BondGraph, comp1::Junction, comp2::Junction)
-#     # comp1 taken as the comp to keep
-#     # remove conflicting connections between junctions if they exist
-#     disconnect!(bg, comp1, comp2)
-#     shared_neighbors = intersect(all_neighbors(bg, comp1), all_neighbors(bg, comp2))
-#     for shared_neighbor in shared_neighbors
-#         disconnect!(bg, comp2, shared_neighbor)
-#     end
-#     swap!(bg, comp2, comp1)
-# end
+If `remove_redundant` is true, junctions that have zero or one neighbours are removed, and
+junctions with two neighbours are squashed (connected components remain connected).
 
-# """
-#     simplify_junctions!(bg::BondGraph; remove_redundant=true, squash_identical=true)
+If `squash_identical` is true, connected junctions of the same type are squashed into a
+single junction.
+"""
+function simplify_junctions!(
+        bg::BondGraph;
+        remove_redundant = true,
+        squash_identical = true
+)
+    junctions = filter(x -> x isa EqualEffort || x isa EqualFlow, components(bg))
 
-# Remove unnecessary or redundant Junctions from bond graph `bg`.
+    # Removes junctions with 2 or less connected ports
+    if remove_redundant
+        for j in junctions
+            all_nbrs = all_neighbor_labels(bg.graph, name(j))
+            if length(all_nbrs) == 2
+                comp1, comp2 = all_nbrs
+                remove_comp!(bg, j)
+                # bond direction may not be preserved here
+                connect!(bg, bg[comp1], bg[comp2])
+            elseif length(all_nbrs) < 2
+                remove_comp!(bg, j)
+            end
+        end
+    end
 
-# If `remove_redundant` is true, junctions that have zero or one neighbours are removed, and
-# junctions with two neighbours are squashed (connected components remain connected).
+    # Squashes identical copies of the same junction type into one junction
+    # FIXME
+    if squash_identical
+        for j in junctions
+            all_nbrs = collect(all_neighbor_labels(bg.graph, name(j)))
+            for nbr in all_nbrs
+                g = bg.graph
+                has_vertex(g, code_for(g, name(j))) || continue # in case j was removed
+                nbrcomp = bg[nbr]
+                if typeof(j) == typeof(nbrcomp)
+                    merge_junctions!(bg, j, nbrcomp)
+                end
+            end
+        end
+    end
 
-# If `squash_identical` is true, connected junctions of the same type are squashed into a
-# single junction.
-# """
-# function simplify_junctions!(
-#         bg::BondGraph;
-#         remove_redundant = true,
-#         squash_identical = true
-# )
-#     junctions = filter(n -> n isa Junction, bg.comps)
+    # TODO merge TF/GY components
 
-#     # Removes junctions with 2 or less connected ports
-#     if remove_redundant
-#         for j in junctions
-#             n_nbrs = length(all_neighbors(bg, j))
-#             if n_nbrs == 2
-#                 #srccomp = inneighbors(bg, j)[1]
-#                 #dstcomp = outneighbors(bg, j)[1]
-#                 comp1, comp2 = all_neighbors(bg, j)
-#                 remove_comp!(bg, j)
-#                 # bond direction may not be preserved here
-#                 connect!(bg, comp1, comp2)
-#             elseif n_nbrs < 2
-#                 remove_comp!(bg, j)
-#             end
-#         end
-#     end
-
-#     # Squashes identical copies of the same junction type into one junction
-#     if squash_identical
-#         for j in junctions, nbr in all_neighbors(bg, j)
-
-#             has_vertex(bg, j) || continue # in case j was removed
-#             if type(j) == type(nbr)
-#                 merge_comps!(bg, j, nbr)
-#             end
-#         end
-#     end
-#     bg
-# end
+    bg
+end

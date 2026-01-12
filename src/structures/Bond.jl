@@ -56,8 +56,8 @@ iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
 
 # src, dst (from Graphs)
-src(b::Bond) = vertex(srcnode(b))
-dst(b::Bond) = vertex(dstnode(b))
+# src(b::Bond) = vertex(srcnode(b))
+# dst(b::Bond) = vertex(dstnode(b))
 
 # get unique components from a vector of bonds
 # FIXME return full components instead of just names

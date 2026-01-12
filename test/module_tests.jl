@@ -1,3 +1,32 @@
+@testset "BondGraphNodes" begin
+    C = Component(:C, "C")
+    bg1 = BondGraph("first")
+    bg2 = BondGraph("second")
+    bg3 = BondGraph("third")
+    main = BondGraph("Main")
+
+    bgn1 = BondGraphNode(bg1)
+    bgn2 = BondGraphNode(bg2)
+    bgn3 = BondGraphNode(bg3)
+
+    @test bgn1.bondgraph === bg1
+    @test bgn1.type === "BG"
+    @test bgn1.name === bg1.name
+    @test bgn1.ports == Dict()
+
+    add_node!(bg1, C)
+    add_node!(bg2, bgn1)
+    add_node!(bg3, bgn2)
+    add_node!(main, bgn3)
+
+    @test main.third.second.first.C === C
+
+    C2 = Component(:C, "C") # Same name
+    add_node!(bg1, C2)
+    @test main.third.second.first.C == [C, C2]
+end
+
+
 @testset "SS component system" begin
     SS = SourceSensor(name = :SS)
 

@@ -1,3 +1,50 @@
+@testset "Chemical reaction" begin
+    model = BondGraph(:Chemical)
+    A = Component(:C, :A)
+    B = Component(:C, :B)
+    C = Component(:C, :C)
+    D = Component(:C, :D)
+    Re = Component(:Re, :Reaction, numports = 2)
+    J_AB = EqualFlow()
+    J_CD = EqualFlow()
+
+    add_node!(model, [A, B, C, D, Re, J_AB, J_CD])
+    connect!(model, A, J_AB)
+    connect!(model, B, J_AB)
+    connect!(model, C, J_CD)
+    connect!(model, D, J_CD)
+
+    # Connecting junctions to specific ports in Re
+    connect!(model, (Re, 2), J_CD)
+    @test ports(Re) == Dict(1 => false, 2 => true)
+    connect!(model, J_AB, (Re, 1))
+    @test ports(Re) == Dict(1 => true, 2 => true)
+
+    @test nv(model) == 7
+    @test ne(model) == 6
+end
+
+# FIXME just for chemical species really
+@testset "Merging components" begin
+    bg = RCI()
+    C = bg.C
+    R = bg.R
+
+    newC = Component(:C, :newC)
+    newR = Component(:R, :newR)
+    add_node!(bg, [newC, newR])
+    connect!(bg, newC, newR)
+
+    merge_nodes!(bg, C, newC)
+    @test isempty(getnodes(bg, "C:newC"))
+
+    merge_nodes!(bg, R, newR; junction = EqualFlow())
+    @test length(getnodes(bg, EqualFlow)) == 1
+    @test length(getnodes(bg, EqualEffort)) == 2
+    @test nv(bg) == 7
+    @test ne(bg) == 7
+end
+
 @testset "Simple Reaction System" begin
     rn = @reaction_network ABC begin
         1, A + B --> C
