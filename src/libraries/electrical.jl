@@ -30,5 +30,15 @@ function currentsource(; name)
     FlowSource([F ~ I], [V], [I]; name)
 end
 
+# Transformers
+function transformer(n; name=Symbol("TF{$n}"))
+    Transformer(n; name)
+end
+
+function gyrator(r; name=Symbol("GY{$n}"))
+    Gyrator(r; name)
+end
+
+# Junctions
 KCL(; name) = EqualEffort(; name)
 KVL(; name) = EqualFlow(; name)

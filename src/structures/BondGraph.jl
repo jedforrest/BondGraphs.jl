@@ -70,6 +70,8 @@ function system(bg::BondGraph; simplify = true)
     simplify ? structural_simplify(sys) : sys
 end
 
+constitutive_relations(bg::BondGraph) = full_equations(system(bg))
+
 ############################################################################################
 
 function metagraph(components::Vector{AbstractElement}, bonds::Vector{Bond}, name)
@@ -91,7 +93,6 @@ function metagraph(components::Vector{AbstractElement}, bonds::Vector{Bond}, nam
     end
     graph
 end
-
 
 ############################################################################################
 # Graph functions

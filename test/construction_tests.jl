@@ -188,6 +188,21 @@ end
     @test outneighbor_comps(model, kvl) == [:i]
 end
 
+# TODO move to runtests.jl
+using BondGraphs: resistor, capacitor, inductor, voltagesource, KVL
+function RCI()
+    @named r = resistor()
+    @named c = capacitor()
+    @named i = inductor()
+    @named v = voltagesource()
+    @named kvl = KVL()
+    b2 = Bond(r, kvl)
+    b1 = Bond(c, kvl)
+    b3 = Bond(kvl, i)
+    b4 = Bond(kvl, v)
+    BondGraph([c, r, i, v, kvl], [b1, b2, b3, b4], name=:RCI)
+end
+
 ### TODO CONTINUE FROM HERE
 @testset "Inserting Nodes" begin
     bg = RCI()

@@ -112,9 +112,9 @@ function (TBE::Type{<:BondElement})(sys::System, efforts, flows, states=[]; name
 end
 
 """ Generic BondGraph Element constructor from a vector of equations"""
-function (TE::Type{<:AbstractElement})(eqs::Vector{Equation}, args...; kwargs...)
-    sys = System(eqs, t; name=Symbol(TE))
-    TE(sys, args...; kwargs...)
+function (TBE::Type{<:BondElement})(eqs::Vector{Equation}, args...; kwargs...)
+    sys = System(eqs, t; name=Symbol(TBE))
+    TBE(sys, args...; kwargs...)
 end
 
 ############################################################
@@ -122,33 +122,45 @@ abstract type JunctionStructure <: AbstractElement end
 abstract type ParametricJunction <: JunctionStructure end
 
 # Junctions are a power-conserving transformation between the effort/flows of each port
+# They have defined relationships between the inputs and outputs
+# New junction types would require a new struct definition
 
 """`TF` component"""
 struct Transformer <: ParametricJunction
     name::Symbol
     sys::System
-    efforts::Vector
-    flows::Vector
+    ratio::Real
     ports::Vector{Port}
-    # function Transformer(sys::System, efforts, flows)
-    #     numports = length(efforts)
-    #     numports >= 2 ||
-    #         error("Transformer must have at least 2 ports ($numports ports given)")
-    #     new(sys, efforts, flows)
-    # end
+    function Transformer(n::Real; name=Symbol("TF{$n}"))
+        ports = [Port(:port_1, name), Port(:port_2, name)]
+        e1, e2 = effort.(ports)
+        f1, f2 = flow.(ports)
+        eqs = [
+            e2 ~ n * e1
+            f1 ~ -n * f2
+        ]
+        sys = System(eqs, t; name, systems=[ports[1].sys, ports[2].sys])
+        new(name, sys, n, ports)
+    end
 end
+
 """`GY` component"""
 struct Gyrator <: ParametricJunction
     name::Symbol
     sys::System
-    efforts::Vector
-    flows::Vector
+    ratio::Real
     ports::Vector{Port}
-    # function Gyrator(sys::System, efforts, flows)
-    #     numports = length(efforts)
-    #     numports >= 2 || error("Gyrator must have at least 2 ports ($numports ports given)")
-    #     new(sys, efforts, flows)
-    # end
+    function Gyrator(r::Real; name=Symbol("GY{$r}"))
+        ports = [Port(:port_1, name), Port(:port_2, name)]
+        e1, e2 = effort.(ports)
+        f1, f2 = flow.(ports)
+        eqs = [
+            e2 ~ r * f1
+            e1 ~ -r * f2
+        ]
+        sys = System(eqs, t; name, systems=[ports[1].sys, ports[2].sys])
+        new(name, sys, r, ports)
+    end
 end
 
 ############################################################
@@ -186,11 +198,6 @@ struct EqualFlow <: NonParametricJunction
         new(name, sys, relation_fn, [Port(:port_1, name)])
     end
 end
-
-# function (TNPJ::Type{<:NonParametricJunction})(; name=Symbol(TNPJ))
-#     sys = System(Equation[], t; name)
-#     TNPJ(name, sys)
-# end
 
 ############################################################
 
@@ -242,14 +249,13 @@ glyph(::JunctionStructure) = :J
 glyph(::EqualEffort) = :𝟎
 glyph(::EqualFlow) = :𝟏
 
+label(elem::AbstractElement) = "$(glyph(elem))::$(name(elem))"
+
 ############################################################
 # Overloading Base
 
-function Base.show(io::IO, elem::AbstractElement)
-    print_str = "$(glyph(elem))::$(name(elem))"
-    print(io, print_str)
-end
-Base.show(io::IO, junc::NonParametricJunction) = print(io, name(junc))
+Base.show(io::IO, elem::AbstractElement) = print(io, label(elem))
+Base.show(io::IO, junc::JunctionStructure) = print(io, name(junc))
 
 # Easier referencing systems using a.b notation
 function Base.getproperty(elem::AbstractElement, name::Symbol)
