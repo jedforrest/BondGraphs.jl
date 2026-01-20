@@ -3,13 +3,18 @@ uuid = "d1a4f103-cd9c-465b-aef3-7f12ef11bc98"
 version = "0.5.1"
 authors = ["Jedforrest <jedforrest@gmail.com> and contributors"]
 
+[workspace]
+projects = ["test", "docs"]
+
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 GraphMakie = "1ecd5474-83a3-4783-bb4f-06765db800d2"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
+MetaGraphsNext = "fa8bd995-216d-47f1-8a91-f3b68fbeb377"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
@@ -18,17 +23,16 @@ SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 
 [compat]
 Catalyst = "14, 15"
+DataStructures = "0.18.22"
 DifferentialEquations = "7"
 GraphMakie = "0.6"
 GraphRecipes = "0.5"
 Graphs = "1"
 Latexify = "0.16.10"
+MetaGraphsNext = "0.7.5"
 ModelingToolkit = "9, 10, 11"
 OrderedCollections = "1"
 RecipesBase = "1"
 Setfield = "0.8, 1"
 SymbolicUtils = "3"
 julia = "1"
-
-[workspace]
-projects = ["test", "docs"]

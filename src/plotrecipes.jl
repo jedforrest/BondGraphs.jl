@@ -15,22 +15,22 @@
     GraphRecipes.GraphPlot([bg])
 end
 
-@recipe function plot(bgn::BondGraphNode, showtype = false)
-    bg = bgn.bondgraph
-    allnodes = nodes(bg)
+# @recipe function plot(bgn::BondGraphNode, showtype = false)
+#     bg = bgn.bondgraph
+#     allnodes = nodes(bg)
 
-    # Default attributes
-    nodecolor --> nodecolour.(allnodes)
-    title --> name(bg)
-    names --> nodelabel.(allnodes, showtype)
+#     # Default attributes
+#     nodecolor --> nodecolour.(allnodes)
+#     title --> name(bg)
+#     names --> nodelabel.(allnodes, showtype)
 
-    # Forced attributes
-    curves := false
-    nodeshape := :circle
-    strokewidth := 0
+#     # Forced attributes
+#     curves := false
+#     nodeshape := :circle
+#     strokewidth := 0
 
-    GraphRecipes.GraphPlot([bg])
-end
+#     GraphRecipes.GraphPlot([bg])
+# end
 
 function nodecolour(node)
     if type(node) in ["Se", "Sf", "SS", "SCe"] # Source node types

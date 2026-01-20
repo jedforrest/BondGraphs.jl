@@ -1,4 +1,33 @@
-@testitem "SS component system" setup=[Setup] begin
+@testset "BondGraphNodes" begin
+    C = Component(:C, "C")
+    bg1 = BondGraph("first")
+    bg2 = BondGraph("second")
+    bg3 = BondGraph("third")
+    main = BondGraph("Main")
+
+    bgn1 = BondGraphNode(bg1)
+    bgn2 = BondGraphNode(bg2)
+    bgn3 = BondGraphNode(bg3)
+
+    @test bgn1.bondgraph === bg1
+    @test bgn1.type === "BG"
+    @test bgn1.name === bg1.name
+    @test bgn1.ports == Dict()
+
+    add_node!(bg1, C)
+    add_node!(bg2, bgn1)
+    add_node!(bg3, bgn2)
+    add_node!(main, bgn3)
+
+    @test main.third.second.first.C === C
+
+    C2 = Component(:C, "C") # Same name
+    add_node!(bg1, C2)
+    @test main.third.second.first.C == [C, C2]
+end
+
+
+@testset "SS component system" begin
     SS = SourceSensor(name = :SS)
 
     @test length(ports(SS)) == 1
@@ -14,7 +43,7 @@
     @test sys.p1.F isa Num
 end
 
-@testitem "Expose models" setup=[Setup] begin
+@testset "Expose models" begin
     r = Component(:R)
     kcl = EqualFlow(name = :kcl)
     SSA = SourceSensor(name = :A)
@@ -47,7 +76,7 @@ end
     @test (0 ~ F2 + BF) in eqns
 end
 
-@testitem "Modular RLC circuit" setup=[Setup] begin
+@testset "Modular RLC circuit" begin
     r = Component(:R)
     l = Component(:I)
     c = Component(:C)
@@ -87,7 +116,7 @@ end
     @test qC / C in eqs_rhs
 end
 
-@testitem "Modular reaction" setup=[Setup] begin
+@testset "Modular reaction" begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
     SSA = SourceSensor(name = :A)
@@ -118,7 +147,7 @@ end
     @test isequal(eqs[2].rhs, e2.rhs)
 end
 
-@testitem "Named ports" setup=[Setup] begin
+@testset "Named ports" begin
     bg1 = BondGraph(:R)
     re = Component(:re, :r)
     SSA = SourceSensor(name = :A)

@@ -1,9 +1,9 @@
+__precompile__(false)
+
 module BondGraphs
 
-import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!
+import Base: RefValue, eltype, show, in, iterate, ==, getproperty, setproperty!, getindex, setindex!
 import Graphs:
-               SimpleGraph,
-               SimpleDiGraph,
                edgetype,
                edges,
                ne,
@@ -24,8 +24,9 @@ import Graphs:
                rem_edge!
 import ModelingToolkit: parameters, equations, controls
 
-# using StaticArrays
+using Graphs: SimpleGraph, SimpleDiGraph, SimpleEdge
 using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
 using DifferentialEquations
 using SymbolicUtils, SymbolicUtils.Rewriters
 using OrderedCollections
@@ -35,16 +36,18 @@ using RecipesBase, GraphRecipes
 using Latexify
 using Graphs
 using GraphMakie, GraphMakie.NetworkLayout
+using MetaGraphsNext
+using DataStructures
 
 export AbstractNode,
        Component,
-       Junction,
+    #    Junction,
        EqualEffort,
        EqualFlow,
        SourceSensor,
        Bond,
        BondGraph,
-       BondGraphNode,
+    #    BondGraphNode,
        type,
        name,
        id,
@@ -61,45 +64,82 @@ export AbstractNode,
        all_variables,
        constitutive_relations,
        has_controls,
-       srcnode,
-       dstnode,
+       srccomp,
+       dstcomp,
        srclabel,
        dstlabel,
-       nodes,
+       comps,
        bonds,
        components,
        junctions,
-       getnodes,
+       getcomps,
        getbonds,
-       add_node!,
-       remove_node!,
+       add_comp!,
+       remove_comp!,
        connect!,
        disconnect!,
        swap!,
-       insert_node!,
-       merge_nodes!,
+       insert_comp!,
+       merge_comps!,
        simplify_junctions!,
        expose,
        simulate,
        addlibrary!,
        description,
-       bgplot
+       bgplot,
+       # NEW
+       Port,
+       Effort,
+       StaticStorageElement,
+       DynamicStorageElement,
+       DissipatorElement,
+       EffortSource,
+       FlowSource,
+       SourceSensor,
+       Transformer,
+       Gyrator,
+       EqualEffort,
+       EqualFlow,
+       power_variables,
+       elementtype,
+       efforts,
+       flows,
+       states,
+       system,
+       is_connected,
+       connect!,
+       effort,
+       flow,
+       elements,
+       junctions,
+       componentnames,
+       is_connected,
+       inneighbor_comps,
+       outneighbor_comps,
+       compile_system!,
+       sub_defaults
 
 # Component libraries
 include("libraries/biochemical.jl")
 include("libraries/standard.jl")
 include("libraries/libraryfunctions.jl")
 
-# Types used by BondGraphs
+# Structures
+include("structures/Port.jl")
+include("structures/AbstractElement.jl")
 include("structures/AbstractNode.jl")
 include("structures/Bond.jl")
 include("structures/BondGraph.jl")
 
 # Core functionality
-include("graphfunctions.jl")
+# include("graphfunctions.jl")
 include("construction.jl")
-include("systems.jl")
+# include("systems.jl")
 include("catalyst.jl")
 include("plotrecipes.jl")
+
+# NEW
+include("libraries/electrical.jl")
+include("libraries/chemical.jl")
 
 end

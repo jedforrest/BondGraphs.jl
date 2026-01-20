@@ -1,4 +1,51 @@
-@testitem "Simple Reaction System" setup=[Setup] begin
+@testset "Chemical reaction" begin
+    @named X = chemicalspecies()
+    @named Y = chemicalspecies()
+    @named Z = chemicalspecies()
+    @named W = chemicalspecies()
+    @named Re = reaction()
+    J_XY = EqualFlow(name=:j1)
+    J_ZW = EqualFlow(name=:j2)
+
+    model = BondGraph([X, Y, Z, W, Re, J_XY, J_ZW], name=:Chemical)
+    connect!(model, X, J_XY)
+    connect!(model, Y, J_XY)
+    connect!(model, Z, J_ZW)
+    connect!(model, W, J_ZW)
+
+    # Connecting junctions to specific ports in Re
+    connect!(model, Re[2], J_ZW)
+    @test is_connected.(ports(Re)) == [false, true]
+    connect!(model, J_XY, Re[1])
+    @test is_connected.(ports(Re)) == [true, true]
+
+    @test nv(model) == 7
+    @test ne(model) == 6
+end
+
+# TODO CONTINUE FROM HERE
+# FIXME just for chemical species really
+@testset "Merging components" begin
+    bg = RCI()
+    C = bg.C
+    R = bg.R
+
+    newC = Component(:C, :newC)
+    newR = Component(:R, :newR)
+    add_node!(bg, [newC, newR])
+    connect!(bg, newC, newR)
+
+    merge_nodes!(bg, C, newC)
+    @test isempty(getnodes(bg, "C:newC"))
+
+    merge_nodes!(bg, R, newR; junction = EqualFlow())
+    @test length(getnodes(bg, EqualFlow)) == 1
+    @test length(getnodes(bg, EqualEffort)) == 2
+    @test nv(bg) == 7
+    @test ne(bg) == 7
+end
+
+@testset "Simple Reaction System" begin
     rn = @reaction_network ABC begin
         1, A + B --> C
     end
@@ -16,7 +63,7 @@
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
 end
 
-@testitem "Reversible MM" setup=[Setup] begin
+@testset "Reversible MM" begin
     rn = @reaction_network MM_reversible begin
         (1, 1), E + S <--> C
         (1, 1), C <--> E + P
@@ -31,7 +78,7 @@ end
     @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
 
-@testitem "Stoichiometry Test" setup=[Setup] begin
+@testset "Stoichiometry Test" begin
     rn = @reaction_network Stoichiometry begin
         1, 3A + 2B --> 5C
     end
@@ -45,7 +92,7 @@ end
     @test repr.(tfs) == ["TF:tf1", "TF:tf2", "TF:tf3"]
 end
 
-@testitem "SERCA" setup=[Setup] begin
+@testset "SERCA" begin
     rn = @reaction_network SERCA begin
         (1, 1), P1 + MgATP <--> P2
         (1, 1), P2 + H <--> P2a

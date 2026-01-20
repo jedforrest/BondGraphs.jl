@@ -8,27 +8,55 @@ be created between the next available ports in each component.
 
 In most cases it is better to use [`connect!`](@ref) instead.
 """
-struct Bond <: Graphs.AbstractSimpleEdge{Int}
-    src::Tuple{AbstractNode, Any}
-    dst::Tuple{AbstractNode, Any}
+struct Bond
+    src::Port
+    dst::Port
+    function Bond(srcport::Port, dstport::Port)
+        is_connected(srcport) && error("$srcport already connected")
+        is_connected(dstport) && error("$dstport already connected")
+        connect!(srcport)
+        connect!(dstport)
+        new(srcport, dstport)
+    end
 end
-function Bond(srcnode::AbstractNode, dstnode::AbstractNode)
-    Bond((srcnode, nextfreeport(srcnode)), (dstnode, nextfreeport(dstnode)))
+# either port or component are accepted as inputs
+function Bond(src::Union{Port,AbstractElement}, dst::Union{Port,AbstractElement})
+    srcport = src isa Port ? src : nextfreeport(src)
+    dstport = dst isa Port ? dst : nextfreeport(dst)
+    isnothing(srcport) && error("Component $src has no free ports")
+    isnothing(dstport) && error("Component $dst has no free ports")
+    Bond(srcport, dstport)
 end
 
-# Source and Destination
-srcnode(b::Bond) = b.src[1]
-dstnode(b::Bond) = b.dst[1]
+ports(b::Bond) = b.src, b.dst
+componentnames(b::Bond) = parentname(b.src), parentname(b.dst)
 
-srclabel(b::Bond) = b.src[2]
-dstlabel(b::Bond) = b.dst[2]
+function Base.show(io::IO, b::Bond)
+    src, dst = componentnames(b)
+    print(io, "$src ⇀ $dst")
+end
+
+# MTK system connector
+function connection_equation(b::Bond)
+    srcport_sys = system(b.src)
+    dstport_sys = system(b.dst)
+    ModelingToolkit.connect(srcport_sys, dstport_sys)
+end
 
 # Base functions
-in(n::AbstractNode, b::Bond) = n === srcnode(b) || n === dstnode(b)
+Base.in(n::AbstractElement, b::Bond) = name(n) in componentnames(b)
 
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
 
-function show(io::IO, b::Bond)
-    print(io, "Bond $(b.src[1])[$(b.src[2])] ⇀ $(b.dst[1])[$(b.dst[2])]")
+# src, dst (from Graphs)
+# src(b::Bond) = vertex(srcnode(b))
+# dst(b::Bond) = vertex(dstnode(b))
+
+# get unique components from a vector of bonds
+# FIXME return full components instead of just names
+function unique_components(bonds::Vector{Bond})
+    return Set(componentnames(b) for b in bonds)
 end
+
+disconnect!(b::Bond) = disconnect!.(ports(b))

@@ -1,270 +1,134 @@
-@testitem "Equations" setup=[Setup] begin
-    c = Component(:C)
-    @parameters C
-    @variables E(t)[1] F(t)[1] q(t) C₊q(t)
-    cr = [
-        0 ~ q / C - E[1],
-        D(q) ~ F[1]
-    ]
-    @test isequal(constitutive_relations(c), cr)
+@variables e(t) f(t) q(t)
+@parameters C L R
+
+@testset "Component Systems" begin
+    eqs = [D(q) ~ f, q ~ C * e]
+    @named cap = StaticStorageElement(eqs, [e], [f], [q])
+
+    sys = system(cap)
+    @test nameof(sys) == :cap
+    @test length(equations(cap)) == 4  # includes port relations
+    @test length(constitutive_relations(cap)) == 2
+    @test isequal(constitutive_relations(cap), eqs)
 
     j = EqualEffort()
+    @test nameof(system(j)) == :𝟎
     @test isempty(equations(j))
+    @test length(constitutive_relations(j)) == 1
 
+    tf = Transformer(2)
+    @test nameof(system(tf)) == Symbol("TF{2}")
+    @test length(equations(tf)) == 2
+end
+
+@testset "Bond Graph System" begin
     bg = BondGraph()
+
+    @test isnothing(bg.sys)
+    compile_system!(bg)
     @test isempty(equations(bg))
-    add_node!(bg, c)
-    @test equations(bg) == [D(C₊q) ~ -0.0] # Equation produces -ve zero
+
+    @named cap = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
+    add_comp!(bg, cap)
+    @test equations(bg) == [D(cap.sys.q) ~ 0.0]
 end
 
-@testitem "Parameters" setup=[Setup] begin
-    tf = Component(:TF)
-    @parameters n
-    @test var_in(n, parameters(tf))
+@testset "Bond Graph RC System" begin
+    # System 1
+    using BondGraphs: capacitor, resistor, KVL
+    @named cap = capacitor()
+    @named res = resistor()
+    @named kvl = KVL()
+    bg = BondGraph([cap, res, kvl])
+    connect!(bg, cap, kvl)
+    connect!(bg, res, kvl)
 
-    Ce = Component(:Ce)
-    @parameters K
-    @test var_in(K, parameters(Ce))
+    sys = system(bg, simplify=false)
+    @test length(full_equations(sys)) == 11
 
-    bg = RLC()
-    @parameters C L R
-    all_params = merge(values(parameters(bg))...)
-    for var in [C L R]
-        @test var_in(var, all_params)
-    end
+    sys = system(bg)
+    @test length(full_equations(sys)) == 1
+
+    cr = constitutive_relations(bg)
+    q, C, R = sys.cap.q, sys.cap.C, sys.res.R
+    @test isequal(cr, [D(q) ~ -q / (C * R)])
 end
 
-@testitem "Globals" setup=[Setup] begin
-    re = Component(:Re)
-    c = Component(:C)
-    @parameters R T
-
-    @test var_in(T, globals(re))
-    @test var_in(R, globals(re))
-    @test globals(c) == Dict()
-
-    bg = BondGraph()
-    add_node!(bg, re)
-    all_globals = merge(values(globals(bg))...)
-    @test var_in(T, all_globals)
-    @test var_in(R, all_globals)
-end
-
-@testitem "State variables" setup=[Setup] begin
-    r = Component(:R)
-    @test isempty(states(r))
-
-    @variables q(t)
-    c = Component(:C)
-    @test var_in(q, states(c))
-
-    bg = RLC()
-    @variables q(t) p(t)
-    all_states = merge(values(states(bg))...)
-    @test var_in(q, all_states)
-    @test var_in(p, all_states)
-end
-
-@testitem "Controls" setup=[Setup] begin
-    bg = RLC()
-    se = Component(:Se)
-    sf = Component(:Sf)
-    add_node!(bg, [se, sf])
-    all_controls = merge(values(controls(bg))...)
-
-    @test has_controls(bg)
-end
-
-@testitem "All variables" setup=[Setup] begin
-    bg = RLC()
-    re = Component(:Re)
-    add_node!(bg, re)
-
-    for (comp, var_dict) in all_variables(bg)
-        @test all_variables(comp) == var_dict
-    end
-end
-
-@testitem "Constitutive relations" setup=[Setup] begin
-    eqE = EqualEffort()
-    eqF = EqualFlow()
-    @test constitutive_relations(eqE) == Equation[]
-    @test constitutive_relations(eqF) == Equation[]
-
-    bg = RLC()
+@testset "Bond Graph RCI circuit" begin
+    # System 2
+    bg = RCI()
     cr_bg = constitutive_relations(bg)
-    sys = ODESystem(bg)
+    sys = system(bg)
 
-    C, L, R = (sys.C.C, sys.I.L, sys.R.R)
-    q, p = sys.C.q, sys.I.p
-    cr1 = D(q) ~ -(q / C) / R + (-p) / L
-    cr2 = D(p) ~ q / C
+    C, L, R, E = (sys.c.C, sys.i.L, sys.r.R, sys.v.E)
+    q, p = sys.c.q, sys.i.λ
+
+    cr1 = D(q) ~ p / L
+    cr2 = D(p) ~ -E + (-q) / C + (-R*p) / L
 
     # Constitutive relations
-    @test isequal(cr_bg[1].lhs, cr1.lhs)
-    @test isequal(simplify(cr_bg[1].rhs - cr1.rhs), 0)
+    @test isequal(cr_bg[1], cr1)
     @test isequal(cr_bg[2], cr2)
 
-    # BondGraphNode CR
-    cr_bgn = constitutive_relations(BondGraphNode(bg))
-    @test isequal(cr_bgn[1].lhs, cr1.lhs)
-    @test isequal(simplify(cr_bgn[1].rhs - cr1.rhs), 0)
-    @test isequal(cr_bgn[2], cr2)
-
-    # CR with sub_defaults=true
-    subbed_eqs = [
-        D(q) ~ -q - p,
-        D(p) ~ q
-    ]
-    @test BondGraphs._sub_defaults([cr1, cr2], all_variables(bg)) == subbed_eqs
-    @test constitutive_relations(bg; sub_defaults = true) == subbed_eqs
+    # With default values
+    cr_subbed = constitutive_relations(bg; sub_defaults=true)
+    @test isequal(cr_subbed, [D(q) ~ p, D(p) ~ -1 - p - q])
 end
 
-@testitem "0-junction equations" setup=[Setup] begin
-    model = BondGraph(:RC)
-    C = Component(:C)
-    R = Component(:R)
-    zero_law = EqualEffort()
+# TODO CONTINUE FROM HERE
+# @testset "Chemical reaction A ⇌ B" begin
+#     A = Component(:ce, :A)
+#     B = Component(:ce, :B)
+#     re = Component(:re, :r)
+#     bg = BondGraph()
 
-    add_node!(model, [R, C, zero_law])
-    connect!(model, R, zero_law)
-    connect!(model, zero_law, C)
+#     add_node!(bg, [A, B, re])
+#     connect!(bg, A, (re, 1))
+#     connect!(bg, (re, 2), B)
+#     sys = ODESystem(bg)
+#     eqs = sorted_eqs(sys)
 
-    @test numports(zero_law) == 2
+#     (xA, xB) = (sys.A.q, sys.B.q)
+#     (KA, KB, r) = (sys.A.K, sys.B.K, sys.r.r)
+#     e1 = D(xA) ~ r * (-KA * xA + KB * xB)
+#     e2 = D(xB) ~ r * (KA * xA - KB * xB)
 
-    @variables E(t)[1:2] F(t)[1:2]
-    @test isequal(constitutive_relations(zero_law), [
-        0 ~ F[1] + F[2],
-        0 ~ E[1] - E[2]
-    ])
-end
+#     @test isequal(eqs[1].rhs, e1.rhs)
+#     @test isequal(eqs[2].rhs, e2.rhs)
+# end
 
-@testitem "1-junction equations" setup=[Setup] begin
-    c1 = Component(:C, :C1)
-    c2 = Component(:R, :R1)
-    c3 = Component(:I, :I1)
-    j = EqualFlow()
+# @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
+#     C_A = Component(:ce, :A)
+#     C_B = Component(:ce, :B)
+#     C_C = Component(:ce, :C)
+#     C_D = Component(:ce, :D)
+#     re1 = Component(:re, :r1)
+#     re2 = Component(:re, :r2)
+#     common_C = EqualEffort()
+#     BC = EqualFlow()
 
-    bg = BondGraph()
-    add_node!(bg, [c1, c2, c3, j])
-    connect!(bg, c1, j)
-    connect!(bg, j, c2)
-    connect!(bg, j, c3)
+#     bg = BondGraph()
+#     add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
+#     connect!(bg, C_A, (re1, 1))
+#     connect!(bg, (re1, 2), BC)
+#     connect!(bg, BC, C_B)
+#     connect!(bg, BC, common_C)
+#     connect!(bg, common_C, C_C)
+#     connect!(bg, common_C, (re2, 1))
+#     connect!(bg, (re2, 2), C_D)
 
-    @test numports(j) == 3
-    @test length(ports(j)) == 3
-    @test ports(j) == [1, -1, -1]
+#     sys = ODESystem(bg)
+#     eqs = sorted_eqs(sys)
 
-    @variables E(t)[1:3] F(t)[1:3]
-    @test isequal(constitutive_relations(j), [
-        0 ~ E[1] - E[2] - E[3],
-        0 ~ F[1] + F[2],
-        0 ~ F[1] + F[3]
-    ])
-end
+#     (xA, xB, xC, xD) = (sys.A.q, sys.B.q, sys.C.q, sys.D.q)
+#     (KA, KB, KC, KD, r1, r2) = (sys.A.K, sys.B.K, sys.C.K, sys.D.K, sys.r1.r, sys.r2.r)
+#     e1 = D(xA) ~ -r1 * (KA * xA - KB * xB * KC * xC)
+#     e2 = D(xB) ~ r1 * (KA * xA - KB * xB * KC * xC)
+#     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
+#     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
 
-@testitem "RC circuit" setup=[Setup] begin
-    r = Component(:R)
-    c = Component(:C)
-    bg = BondGraph(:RC)
-    add_node!(bg, [c, r])
-    connect!(bg, r, c)
-
-    sys = ODESystem(bg)
-    eqs = constitutive_relations(bg)
-    @test length(eqs) == 1
-
-    (C, R) = (sys.C.C, sys.R.R)
-    x = sys.C.q
-    e1 = eqs[1]
-    e2 = D(x) ~ -x / C / R
-
-    @test isequal(e1.lhs, e2.lhs)
-    @test isequal(expand(e1.rhs), e2.rhs)
-end
-
-@testitem "RL circuit" setup=[Setup] begin
-    r = Component(:R)
-    l = Component(:I)
-    bg = BondGraph(:RL)
-    add_node!(bg, [r, l])
-    connect!(bg, l, r)
-
-    eqs = constitutive_relations(bg)
-    sys = ODESystem(bg)
-    x = sys.I.p
-    (R, L) = (sys.R.R, sys.I.L)
-    @test eqs == [D(x) ~ -R * x / L]
-end
-
-@testitem "RLC circuit" setup=[Setup] begin
-    bg = RLC()
-    eqs = constitutive_relations(bg)
-    @test length(eqs) == 2
-
-    sys = ODESystem(bg)
-    (R, L, C) = (sys.R.R, sys.I.L, sys.C.C)
-    (qC, pL) = (sys.C.q, sys.I.p)
-    e1 = D(qC) ~ -pL / L + (-qC / C / R)
-    e2 = D(pL) ~ qC / C
-
-    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
-    @test isequal(eqs[2].rhs, e2.rhs)
-end
-
-@testitem "Chemical reaction A ⇌ B" setup=[Setup] begin
-    A = Component(:ce, :A)
-    B = Component(:ce, :B)
-    re = Component(:re, :r)
-    bg = BondGraph()
-
-    add_node!(bg, [A, B, re])
-    connect!(bg, A, (re, 1))
-    connect!(bg, (re, 2), B)
-    sys = ODESystem(bg)
-    eqs = sorted_eqs(sys)
-
-    (xA, xB) = (sys.A.q, sys.B.q)
-    (KA, KB, r) = (sys.A.K, sys.B.K, sys.r.r)
-    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
-    e2 = D(xB) ~ r * (KA * xA - KB * xB)
-
-    @test isequal(eqs[1].rhs, e1.rhs)
-    @test isequal(eqs[2].rhs, e2.rhs)
-end
-
-@testitem "Chemical reaction A ⇌ B + C, C ⇌ D" setup=[Setup] begin
-    C_A = Component(:ce, :A)
-    C_B = Component(:ce, :B)
-    C_C = Component(:ce, :C)
-    C_D = Component(:ce, :D)
-    re1 = Component(:re, :r1)
-    re2 = Component(:re, :r2)
-    common_C = EqualEffort()
-    BC = EqualFlow()
-
-    bg = BondGraph()
-    add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
-    connect!(bg, C_A, (re1, 1))
-    connect!(bg, (re1, 2), BC)
-    connect!(bg, BC, C_B)
-    connect!(bg, BC, common_C)
-    connect!(bg, common_C, C_C)
-    connect!(bg, common_C, (re2, 1))
-    connect!(bg, (re2, 2), C_D)
-
-    sys = ODESystem(bg)
-    eqs = sorted_eqs(sys)
-
-    (xA, xB, xC, xD) = (sys.A.q, sys.B.q, sys.C.q, sys.D.q)
-    (KA, KB, KC, KD, r1, r2) = (sys.A.K, sys.B.K, sys.C.K, sys.D.K, sys.r1.r, sys.r2.r)
-    e1 = D(xA) ~ -r1 * (KA * xA - KB * xB * KC * xC)
-    e2 = D(xB) ~ r1 * (KA * xA - KB * xB * KC * xC)
-    e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
-    e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
-
-    @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
-    @test isequal(simplify(eqs[2].rhs - e2.rhs), 0)
-    @test isequal(simplify(eqs[3].rhs - e3.rhs), 0)
-    @test isequal(simplify(eqs[4].rhs - e4.rhs), 0)
-end
+#     @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
+#     @test isequal(simplify(eqs[2].rhs - e2.rhs), 0)
+#     @test isequal(simplify(eqs[3].rhs - e3.rhs), 0)
+#     @test isequal(simplify(eqs[4].rhs - e4.rhs), 0)
+# end
