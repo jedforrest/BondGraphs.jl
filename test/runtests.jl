@@ -9,8 +9,8 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using Graphs
 using MetaGraphsNext
 using DataStructures
+using Catalyst
 # using DifferentialEquations: Rosenbrock23
-# using Catalyst
 # using RecipesBase
 
 function RCI()

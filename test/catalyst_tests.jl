@@ -23,28 +23,29 @@
     @test ne(model) == 6
 end
 
-# TODO CONTINUE FROM HERE
-# FIXME just for chemical species really
 @testset "Merging components" begin
     bg = RCI()
-    C = bg.C
-    R = bg.R
+    C = bg[:c]
+    R = bg[:r]
 
-    newC = Component(:C, :newC)
-    newR = Component(:R, :newR)
-    add_node!(bg, [newC, newR])
+    @named newC = capacitor()
+    @named newR = resistor()
+
+    add_comp!(bg, newC)
+    add_comp!(bg, newR)
     connect!(bg, newC, newR)
 
-    merge_nodes!(bg, C, newC)
-    @test isempty(getnodes(bg, "C:newC"))
+    merge_comps!(bg, C, newC)
+    @test !(newC in bg)
 
-    merge_nodes!(bg, R, newR; junction = EqualFlow())
-    @test length(getnodes(bg, EqualFlow)) == 1
-    @test length(getnodes(bg, EqualEffort)) == 2
+    merge_comps!(bg, R, newR; junctiontype = EqualFlow)
+    @test length(junctions(bg)) == 3
     @test nv(bg) == 7
     @test ne(bg) == 7
 end
 
+# TODO CONTINUE FROM HERE
+# rewrite catalyst -> bondgraph function
 @testset "Simple Reaction System" begin
     rn = @reaction_network ABC begin
         1, A + B --> C

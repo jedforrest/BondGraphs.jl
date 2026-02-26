@@ -1,7 +1,7 @@
 #TODO: include reaction rates in forming the bondgraph
 
 """
-    merge_comps!(bg::BondGraph, comp1, comp2; junction=EqualEffort())
+    merge_comps!(bg::BondGraph, comp1, comp2; junction=EqualEffort)
 
 Combine two copies of the same component in `bg` by adding a `junction` and connecting the
 neighbours of `comp1` and `comp2` to the new junction.
@@ -9,14 +9,26 @@ neighbours of `comp1` and `comp2` to the new junction.
 Merging comps this way means there is only one component representing a system component, and
 all other comps connect to the component via the new junction.
 """
-# FIXME this is mainly useful for catalyst/chemical bond graphs
-function merge_comps!(bg::BondGraph, comp1::T, comp2::T; junction = EqualEffort()) where {T <: AbstractElement}
-    comp1.type == comp2.type || error("Components must have the same type")
+function merge_comps!(bg::BondGraph, comp1::T, comp2::T;
+        junctiontype::Type{<:JunctionStructure} = EqualEffort) where {T <: BondElement}
 
     # comp1 taken as the comp to keep
-    for nb in all_neighbors(bg, comp1)
-        junc = deepcopy(junction)
-        bond = getbonds(bg, comp1, nb)[1]
+    comp1_name = name(comp1)
+    in_nbrs = inneighbor_comps(bg, comp1)
+    out_nbrs = outneighbor_comps(bg, comp1)
+
+    nbr_bonds = Bond[]
+    for i in in_nbrs
+        push!(nbr_bonds, bg[i, comp1_name])
+    end
+    for o in out_nbrs
+        push!(nbr_bonds, bg[comp1_name, o])
+    end
+
+    juncname = "$(name(comp1))_$junctiontype"
+    junc = junctiontype(; name=Symbol(juncname))
+
+    for bond in nbr_bonds
         insert_comp!(bg, bond, junc)
         swap!(bg, comp2, junc)
     end
@@ -30,14 +42,14 @@ Convert a Catalyst.ReactionSystem into a BondGraph.
 `chemostats` are chemical species with fixed concentrations. In bond graph terms, these are
 "SCe" types (chemical energy sources) instead of "Ce" types (chemical energy store).
 """
-function BondGraph(rs::ReactionSystem; chemostats = [])
-    bg = BondGraph(nameof(rs))
+function BondGraph(rn::ReactionSystem; chemostats = [])
+    bg = BondGraph(; name=nameof(rn))
 
     re_num = Ref(1)
     tf_num = Ref(1)
 
     # Create disjoint reaction bondgraphs for each reaction in network
-    all_reactions = reactions(rs)
+    all_reactions = reactions(rn)
     for (i, reaction) in enumerate(all_reactions)
         if i > 1 && _is_reverse_off_previous(reaction, all_reactions[i - 1])
             # Skip the second reaction
@@ -69,7 +81,7 @@ function BondGraph(rs::ReactionSystem; chemostats = [])
     end
 
     # Combine common species across reactions
-    species_names = _stringify_species.(species(rs))
+    species_names = _stringify_species.(species(rn))
     for spcs_name in species_names
         spcs_nodes = getproperty(bg, Symbol(spcs_name))
         spcs_nodes isa Vector || continue

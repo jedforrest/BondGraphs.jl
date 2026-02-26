@@ -175,6 +175,10 @@ setindex!(bg::BondGraph, data, s, d) = setindex!(bg.graph, data, s, d)
 inneighbor_comps(bg::BondGraph, elem::AbstractElement) = collect(inneighbor_labels(bg.graph, name(elem)))
 outneighbor_comps(bg::BondGraph, elem::AbstractElement) = collect(outneighbor_labels(bg.graph, name(elem)))
 
+function Base.in(elem::AbstractElement, bg::BondGraph)
+    haskey(bg.graph, name(elem))
+end
+
 function Base.in(b::Bond, bg::BondGraph)
     srcname, dstname = componentnames(b)
     haskey(bg.graph, srcname, dstname)
