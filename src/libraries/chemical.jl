@@ -34,3 +34,8 @@ function chemostat(; name)
     end
     EffortSource([u ~ RT*log(K*X)], [u], [v]; name)
 end
+
+# Stoichiometry
+function stoichiometry(n; name=Symbol("TF{$n}"))
+    Transformer(n; name)
+end

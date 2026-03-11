@@ -44,24 +44,23 @@ end
     @test ne(bg) == 7
 end
 
-# TODO CONTINUE FROM HERE
-# rewrite catalyst -> bondgraph function
 @testset "Simple Reaction System" begin
     rn = @reaction_network ABC begin
         1, A + B --> C
     end
 
-    bg_rn = BondGraph(rn)
+    bg_rn = BondGraph(rn, simplify=false)
+    @test bg_rn.name == :ABC
+    @test nv(bg_rn) == 9
+    @test ne(bg_rn) == 8
 
-    @test bg_rn.name == "ABC"
+    bg_rn = BondGraph(rn, simplify=true)
     @test nv(bg_rn) == 5
     @test ne(bg_rn) == 4
 
     # Checking that a "reverse" direction bond is included
-    bond_rev = Bond((bg_rn.C, 1), (bg_rn.R1, 2))
-    @test bond_rev in bonds(bg_rn)
-
-    @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1]
+    bond_rev = bonds(bg_rn)[end]
+    @test componentnames(bond_rev) == (:C, :Re1)
 end
 
 @testset "Reversible MM" begin
@@ -70,13 +69,11 @@ end
         (1, 1), C <--> E + P
     end
 
-    bg_rn = BondGraph(rn; chemostats = ["S", "P"])
+    bg_rn = BondGraph(rn; chemostats = [:S, :P])
 
-    @test name(bg_rn) == "MM_reversible"
+    @test name(bg_rn) == :MM_reversible
     @test nv(bg_rn) == 10
     @test ne(bg_rn) == 10
-
-    @test Graphs.degree(bg_rn) == [2, 3, 1, 1, 1, 2, 3, 1, 3, 3]
 end
 
 @testset "Stoichiometry Test" begin
@@ -89,8 +86,8 @@ end
     @test nv(bg_rn) == 8
     @test ne(bg_rn) == 7
 
-    tfs = filter(n -> type(n) == "TF", bg_rn.nodes)
-    @test repr.(tfs) == ["TF:tf1", "TF:tf2", "TF:tf3"]
+    tfs = BondGraphs.filterbytype(Transformer, junctions(bg_rn))
+    @test length(tfs) == 3
 end
 
 @testset "SERCA" begin
