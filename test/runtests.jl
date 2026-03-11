@@ -1,7 +1,7 @@
 using Test
 using BondGraphs
-using BondGraphs: is_connected
-using BondGraphs: resistor, capacitor, inductor, voltagesource, KVL
+using BondGraphs: is_connected, components
+using BondGraphs: resistor, capacitor, inductor, voltagesource, transformer, KCL, KVL
 using BondGraphs: chemicalspecies, reaction, chemostat
 
 using ModelingToolkit
@@ -29,7 +29,7 @@ end
 @testset begin
     @testset "Construction Tests" include("./construction_tests.jl")
     @testset "Equation Tests" include("./equation_tests.jl")
-    # @testset "Catalyst Tests" include("./catalyst_tests.jl")
+    @testset "Catalyst Tests" include("./catalyst_tests.jl")
     # @testset "Simulation Tests" include("./simulation_tests.jl")
     # @testset "Module Tests" include("./module_tests.jl")
 end

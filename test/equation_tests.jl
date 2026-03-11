@@ -11,12 +11,12 @@
     @test length(constitutive_relations(cap)) == 2
     @test isequal(constitutive_relations(cap), eqs)
 
-    j = EqualEffort()
+    j = EqualEffort(; name=:𝟎)
     @test nameof(system(j)) == :𝟎
     @test isempty(equations(j))
     @test length(constitutive_relations(j)) == 1
 
-    tf = Transformer(2)
+    tf = transformer(2)
     @test nameof(system(tf)) == Symbol("TF{2}")
     @test length(equations(tf)) == 2
 end

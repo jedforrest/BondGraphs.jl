@@ -73,7 +73,6 @@ end
 
 @testset "BondGraph Construction" begin
     # imported from library
-    using BondGraphs: resistor, capacitor, KCL
     @named rcomp = resistor()
     @named ccomp = capacitor()
     @named kcl = KCL()
@@ -134,7 +133,6 @@ end
 end
 
 @testset "BondGraph Modification" begin
-    using BondGraphs: resistor, capacitor, inductor, voltagesource, KCL, KVL
     @named r = resistor()
     @named c = capacitor()
     @named i = inductor()
@@ -178,7 +176,6 @@ end
 end
 
 @testset "Inserting Nodes" begin
-    using BondGraphs: transformer, KCL
     bg = RCI()
 
     bond_c_kvl = bg[:c, :kvl]
