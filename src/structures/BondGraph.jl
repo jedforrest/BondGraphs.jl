@@ -125,6 +125,18 @@ end
 # TODO display equations with variables indexed by the (graph) vertex of their component
 
 ############################################################################################
+# Extra simplification rules
+#TODO CONTINUE FROM HERE
+exponent_rules = [
+    @rule(exp(log(~x)) => ~x),
+    @rule(log(exp(~x)) => ~x),
+    # @acrule(exp(~x + ~y) => exp(~x) * exp(~y)),
+    # @acrule(exp(~x * ~y) => exp(~y)^~x),
+    # @acrule(log(~x) + log(~y) => log(~x * ~y)),
+    # @acrule(log((~x)^(~a)) => ~a * log(~x)),
+    # @acrule(~a * exp(~b * log(~x)) => (~a) * (~x)^(~b))
+]
+############################################################################################
 # Graph functions
 # Most graph functions are passed on to the graph field within the bond graph struct
 

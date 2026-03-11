@@ -1,8 +1,8 @@
-@constants begin
-    T=1
-    R=1
-end
-const RT = R * T
+const _R = 1
+const _T = 1
+@parameters R=_R T=_T
+R = GlobalScope(R)
+T = GlobalScope(T)
 
 # Chemical Species
 function chemicalspecies(; name)
@@ -12,7 +12,7 @@ function chemicalspecies(; name)
         ν(t), [connect = Flow]
         x(t)
     end
-    StaticStorageElement([D(x) ~ v, u ~ RT*log(K*x)], [u], [v], [x]; name)
+    StaticStorageElement([D(x) ~ v, u ~ R*T*log(K*x)], [u], [v], [x]; name)
 end
 
 # Reaction
@@ -22,17 +22,17 @@ function reaction(; name)
         μ(t)[1:2], [connect = Effort]
         ν(t)[1:2], [connect = Flow]
     end
-    DissipatorElement([v[1] ~ - v[2], v[1] ~ κ * (exp(u[1] / RT) - exp(u[2] / RT))], u, v; name)
+    DissipatorElement([v[1] ~ - v[2], v[1] ~ κ * (exp(u[1] / (R*T)) - exp(u[2] / (R*T)))], u, v; name)
 end
 
 # Chemical Source (chemostat)
 function chemostat(; name)
     @parameters K=1 X=1
-        u, v = @variables begin
+    u, v = @variables begin
         μ(t), [connect = Effort]
         ν(t), [connect = Flow]
     end
-    EffortSource([u ~ RT*log(K*X)], [u], [v]; name)
+    EffortSource([u ~ R*T*log(K*X)], [u], [v]; name)
 end
 
 # Stoichiometry

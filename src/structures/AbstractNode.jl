@@ -191,9 +191,9 @@ end
 # Base.show(io::IO, node::Junction) = print(io, name(node))
 
 function Base.show(io::IO, comp::Component{<:BondElement})
-    print(io, "$(glyph(comp.element))::$(comp.name)")
+    print(io, "$(icon(comp.element))::$(comp.name)")
 end
-Base.show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(glyph(comp.element))")
+Base.show(io::IO, comp::Component{<:JunctionStructure}) = print(io, "$(icon(comp.element))")
 
 
 # Easier referencing systems using a.b notation

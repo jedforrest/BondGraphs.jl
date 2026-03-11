@@ -248,18 +248,18 @@ numports(::NonParametricJunction) = Inf
 
 # Used when displaying in a graph.
 # TODO these can just be included in the struct definitions above (kwdef)
-glyph(::DissipatorElement) = :R
-glyph(::StaticStorageElement) = :C
-glyph(::DynamicStorageElement) = :I
-glyph(::EffortSource) = :Se
-glyph(::FlowSource) = :Sf
-glyph(::Transformer) = :TF
-glyph(::Gyrator) = :GY
-glyph(::JunctionStructure) = :J
-glyph(::EqualEffort) = :𝟎
-glyph(::EqualFlow) = :𝟏
+icon(::DissipatorElement) = :R
+icon(::StaticStorageElement) = :C
+icon(::DynamicStorageElement) = :I
+icon(::EffortSource) = :Se
+icon(::FlowSource) = :Sf
+icon(::Transformer) = :TF
+icon(::Gyrator) = :GY
+icon(::JunctionStructure) = :J
+icon(::EqualEffort) = :𝟎
+icon(::EqualFlow) = :𝟏
 
-label(elem::AbstractElement) = "$(glyph(elem))::$(name(elem))"
+label(elem::AbstractElement) = "$(icon(elem))::$(name(elem))"
 
 ############################################################
 # Overloading Base

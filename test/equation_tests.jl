@@ -35,7 +35,6 @@ end
 
 @testset "Bond Graph RC System" begin
     # System 1
-    using BondGraphs: capacitor, resistor, KVL
     @named cap = capacitor()
     @named res = resistor()
     @named kvl = KVL()
@@ -76,26 +75,30 @@ end
 end
 
 # TODO CONTINUE FROM HERE
-# @testset "Chemical reaction A ⇌ B" begin
-#     A = Component(:ce, :A)
-#     B = Component(:ce, :B)
-#     re = Component(:re, :r)
-#     bg = BondGraph()
+# apply exponent simplification rules
+@testset "Chemical reaction A ⇌ B" begin
+    @named A = chemicalspecies()
+    @named B = chemicalspecies()
+    @named re = reaction()
+    bg = BondGraph()
 
-#     add_node!(bg, [A, B, re])
-#     connect!(bg, A, (re, 1))
-#     connect!(bg, (re, 2), B)
-#     sys = ODESystem(bg)
-#     eqs = sorted_eqs(sys)
+    [add_comp!(bg, c) for c in [A, B, re]]
+    connect!(bg, A, re[1])
+    connect!(bg, re[2], B)
+    sys = system(bg)
+    eqs = full_equations(sys)
+    eq = eqs[1]
 
-#     (xA, xB) = (sys.A.q, sys.B.q)
-#     (KA, KB, r) = (sys.A.K, sys.B.K, sys.r.r)
-#     e1 = D(xA) ~ r * (-KA * xA + KB * xB)
-#     e2 = D(xB) ~ r * (KA * xA - KB * xB)
+    expand(eq)
 
-#     @test isequal(eqs[1].rhs, e1.rhs)
-#     @test isequal(eqs[2].rhs, e2.rhs)
-# end
+    (xA, xB) = (sys.A.q, sys.B.q)
+    (KA, KB, r) = (sys.A.K, sys.B.K, sys.r.r)
+    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
+    e2 = D(xB) ~ r * (KA * xA - KB * xB)
+
+    @test isequal(eqs[1].rhs, e1.rhs)
+    @test isequal(eqs[2].rhs, e2.rhs)
+end
 
 # @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
 #     C_A = Component(:ce, :A)
