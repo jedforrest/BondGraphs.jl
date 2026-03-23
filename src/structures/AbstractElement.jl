@@ -75,29 +75,16 @@ function (TBE::Type{<:BondElement})(sys::System, efforts, flows, states=[]; name
     check_num_ports(efforts, flows)
 
     # make new port subsystems that expose the effort and flow variables
-
-    # create ports and add port connections
     ports = Port[]
     portsystems = System[]
-    port_connection_eqs = Equation[]
-    for (i, (e, f)) in enumerate(zip(efforts, flows))
+    for i in 1:length(efforts)
         # create N port subsystems and extend the user-given MTK System
         port = Port(Symbol("port_", i), name)
         portsys = system(port, namespaced=false)
-
-        # add effort/flow connections to newly added port variables
-        # (assuming efforts and flows are in the correct order)
-        port_conn_eq = [
-            ParentScope(e) ~ ParentScope(portsys.e),
-            ParentScope(f) ~ ParentScope(portsys.f)
-        ]
-
         push!(ports, port)
         push!(portsystems, portsys)
-        append!(port_connection_eqs, port_conn_eq)
     end
     sys = compose(sys, portsystems)
-    sys = compose(sys, System(port_connection_eqs, t; name))
 
     # kwargs are used to set default parameter values
     for (key, val) in kwargs
@@ -201,7 +188,6 @@ end
 
 ############################################################
 
-
 function check_num_ports(efforts, flows)
     numports = length(efforts)
     (numports == length(flows)) ||
@@ -214,10 +200,30 @@ end
 
 name(elem::AbstractElement) = elem.name
 
-system(elem::AbstractElement) = elem.sys
+function system(elem::AbstractElement)
+    port_connection_eqs = Equation[]
+    for (i, port) in enumerate(ports(elem))
+        portsys = system(port, namespaced=false)
+        e = elem.efforts[i]
+        f = elem.flows[i]
+        w = port_weight(port)
+        # add effort/flow connections to newly added port variables
+        # (assuming efforts and flows are in the correct order)
+        port_conn_eq = [
+            ParentScope(e) ~ w * ParentScope(portsys.e),
+            ParentScope(f) ~ w * ParentScope(portsys.f)
+        ]
+        append!(port_connection_eqs, port_conn_eq)
+    end
+    compose(elem.sys, System(port_connection_eqs, t; name=name(elem)))
+end
 function system(junc::NonParametricJunction)
-    portsys = system.(ports(junc))
-    System(constitutive_relations(junc), t; systems=portsys, name=name(junc))
+    ps = ports(junc)
+    portsys = system.(ps)
+    W = port_weight.(ps)
+    es = W .* effort.(ps)
+    fs = W .* flow.(ps)
+    System(junc.relation(es, fs), t; systems=portsys, name=name(junc))
 end
 
 efforts(elem::BondElement) = elem.efforts
@@ -232,7 +238,7 @@ equations(elem::AbstractElement) = equations(elem.sys)
 
 ports(elem::AbstractElement) = elem.ports
 
-# excludes equation relating to port connections
+# excludes equations relating to port connections
 function constitutive_relations(elem::BondElement)
     ModelingToolkit.equations_toplevel(elem.sys)
 end
@@ -240,7 +246,7 @@ function constitutive_relations(junc::ParametricJunction)
     ModelingToolkit.equations_toplevel(junc.sys)
 end
 function constitutive_relations(junc::NonParametricJunction)
-    junc.relation(efforts(junc), flows(junc))
+    ModelingToolkit.equations(system(junc))
 end
 
 numports(elem::AbstractElement) = length(elem.ports)

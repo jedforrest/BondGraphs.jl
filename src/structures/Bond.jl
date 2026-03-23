@@ -14,8 +14,10 @@ struct Bond
     function Bond(srcport::Port, dstport::Port)
         is_connected(srcport) && error("$srcport already connected")
         is_connected(dstport) && error("$dstport already connected")
-        connect!(srcport)
-        connect!(dstport)
+        srcport.connected = true
+        srcport.is_source = true
+        dstport.connected = true
+        dstport.is_source = false
         new(srcport, dstport)
     end
 end
@@ -36,13 +38,6 @@ function Base.show(io::IO, b::Bond)
     print(io, "$src ⇀ $dst")
 end
 
-# MTK system connector
-function connection_equation(b::Bond)
-    srcport_sys = system(b.src)
-    dstport_sys = system(b.dst)
-    ModelingToolkit.connect(srcport_sys, dstport_sys)
-end
-
 # Base functions
 Base.in(n::AbstractElement, b::Bond) = name(n) in componentnames(b)
 
@@ -59,4 +54,9 @@ function unique_components(bonds::Vector{Bond})
     return Set(componentnames(b) for b in bonds)
 end
 
-disconnect!(b::Bond) = disconnect!.(ports(b))
+function disconnect!(b::Bond)
+    for p in ports(b)
+        p.connected = false
+        p.is_source = false
+    end
+end

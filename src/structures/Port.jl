@@ -30,9 +30,10 @@ mutable struct Port
     parentname::Symbol
     sys::System  # port connector
     connected::Bool
+    is_source::Bool  # true: source, false: destination (or disconnected)
     function Port(name, parentname; e=:e, f=:f)
         sys = PortConnector(; name, e, f)
-        new(name, parentname, sys, false)
+        new(name, parentname, sys, false, false)
     end
 end
 
@@ -43,8 +44,16 @@ function system(p::Port; namespaced = true)
 end
 
 is_connected(p::Port) = p.connected
-connect!(p::Port) = p.connected = true
-disconnect!(p::Port) = p.connected = false
+
+function port_weight(p::Port)
+    if !p.connected
+        return 0
+    elseif p.is_source
+        return -1  # source port
+    else
+        return 1  # destination port
+    end
+end
 
 function effort(p::Port)
     e = filter(x -> get_connection_type(x) == Effort, unknowns(p.sys))[]

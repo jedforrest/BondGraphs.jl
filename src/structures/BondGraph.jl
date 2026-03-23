@@ -21,7 +21,6 @@ AbstractGraph type and so will work with
 
 See also [`BondGraphNode`](@ref).
 """
-# TODO store System object for reuse
 mutable struct BondGraph <: AbstractGraph{Int}
     name::Symbol
     graph::MetaGraph
@@ -38,10 +37,10 @@ mutable struct BondGraph <: AbstractGraph{Int}
     end
 end
 
-function BondGraph(name, bonds::Vector{Bond})
-    # TODO constuct from bonds only
-    BondGraph(Symbol(name), componentnames, bonds)
-end
+# function BondGraph(name, bonds::Vector{Bond})
+#     # TODO constuct from bonds only
+#     BondGraph(Symbol(name), componentnames, bonds)
+# end
 
 function Base.show(io::IO, bg::BondGraph)
     print_str = "$(name(bg))"
@@ -89,6 +88,15 @@ filterbytype(T::Type{<:AbstractElement}, vec) = filter(x -> x isa T, vec)
 elements(bg::BondGraph) = filterbytype(BondElement, components(bg))
 junctions(bg::BondGraph) = filterbytype(JunctionStructure, components(bg))
 
+############################################################################################
+# Extra simplification rules
+log_exp_rules = [
+    @rule(~a * log(~x) => log((~x) ^ (~a))),
+    @acrule(log(~x) + log(~y) => log(~x * ~y)),
+    @acrule(~!a * exp(~!b * log(~x) + ~!c) => (~a) * ((~x)^(~b) + ~c)),
+]
+const rewriter = Postwalk(RestartedChain(log_exp_rules))
+
 function system(bg::BondGraph; simplify = true)
     if isnothing(bg.sys) || bg.autocompile
         compile_system!(bg; simplify)
@@ -101,7 +109,9 @@ function compile_system!(bg::BondGraph; simplify = true)
     comps = components(bg)
     subsyss = system.(comps)
 
-    conn_eqns = connection_equation.(bonds(bg))
+    conn_eqns = [
+        ModelingToolkit.connect(system(b.src), system(b.dst)) for b in bonds(bg)
+    ]
     basesys = System(conn_eqns, t, name = name(bg))
 
     sys = compose(basesys, subsyss...)
@@ -111,10 +121,10 @@ function compile_system!(bg::BondGraph; simplify = true)
     bg.sys = sys
 end
 
-equations(bg::BondGraph) = equations(system(bg))
 function constitutive_relations(bg::BondGraph; sub_defaults = false)
     sys = system(bg)
     eqs = full_equations(sys)
+    eqs = simplify.(eqs; rewriter)  # for chemical exp/log cancelling
     if sub_defaults
         sub_dict = Dict(k => v for (k, v) in defaults(sys) if !(v isa Bool))
         eqs = [substitute(eq, sub_dict) for eq in eqs]
@@ -124,18 +134,6 @@ end
 
 # TODO display equations with variables indexed by the (graph) vertex of their component
 
-############################################################################################
-# Extra simplification rules
-#TODO CONTINUE FROM HERE
-exponent_rules = [
-    @rule(exp(log(~x)) => ~x),
-    @rule(log(exp(~x)) => ~x),
-    # @acrule(exp(~x + ~y) => exp(~x) * exp(~y)),
-    # @acrule(exp(~x * ~y) => exp(~y)^~x),
-    # @acrule(log(~x) + log(~y) => log(~x * ~y)),
-    # @acrule(log((~x)^(~a)) => ~a * log(~x)),
-    # @acrule(~a * exp(~b * log(~x)) => (~a) * (~x)^(~b))
-]
 ############################################################################################
 # Graph functions
 # Most graph functions are passed on to the graph field within the bond graph struct

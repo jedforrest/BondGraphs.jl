@@ -26,11 +26,11 @@ end
 
     @test isnothing(bg.sys)
     compile_system!(bg)
-    @test isempty(equations(bg))
+    @test isempty(equations(bg.sys))
 
     @named cap = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
     add_comp!(bg, cap)
-    @test equations(bg) == [D(cap.sys.q) ~ 0.0]
+    @test equations(system(bg)) == [D(cap.sys.q) ~ 0.0]
 end
 
 @testset "Bond Graph RC System" begin
@@ -74,64 +74,130 @@ end
     @test isequal(cr_subbed, [D(q) ~ p, D(p) ~ -1 - p - q])
 end
 
-# TODO CONTINUE FROM HERE
-# apply exponent simplification rules
+@testset "Equation Rewriter" begin
+    # simplifying exp/log for chemical bond graphs
+    rewriter = BondGraphs.rewriter
+    @variables a b
+
+    expr = 2log(a) + log(b)
+    simplified_expr = simplify(expr; rewriter)
+    @test isequal(simplified_expr, log((b * a^2)))
+
+    expr = -2b*exp(4log(a)) + 3
+    simplified_expr = simplify(expr; rewriter)
+    @test isequal(simplified_expr, 3 - 2b*a^4)
+end
+
 @testset "Chemical reaction A ⇌ B" begin
     @named A = chemicalspecies()
     @named B = chemicalspecies()
     @named re = reaction()
     bg = BondGraph()
 
-    [add_comp!(bg, c) for c in [A, B, re]]
+    for c in [A, B, re]
+        add_comp!(bg, c)
+    end
     connect!(bg, A, re[1])
     connect!(bg, re[2], B)
+
     sys = system(bg)
-    eqs = full_equations(sys)
-    eq = eqs[1]
+    xA, xB = unknowns(sys)
+    KB, KA, k = parameters(sys)
 
-    expand(eq)
+    xA, xB = sys.A.x, sys.B.x
+    KA, KB, k = sys.A.K, sys.B.K, sys.re.κ
 
-    (xA, xB) = (sys.A.q, sys.B.q)
-    (KA, KB, r) = (sys.A.K, sys.B.K, sys.r.r)
-    e1 = D(xA) ~ r * (-KA * xA + KB * xB)
-    e2 = D(xB) ~ r * (KA * xA - KB * xB)
-
-    @test isequal(eqs[1].rhs, e1.rhs)
-    @test isequal(eqs[2].rhs, e2.rhs)
+    cr = constitutive_relations(bg)
+    @test isequal(cr[1], D(xA) ~ k*(-KA*xA + KB*xB))
+    @test isequal(cr[2], D(xB) ~ k*(KA*xA - KB*xB))
 end
 
-# @testset "Chemical reaction A ⇌ B + C, C ⇌ D" begin
-#     C_A = Component(:ce, :A)
-#     C_B = Component(:ce, :B)
-#     C_C = Component(:ce, :C)
-#     C_D = Component(:ce, :D)
-#     re1 = Component(:re, :r1)
-#     re2 = Component(:re, :r2)
-#     common_C = EqualEffort()
-#     BC = EqualFlow()
+@testset "EqualFlow equations" begin
+    bg = begin
+        @named J = EqualFlow()
+        @named C1 = chemicalspecies()
+        @named C2 = chemicalspecies()
+        @named C3 = chemicalspecies()
+        @named C4 = chemicalspecies()
+        @named Re = reaction()
+        BondGraph([J, C1, C2, C3, C4, Re])
+    end
 
-#     bg = BondGraph()
-#     add_node!(bg, [C_A, C_B, C_C, C_D, re1, re2, common_C, BC])
-#     connect!(bg, C_A, (re1, 1))
-#     connect!(bg, (re1, 2), BC)
-#     connect!(bg, BC, C_B)
-#     connect!(bg, BC, common_C)
-#     connect!(bg, common_C, C_C)
-#     connect!(bg, common_C, (re2, 1))
-#     connect!(bg, (re2, 2), C_D)
+    # no connections
+    @test BondGraphs.port_weight.(J.ports) == [0]
 
-#     sys = ODESystem(bg)
-#     eqs = sorted_eqs(sys)
+    # C1, C2, C3 -> J -> Re -> C4
+    connect!(bg, C1, J)
+    connect!(bg, C2, J)
+    connect!(bg, C3, J)
+    connect!(bg, J, Re)
+    connect!(bg, Re, C4)
+    @test BondGraphs.port_weight.(J.ports) == [1, 1, 1, -1]
+    @test BondGraphs.port_weight.(Re.ports) == [1, -1]
+    cr1 = constitutive_relations(bg)
 
-#     (xA, xB, xC, xD) = (sys.A.q, sys.B.q, sys.C.q, sys.D.q)
-#     (KA, KB, KC, KD, r1, r2) = (sys.A.K, sys.B.K, sys.C.K, sys.D.K, sys.r1.r, sys.r2.r)
-#     e1 = D(xA) ~ -r1 * (KA * xA - KB * xB * KC * xC)
-#     e2 = D(xB) ~ r1 * (KA * xA - KB * xB * KC * xC)
-#     e3 = D(xC) ~ r1 * (KA * xA - KB * xB * KC * xC) - r2 * (KC * xC - KD * xD)
-#     e4 = D(xD) ~ r2 * (KC * xC - KD * xD)
+    # C1, C2, C3 <- J -> Re -> C4
+    disconnect!(bg, C1, J)
+    disconnect!(bg, C2, J)
+    disconnect!(bg, C3, J)
+    connect!(bg, J, C1)
+    connect!(bg, J, C2)
+    connect!(bg, J, C3)
+    @test BondGraphs.port_weight.(J.ports) == [-1, -1, -1, -1]
+    cr2 = constitutive_relations(bg)
 
-#     @test isequal(simplify(eqs[1].rhs - e1.rhs), 0)
-#     @test isequal(simplify(eqs[2].rhs - e2.rhs), 0)
-#     @test isequal(simplify(eqs[3].rhs - e3.rhs), 0)
-#     @test isequal(simplify(eqs[4].rhs - e4.rhs), 0)
-# end
+    # check that the CR are the same, regardless of internal bond directions
+    @test all(isequal.(cr1, cr2))
+    # TODO CR are the same, but the simplification rules need to be fixed
+end
+
+# TODO CONTINUE FROM HERE
+# Fix simplification rules
+@testset "Chemical reaction A ⇌ B + C, C ⇌ E" begin
+    @named A = chemicalspecies()
+    @named B = chemicalspecies()
+    @named C = chemicalspecies()
+    @named E = chemicalspecies()
+    @named re1 = reaction()
+    @named re2 = reaction()
+    @named common_C = EqualEffort()
+    @named BC = EqualFlow()
+    bg = BondGraph()
+
+    for c in [A, B, C, E, re1, re2, common_C, BC]
+        add_comp!(bg, c)
+    end
+    connect!(bg, A, re1[1])
+    connect!(bg, re1[2], BC)
+    connect!(bg, BC, B)
+    connect!(bg, BC, common_C)
+    connect!(bg, common_C, C)
+    connect!(bg, common_C, re2[1])
+    connect!(bg, re2[2], E)
+
+    sys = system(bg)
+
+    observed(sys)
+
+    constitutive_relations(bg[:BC])
+
+    # CONTINUE
+    BondGraphs.inneighbor_comps(bg, bg[:BC])
+    BondGraphs.outneighbor_comps(bg, bg[:BC])
+    bg[:BC].ports
+
+    full_equations(sys)
+    cr = constitutive_relations(bg)
+
+    (xA, xB, xC, xE) = (sys.A.x, sys.B.x, sys.C.x, sys.E.x)
+    (KA, KB, KC, KE, k1, k2) = (sys.A.K, sys.B.K, sys.C.K, sys.E.K, sys.re1.κ, sys.re2.κ)
+    eq1 = D(xA) ~ -k1 * (KA * xA - KB * xB * KC * xC)
+    eq2 = D(xB) ~ k1 * (KA * xA - KB * xB * KC * xC)
+    eq3 = D(xC) ~ k1 * (KA * xA - KB * xB * KC * xC) - k2 * (KC * xC - KE * xE)
+    eq4 = D(xE) ~ k2 * (KC * xC - KE * xE)
+
+    @test isequal(cr[1], eq1)
+    @test isequal(cr[2], eq2)
+    @test isequal(cr[3], eq3)
+    @test isequal(cr[4], eq4)
+end

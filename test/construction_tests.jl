@@ -26,10 +26,7 @@ end
 
     @test nameof(system(port)) == :parent₊port_1
     @test nameof(system(port, namespaced=false)) == :port_1
-
     @test is_connected(port) == false
-    connect!(port)
-    @test is_connected(port) == true
 
     @test repr(effort(port)) == "port_1₊V(t)"
     @test repr(flow(port)) == "port_1₊I(t)"
