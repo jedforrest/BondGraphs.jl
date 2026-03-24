@@ -92,7 +92,7 @@ junctions(bg::BondGraph) = filterbytype(JunctionStructure, components(bg))
 # Extra simplification rules
 log_exp_rules = [
     @rule(~a * log(~x) => log((~x) ^ (~a))),
-    @acrule(log(~x) + log(~y) => log(~x * ~y)),
+    @acrule(~!a * log(~x) + ~!a * log(~y) => ~a * log(~x * ~y)),
     @acrule(~!a * exp(~!b * log(~x) + ~!c) => (~a) * ((~x)^(~b) + ~c)),
 ]
 const rewriter = Postwalk(RestartedChain(log_exp_rules))
@@ -124,7 +124,9 @@ end
 function constitutive_relations(bg::BondGraph; sub_defaults = false)
     sys = system(bg)
     eqs = full_equations(sys)
-    eqs = simplify.(eqs; rewriter)  # for chemical exp/log cancelling
+    # for chemical exp/log cancelling
+    # this only works with this syntax for some reason
+    eqs = simplify.(simplify.(eqs); rewriter)
     if sub_defaults
         sub_dict = Dict(k => v for (k, v) in defaults(sys) if !(v isa Bool))
         eqs = [substitute(eq, sub_dict) for eq in eqs]

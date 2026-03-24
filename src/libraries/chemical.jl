@@ -12,7 +12,7 @@ function chemicalspecies(; name)
         ν(t), [connect = Flow]
         x(t)
     end
-    StaticStorageElement([D(x) ~ v, u ~ R*T*log(K*x)], [u], [v], [x]; name)
+    StaticStorageElement([D(x) ~ - v, u ~ R*T*log(K*x)], [u], [v], [x]; name)
 end
 
 # Reaction
@@ -22,7 +22,7 @@ function reaction(; name)
         μ(t)[1:2], [connect = Effort]
         ν(t)[1:2], [connect = Flow]
     end
-    DissipatorElement([v[1] ~ - v[2], v[1] ~ κ * (exp(u[1] / (R*T)) - exp(u[2] / (R*T)))], u, v; name)
+    DissipatorElement([v[1] ~ - v[2], v[1] ~ κ * (exp(-u[1] / (R*T)) - exp(-u[2] / (R*T)))], u, v; name)
 end
 
 # Chemical Source (chemostat)

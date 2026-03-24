@@ -7,7 +7,7 @@
 
     sys = system(cap)
     @test nameof(sys) == :cap
-    @test length(equations(cap)) == 4  # includes port relations
+    @test length(equations(expand_connections(cap.sys))) == 3  # includes port relations
     @test length(constitutive_relations(cap)) == 2
     @test isequal(constitutive_relations(cap), eqs)
 
@@ -29,8 +29,11 @@ end
     @test isempty(equations(bg.sys))
 
     @named cap = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
+    @named res = DissipatorElement([e ~ R * f], [e], [f])
     add_comp!(bg, cap)
-    @test equations(system(bg)) == [D(cap.sys.q) ~ 0.0]
+    add_comp!(bg, res)
+    connect!(bg, cap, res)
+    @test full_equations(system(bg)) == [D(cap.sys.q) ~ -cap.sys.q / (cap.sys.C*res.sys.R)]
 end
 
 @testset "Bond Graph RC System" begin
@@ -67,7 +70,7 @@ end
 
     # Constitutive relations
     @test isequal(cr_bg[1], cr1)
-    @test isequal(cr_bg[2], cr2)
+    @test isequal(cr_bg[2], simplify(cr2))
 
     # With default values
     cr_subbed = constitutive_relations(bg; sub_defaults=true)
@@ -86,6 +89,11 @@ end
     expr = -2b*exp(4log(a)) + 3
     simplified_expr = simplify(expr; rewriter)
     @test isequal(simplified_expr, 3 - 2b*a^4)
+
+    @variables k R T K1 K2 K3 K4 x1 x2 x3 x4
+    expr = k*(exp(log(K4*x4)) - exp((R*T*log(K1*x1) + R*T*log(K3*x3) + R*T*log(K2*x2)) / (R*T)))
+    simplified_expr = simplify(simplify(expr); rewriter)  # double simplification needed
+    @test isequal(simplified_expr, k * (K4*x4 - K1*K2*K3*x1*x2*x3))
 end
 
 @testset "Chemical reaction A ⇌ B" begin
@@ -148,7 +156,6 @@ end
 
     # check that the CR are the same, regardless of internal bond directions
     @test all(isequal.(cr1, cr2))
-    # TODO CR are the same, but the simplification rules need to be fixed
 end
 
 # TODO CONTINUE FROM HERE
@@ -181,7 +188,7 @@ end
 
     constitutive_relations(bg[:BC])
 
-    # CONTINUE
+    # TODO CONTINUE FROM HERE
     BondGraphs.inneighbor_comps(bg, bg[:BC])
     BondGraphs.outneighbor_comps(bg, bg[:BC])
     bg[:BC].ports
