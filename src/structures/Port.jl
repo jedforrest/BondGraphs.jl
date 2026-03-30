@@ -25,15 +25,18 @@ end
 
 ############################################################
 
+# used for adjusting the sign of efforts/flows
+@enum PortWeight INBOUND=1 OUTBOUND=-1 DISCONNECTED=0
+
 mutable struct Port
     name::Symbol
     parentname::Symbol
     sys::System  # port connector
     connected::Bool
-    is_source::Bool  # true: source, false: destination (or disconnected)
+    weight::PortWeight
     function Port(name, parentname; e=:e, f=:f)
         sys = PortConnector(; name, e, f)
-        new(name, parentname, sys, false, false)
+        new(name, parentname, sys, false, DISCONNECTED)
     end
 end
 
@@ -45,15 +48,9 @@ end
 
 is_connected(p::Port) = p.connected
 
-function port_weight(p::Port)
-    if !p.connected
-        return 0
-    elseif p.is_source
-        return -1  # source port
-    else
-        return 1  # destination port
-    end
-end
+is_source(p::Port) = p.weight == OUTBOUND
+
+portweight(p::Port) = Int(p.weight)
 
 function effort(p::Port)
     e = filter(x -> get_connection_type(x) == Effort, unknowns(p.sys))[]

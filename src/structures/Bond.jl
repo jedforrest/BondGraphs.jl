@@ -15,9 +15,9 @@ struct Bond
         is_connected(srcport) && error("$srcport already connected")
         is_connected(dstport) && error("$dstport already connected")
         srcport.connected = true
-        srcport.is_source = true
         dstport.connected = true
-        dstport.is_source = false
+        srcport.weight = OUTBOUND
+        dstport.weight = INBOUND
         new(srcport, dstport)
     end
 end
@@ -57,6 +57,6 @@ end
 function disconnect!(b::Bond)
     for p in ports(b)
         p.connected = false
-        p.is_source = false
+        p.weight = DISCONNECTED
     end
 end

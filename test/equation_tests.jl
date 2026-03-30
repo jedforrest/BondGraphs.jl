@@ -100,11 +100,8 @@ end
     @named A = chemicalspecies()
     @named B = chemicalspecies()
     @named re = reaction()
-    bg = BondGraph()
+    bg = BondGraph([A, B, re])
 
-    for c in [A, B, re]
-        add_comp!(bg, c)
-    end
     connect!(bg, A, re[1])
     connect!(bg, re[2], B)
 
@@ -132,7 +129,7 @@ end
     end
 
     # no connections
-    @test BondGraphs.port_weight.(J.ports) == [0]
+    @test BondGraphs.portweight.(J.ports) == [0]
 
     # C1, C2, C3 -> J -> Re -> C4
     connect!(bg, C1, J)
@@ -140,8 +137,8 @@ end
     connect!(bg, C3, J)
     connect!(bg, J, Re)
     connect!(bg, Re, C4)
-    @test BondGraphs.port_weight.(J.ports) == [1, 1, 1, -1]
-    @test BondGraphs.port_weight.(Re.ports) == [1, -1]
+    @test BondGraphs.portweight.(J.ports) == [1, 1, 1, -1]
+    @test BondGraphs.portweight.(Re.ports) == [1, -1]
     cr1 = constitutive_relations(bg)
 
     # C1, C2, C3 <- J -> Re -> C4
@@ -151,56 +148,52 @@ end
     connect!(bg, J, C1)
     connect!(bg, J, C2)
     connect!(bg, J, C3)
-    @test BondGraphs.port_weight.(J.ports) == [-1, -1, -1, -1]
+    @test BondGraphs.portweight.(J.ports) == [-1, -1, -1, -1]
     cr2 = constitutive_relations(bg)
 
-    # check that the CR are the same, regardless of internal bond directions
+    # check that the CR are the same regardless of internal bond directions
     @test all(isequal.(cr1, cr2))
+
+    sys = system(bg)
+    (x1, x2, x3, x4) = (sys.C1.x, sys.C2.x, sys.C3.x, sys.C4.x)
+    (K1, K2, K3, K4, k) = (sys.C1.K, sys.C2.K, sys.C3.K, sys.C4.K, sys.Re.κ)
+    true_cr = [
+        D(x1) ~ k*(K4*x4 - K1*K2*K3*x2*x1*x3)
+        D(x2) ~ k*(K4*x4 - K1*K2*K3*x2*x1*x3)
+        D(x3) ~ k*(K4*x4 - K1*K2*K3*x2*x1*x3)
+        D(x4) ~ k*(-K4*x4 + K1*K2*K3*x2*x1*x3)
+    ]
+    @test all(isequal.(cr1, true_cr))
 end
 
-# TODO CONTINUE FROM HERE
-# Fix simplification rules
 @testset "Chemical reaction A ⇌ B + C, C ⇌ E" begin
-    @named A = chemicalspecies()
-    @named B = chemicalspecies()
-    @named C = chemicalspecies()
-    @named E = chemicalspecies()
-    @named re1 = reaction()
-    @named re2 = reaction()
-    @named common_C = EqualEffort()
-    @named BC = EqualFlow()
-    bg = BondGraph()
-
-    for c in [A, B, C, E, re1, re2, common_C, BC]
-        add_comp!(bg, c)
+    bg = begin
+        @named A = chemicalspecies()
+        @named B = chemicalspecies()
+        @named C = chemicalspecies()
+        @named E = chemicalspecies()
+        @named re1 = reaction()
+        @named re2 = reaction()
+        @named common_C = EqualEffort()
+        @named BC = EqualFlow()
+        BondGraph([A, B, C, E, re1, re2, common_C, BC])
     end
+
     connect!(bg, A, re1[1])
     connect!(bg, re1[2], BC)
-    connect!(bg, BC, B)
-    connect!(bg, BC, common_C)
-    connect!(bg, common_C, C)
+    connect!(bg, B, BC)
+    connect!(bg, common_C, BC)
+    connect!(bg, C, common_C)  # NOTE: only works if this bond is in this direction
     connect!(bg, common_C, re2[1])
     connect!(bg, re2[2], E)
 
-    sys = system(bg)
-
-    observed(sys)
-
-    constitutive_relations(bg[:BC])
-
-    # TODO CONTINUE FROM HERE
-    BondGraphs.inneighbor_comps(bg, bg[:BC])
-    BondGraphs.outneighbor_comps(bg, bg[:BC])
-    bg[:BC].ports
-
-    full_equations(sys)
     cr = constitutive_relations(bg)
 
     (xA, xB, xC, xE) = (sys.A.x, sys.B.x, sys.C.x, sys.E.x)
     (KA, KB, KC, KE, k1, k2) = (sys.A.K, sys.B.K, sys.C.K, sys.E.K, sys.re1.κ, sys.re2.κ)
     eq1 = D(xA) ~ -k1 * (KA * xA - KB * xB * KC * xC)
     eq2 = D(xB) ~ k1 * (KA * xA - KB * xB * KC * xC)
-    eq3 = D(xC) ~ k1 * (KA * xA - KB * xB * KC * xC) - k2 * (KC * xC - KE * xE)
+    eq3 = D(xC) ~ k1 * (KA * xA - KB * xB * KC * xC) + k2 * (-KC * xC + KE * xE)
     eq4 = D(xE) ~ k2 * (KC * xC - KE * xE)
 
     @test isequal(cr[1], eq1)

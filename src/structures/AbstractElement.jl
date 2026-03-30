@@ -159,30 +159,20 @@ abstract type NonParametricJunction <: JunctionStructure end
 struct EqualEffort <: NonParametricJunction
     name::Symbol
     sys::System
-    relation::Function
     ports::Vector{Port}
     function EqualEffort(; name)
         sys = System(Equation[], t; name)
-        relation_fn(es, fs) = [
-            [es[1] ~ e for e in es[2:end]];
-            sum(fs) ~ 0
-        ]
-        new(name, sys, relation_fn, [Port(:port_1, name)])
+        new(name, sys, [Port(:port_1, name)])
     end
 end
 """`1`-junction"""
 struct EqualFlow <: NonParametricJunction
     name::Symbol
     sys::System
-    relation::Function
     ports::Vector{Port}
     function EqualFlow(; name)
         sys = System(Equation[], t; name)
-        relation_fn(es, fs) = [
-            sum(es) ~ 0;
-            [fs[1] ~ f for f in fs[2:end]]
-        ]
-        new(name, sys, relation_fn, [Port(:port_1, name)])
+        new(name, sys, [Port(:port_1, name)])
     end
 end
 
@@ -206,26 +196,43 @@ function system(elem::AbstractElement)
     fs = flows(elem)
     for (i, port) in enumerate(ports(elem))
         portsys = system(port, namespaced=false)
-        e = es[i]
-        f = fs[i]
-        w = port_weight(port)
+        w = portweight(port)
         # add effort/flow connections to newly added port variables
         # (assuming efforts and flows are in the correct order)
         port_conn_eq = [
-            ParentScope(e) ~ w .* ParentScope(portsys.e),
-            ParentScope(f) ~ w .* ParentScope(portsys.f)
+            ParentScope(es[i]) ~ w .* ParentScope(portsys.e),
+            ParentScope(fs[i]) ~ w .* ParentScope(portsys.f)
         ]
         append!(port_connection_eqs, port_conn_eq)
     end
     compose(elem.sys, System(port_connection_eqs, t; name=name(elem)))
 end
-function system(junc::NonParametricJunction)
-    ps = ports(junc)
-    portsys = system.(ps)
-    W = port_weight.(ps)
-    es = W .* effort.(ps)
-    fs = W .* flow.(ps)
-    System(junc.relation(es, fs), t; systems=portsys, name=name(junc))
+function system(j0::EqualEffort)
+    _ports = ports(j0)
+    es = effort.(_ports)
+    fs = flow.(_ports)
+
+    # e_in = -e_out
+    # Σ f_in = Σ f_out
+    eqs = [
+        [es[1] ~ e for e in es[2:end]];
+        sum(fs; init=0) ~ 0
+    ]
+    System(eqs, t; systems=system.(_ports), name=name(j0))
+end
+function system(j1::EqualFlow)
+    _ports = ports(j1)
+    W = portweight.(_ports)
+    es = W .* effort.(_ports)
+    fs = W .* flow.(_ports)
+
+    # Σ e_in = Σ e_out
+    # f_in = -f_out
+    eqs = [
+        sum(es; init=0) ~ 0;
+        [fs[1] ~ f for f in fs[2:end]]
+    ]
+    System(eqs, t; systems=system.(_ports), name=name(j1))
 end
 
 efforts(elem::BondElement) = elem.efforts

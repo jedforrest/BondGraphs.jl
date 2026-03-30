@@ -32,7 +32,7 @@ function chemostat(; name)
         μ(t), [connect = Effort]
         ν(t), [connect = Flow]
     end
-    EffortSource([u ~ R*T*log(K*X)], [u], [v]; name)
+    EffortSource([D(x) ~ - v, u ~ R*T*log(K*X)], [u], [v]; name)
 end
 
 # Stoichiometry
