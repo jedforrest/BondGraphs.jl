@@ -293,6 +293,10 @@ function Base.getproperty(elem::AbstractElement, name::Symbol)
     end
 end
 
+function Base.setproperty!(elem::BondElement, name::Symbol, val)
+    setproperty!(system(elem), name, val)
+end
+
 ############################
 
 # index referencing for ports

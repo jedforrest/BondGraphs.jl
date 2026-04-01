@@ -10,8 +10,7 @@ using Graphs
 using MetaGraphsNext
 using DataStructures
 using Catalyst
-# using DifferentialEquations: Rosenbrock23
-# using RecipesBase
+using DifferentialEquations: Rosenbrock23
 
 function RCI()
     @named r = resistor()

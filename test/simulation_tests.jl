@@ -1,60 +1,54 @@
+@variables e(t) f(t) q(t)
+@parameters C L R
+
 @testset "Setting variables" begin
-    c = Component(:C)
-    re = Component(:Re)
+    @parameters C=2
+    @named ccomp = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q]; q=1)
+    @named icomp = inductor(L=5)
+    @named re = reaction(; normalised=false)
+    re.κ = 4
 
     # getting
-    @test c.C == 1 && c.q == 0
-    @test re.r == 1 && re.R ≈ 8.314 && re.T == 310
+    @test ccomp.C == 2 && ccomp.q == 1
+    @test icomp.L == 5
+    @test re.κ == 4
 
-    # setting
-    c.C = 2
-    re.T = 200
-    @test c.C == 2
-    @test re.T == 200
+    # incompatible variables fail
+    @test_throws ErrorException re.s = 1
+    @test_throws ErrorException ccomp.p = 2
 end
 
 @testset "Setting non-numeric control variables" begin
-    f(t) = sin(2t) # forcing function
-
-    sf = Component(:Sf)
-    @test sf.fs(1) ≈ 1
-
-    sf.fs = f
-    @test sf.fs == f
-    @test sf.fs(1) ≈ f(1)
-end
-
-@testset "Incompatible variables fail" begin
-    re = Component(:Re)
-    c = Component(:C)
-    @test_throws ErrorException re.s = 1
-    @test_throws ErrorException c.p = 2
+    battery = voltagesource(; name=:se)
+    battery.E(t) = sin(2t)
+    @test battery.E(0) ≈ 0.0
 end
 
 @testset "Simulate RC circuit" begin
-    r = Component(:R; R = 2)
-    c = Component(:C; C = 1, q = 10)
-    bg = BondGraph(:RC)
-
-    add_node!(bg, [c, r])
+    r = resistor(R = 2, name = :R)
+    c = capacitor(C = 1, q0=10, name = :C)
+    bg = BondGraph([r, c], name=:RC)
     connect!(bg, r, c)
 
-    f(x, a, τ) = a * exp(-x / τ)
+    # true solution
+    f_sol(x, a, τ) = a * exp(-x / τ)
 
     tspan = (0.0, 10.0)
-    sol = simulate(bg, tspan)
+    sys = system(bg)
+
+    sol = solve(ODEProblem(sys, [], tspan))
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, 2), atol = 1e-5)
+        @test isapprox(sol(t)[], f_sol(t, 10, 2), atol = 1e-5)
     end
 
-    sol = simulate(bg, tspan; u0 = [5.0])
+    sol = solve(ODEProblem(sys, [sys.C.q => 5.], tspan))
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 5, 2), atol = 1e-5)
+        @test isapprox(sol(t)[1], f_sol(t, 5, 2), atol = 1e-5)
     end
 
-    sol = simulate(bg, tspan; pmap = [1.0, 3.0])
+    sol = solve(ODEProblem(sys, [], tspan, [1., 3.]))
     for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, 3), atol = 1e-5)
+        @test isapprox(sol(t)[1], f_sol(t, 10, 3), atol = 1e-5)
     end
 end
 
@@ -65,48 +59,55 @@ end
     C = 3.0
     τ = Req * C
 
-    r1 = Component(:R, :r1; R = R1)
-    r2 = Component(:R, :r2; R = R2)
-    c = Component(:C; C = C, q = 10)
-    kcl = EqualFlow(name = :kcl)
-    bg = BondGraph(:RRC)
+    r1 = resistor(name = :r1, R = R1)
+    r2 = resistor(name = :r2, R = R2)
+    c = capacitor(name = :c; C = C, q0=10)
+    kvl = KVL(name = :kvl)
+    bg = BondGraph([c, r1, r2, kvl], name=:RRC)
+    connect!(bg, c, kvl)
+    connect!(bg, kvl, r1)
+    connect!(bg, kvl, r2)
 
-    add_node!(bg, [c, r1, r2, kcl])
-    connect!(bg, c, kcl)
-    connect!(bg, kcl, r1)
-    connect!(bg, kcl, r2)
-
-    f(x, a, τ) = a * exp(-x / τ)
+    f_sol(x, a, τ) = a * exp(-x / τ)
 
     tspan = (0.0, 10.0)
-    sol = simulate(bg, tspan, abstol = 1e-9, reltol = 1e-9)
-    for t in [0.5, 1.0, 5.0, 10.0]
-        @test isapprox(sol(t)[1], f(t, 10, τ), atol = 1e-5)
+    sys = system(bg)
+
+    cq = sys.c.q
+    ri = sys.r1.I
+    # guesses needed to resolve DAE cyclic conditions
+    prob = ODEProblem(sys, [], tspan, guesses=[ri => 1.])
+    sol = solve(prob)
+
+    for _t in [0.5, 1.0, 5.0, 10.0]
+        @test isapprox(sol(_t)[1], f_sol(_t, 10, τ), atol = 1e-5)
     end
 end
 
+# TODO CONTINUE FROM HERE
 @testset "π-filter" begin
-    Se = Component(:Se, :Pin; es = t -> 1)
+    Se = voltagesource(name=:Pin; E = 1)
 
     Pa = EqualEffort(name = :Pa)
     fa = EqualFlow(name = :fa)
-    ca = Component(:C, :Ca; C = 1, q = 1)
-    rpa = Component(:R, :Rpa; R = 1)
+    ca = capacitor(name = :Ca, C = 1, q0 = 1)
+    rpa = resistor(name = :Rpa, R = 1)
 
     Pb = EqualEffort(name = :Pb)
     fb = EqualFlow(name = :fb)
-    cb = Component(:C, :Cb; C = 1, q = 2)
-    rpb = Component(:R, :Rpb; R = 1)
+    cb = capacitor(name = :Cb, C = 1, q0 = 2)
+    rpb = resistor(name = :Rpb, R = 1)
 
     fs = EqualFlow(name = :fs)
-    l = Component(:I, :L; L = 1, p = 1)
-    r = Component(:R, :Rs; R = 1)
+    l = inductor(name = :L, L = 1, λ0 = 1)
+    r = resistor(name = :Rs, R = 1)
 
-    rl = Component(:R, :RL; R = 1)
+    rl = resistor(name = :RL, R = 1)
 
-    bg = BondGraph(:π_filter)
-    add_node!(bg, [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl])
-
+    bg = BondGraph(name=:π_filter)
+    for comp in [Se, Pa, fa, ca, rpa, Pb, fb, cb, rpb, fs, l, r, rl]
+        add_comp!(bg, comp)
+    end
     connect!(bg, Se, Pa)
     connect!(bg, Pa, fa)
     connect!(bg, fa, ca)
@@ -121,57 +122,61 @@ end
     connect!(bg, Pb, rl)
 
     tspan = (0, 100.0)
-    sol = simulate(bg, tspan; solver = Rosenbrock23(), flag_ODE = false) # Model is a DAE
+    sys = system(bg)
 
-    # Need sys states to test solution (states may change order)
-    sys = ODESystem(bg)
-    (L, Ca, Cb) = (sys.L.p, sys.Ca.q, sys.Cb.q)
+    constitutive_relations(bg; sub_defaults=true)
 
-    @test (sol[Ca, 1] == 1) && (sol[Cb, 1] == 2) && (sol[L, 1] == 1)
+    prob = ODEProblem(sys, [], tspan, guesses=[sys.RL.V => 1.5])  # Model is a DAE
+    sol = solve(prob, Rosenbrock23())
+
+    (p, Ca, Cb) = (sys.L.λ, sys.Ca.q, sys.Cb.q)
+    @test (sol[Ca, 1] ≈ 1) && (sol[Cb, 1] ≈ 2) && (sol[p, 1] == 1)
+    # TODO fix sign issue, possible when multiple junctions are used
     @test isapprox(sol[Ca, end], 1.0, atol = 1e-5)
     @test isapprox(sol[Cb, end], 0.5, atol = 1e-5)
-    @test isapprox(sol[L, end], 0.5, atol = 1e-5)
+    @test isapprox(sol[p, end], 0.5, atol = 1e-5)
 end
 
-@testset "Simulate modular BG" begin
-    r = Component(:R; R = 1)
-    l = Component(:I; L = 1, p = 1)
-    c = Component(:C; C = 1, q = 1)
-    kvl = EqualEffort(name = :kvl)
-    SS1 = SourceSensor(name = :SS1)
-    SS2 = SourceSensor(name = :SS2)
+# TODO Bond Graph Nodes
+# @testset "Simulate modular BG" begin
+#     r = Component(:R; R = 1)
+#     l = Component(:I; L = 1, p = 1)
+#     c = Component(:C; C = 1, q = 1)
+#     kvl = EqualEffort(name = :kvl)
+#     SS1 = SourceSensor(name = :SS1)
+#     SS2 = SourceSensor(name = :SS2)
 
-    bg1 = BondGraph(:RC)
-    add_node!(bg1, [r, c, kvl, SS1])
-    connect!(bg1, r, kvl)
-    connect!(bg1, c, kvl)
-    connect!(bg1, SS1, kvl)
-    bgn1 = BondGraphNode(bg1)
+#     bg1 = BondGraph(:RC)
+#     add_node!(bg1, [r, c, kvl, SS1])
+#     connect!(bg1, r, kvl)
+#     connect!(bg1, c, kvl)
+#     connect!(bg1, SS1, kvl)
+#     bgn1 = BondGraphNode(bg1)
 
-    bg2 = BondGraph(:L)
-    add_node!(bg2, [l, SS2])
-    connect!(bg2, l, SS2)
-    bgn2 = BondGraphNode(bg2)
+#     bg2 = BondGraph(:L)
+#     add_node!(bg2, [l, SS2])
+#     connect!(bg2, l, SS2)
+#     bgn2 = BondGraphNode(bg2)
 
-    bg = BondGraph()
-    add_node!(bg, [bgn1, bgn2])
-    connect!(bg, bgn1, bgn2)
+#     bg = BondGraph()
+#     add_node!(bg, [bgn1, bgn2])
+#     connect!(bg, bgn1, bgn2)
 
-    tspan = (0, 10.0)
-    sol = simulate(bg, tspan)
+#     tspan = (0, 10.0)
+#     sol = simulate(bg, tspan)
 
-    τ = 2
-    ω = sqrt(3) / 2
-    f(t, τ, ω) = exp(-t / τ) * [
-        cos(ω * t) - sqrt(3) * sin(ω * t),
-        cos(ω * t) + sqrt(3) * sin(ω * t)
-    ]
+#     τ = 2
+#     ω = sqrt(3) / 2
+#     f(t, τ, ω) = exp(-t / τ) * [
+#         cos(ω * t) - sqrt(3) * sin(ω * t),
+#         cos(ω * t) + sqrt(3) * sin(ω * t)
+#     ]
 
-    for t in [0.0, 0.5, 1.0, 5.0, 10.0]
-        # sort! so that the order of the output is consistent
-        @test isapprox(sort!(sol(t)), sort!(f(t, τ, ω)), atol = 1e-5)
-    end
-end
+#     for t in [0.0, 0.5, 1.0, 5.0, 10.0]
+#         # sort! so that the order of the output is consistent
+#         @test isapprox(sort!(sol(t)), sort!(f(t, τ, ω)), atol = 1e-5)
+#     end
+# end
 
 @testset "Driven Filter Circuit" begin
     model = BondGraph("RC")

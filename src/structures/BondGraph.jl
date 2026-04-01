@@ -128,7 +128,8 @@ function constitutive_relations(bg::BondGraph; sub_defaults = false)
     # this only works with this syntax for some reason
     eqs = simplify.(simplify.(eqs); rewriter)
     if sub_defaults
-        sub_dict = Dict(k => v for (k, v) in defaults(sys) if !(v isa Bool))
+        default_dict = defaults(sys)
+        sub_dict = Dict(p => default_dict[p] for p in parameters(sys))
         eqs = [substitute(eq, sub_dict) for eq in eqs]
     end
     eqs
@@ -212,10 +213,6 @@ end
 #         return symnodes
 #     end
 # end
-
-# Conversion to common graph types
-# SimpleGraph(bg::BondGraph) = SimpleGraph(SimpleDiGraph(bg))
-# SimpleDiGraph(bg::BondGraph) = SimpleDiGraph(adjacency_matrix(bg))
 
 # """
 #     BondGraphNode(bg::BondGraph, name=name(bg); deep_copy=false)
