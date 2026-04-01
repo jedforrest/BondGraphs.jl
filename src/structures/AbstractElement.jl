@@ -237,6 +237,7 @@ end
 
 efforts(elem::BondElement) = elem.efforts
 efforts(junc::JunctionStructure) = effort.(ports(junc))
+
 flows(elem::BondElement) = elem.flows
 flows(junc::JunctionStructure) = flow.(ports(junc))
 

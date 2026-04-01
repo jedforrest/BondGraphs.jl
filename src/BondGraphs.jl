@@ -117,7 +117,8 @@ export AbstractNode,
        inneighbor_comps,
        outneighbor_comps,
        compile_system!,
-       sub_defaults
+       sub_defaults,
+       BondGraphElement
 
 # Component libraries
 include("libraries/biochemical.jl")
@@ -130,6 +131,7 @@ include("structures/AbstractElement.jl")
 include("structures/AbstractNode.jl")
 include("structures/Bond.jl")
 include("structures/BondGraph.jl")
+include("structures/BondGraphElement.jl")
 
 # Core functionality
 # include("graphfunctions.jl")
