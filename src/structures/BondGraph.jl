@@ -126,7 +126,11 @@ function constitutive_relations(bg::BondGraph; sub_defaults = false)
     eqs = simplify.(simplify.(eqs); rewriter)
     if sub_defaults
         default_dict = defaults(sys)
-        sub_dict = Dict(p => default_dict[p] for p in parameters(sys))
+        sub_dict = Dict(
+            p => default_dict[p]
+            for p in parameters(sys)
+            if default_dict[p] isa Number
+        )
         eqs = [substitute(eq, sub_dict) for eq in eqs]
     end
     eqs

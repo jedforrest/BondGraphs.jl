@@ -1,7 +1,7 @@
 using Test
 using BondGraphs
 using BondGraphs: is_connected, components
-using BondGraphs: resistor, capacitor, inductor, voltagesource, transformer, KCL, KVL
+using BondGraphs: resistor, capacitor, inductor, voltagesource, currentsource, transformer, KCL, KVL
 using BondGraphs: chemicalspecies, reaction, chemostat
 
 using ModelingToolkit

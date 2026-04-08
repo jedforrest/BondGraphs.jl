@@ -63,6 +63,7 @@ function BondGraph(rn::ReactionSystem; chemostats = [], simplify=true)
         zero_junc = EqualEffort(; name=zero_junc_name)
         add_comp!(bg, zero_junc)
 
+        # connect!(bg, zero_junc, species_comp)
         connect!(bg, species_comp, zero_junc)
     end
 

@@ -20,14 +20,14 @@ function inductor(; L=1, λ0=0, name)
 end
 
 # Sources
-function voltagesource(; E=1, name)
-    @parameters E(t)=E
-    EffortSource([V ~ E], [V], [I]; name)
+function voltagesource(; E=t->1, name)
+    @parameters Vs(::Real) = E
+    EffortSource([V ~ Vs(t)], [V], [I]; name)
 end
 
-function currentsource(; F=1, name)
-    @parameters F(t)=F
-    FlowSource([I ~ F], [V], [I]; name)
+function currentsource(; F=t->1, name)
+    @parameters Is(::Real) = F
+    FlowSource([I ~ Is(t)], [V], [I]; name)
 end
 
 # Transformers

@@ -176,6 +176,7 @@ function simplify_junctions!(
                 comp1, comp2 = all_nbrs
                 remove_comp!(bg, j)
                 # bond direction may not be preserved here
+                # TODO direction is sometimes important
                 connect!(bg, bg[comp1], bg[comp2])
             elseif length(all_nbrs) < 2
                 remove_comp!(bg, j)

@@ -195,12 +195,13 @@ function system(elem::AbstractElement)
     es = efforts(elem)
     fs = flows(elem)
     for (i, port) in enumerate(ports(elem))
-        portsys = system(port, namespaced=false)
         # add effort/flow connections to newly added port variables
         # (assuming efforts and flows are in the correct order)
+        portsys = system(port, namespaced=false)
+        w = portweight(port)
         port_conn_eq = [
-            ParentScope(es[i]) ~ ParentScope(portsys.e),
-            ParentScope(fs[i]) ~ ParentScope(portsys.f)
+            ParentScope(es[i]) ~ w * ParentScope(portsys.e),
+            ParentScope(fs[i]) ~ w * ParentScope(portsys.f)
         ]
         append!(port_connection_eqs, port_conn_eq)
     end
@@ -208,6 +209,7 @@ function system(elem::AbstractElement)
 end
 function system(j0::EqualEffort)
     _ports = ports(j0)
+    W = portweight.(_ports)
     es = effort.(_ports)
     fs = flow.(_ports)
 
@@ -275,6 +277,9 @@ icon(::EqualEffort) = :𝟎
 icon(::EqualFlow) = :𝟏
 
 label(elem::AbstractElement) = "$(icon(elem))::$(name(elem))"
+
+############################
+# TODO solution handling e.g. getting Power
 
 ############################################################
 # Overloading Base

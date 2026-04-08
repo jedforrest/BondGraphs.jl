@@ -46,15 +46,15 @@ end
 
 # Chemical Source (chemostat)
 function chemostat(; K=1, X=1, normalised=true, name)
-    @parameters K=K X=X
+    @parameters K=K Xs(::Real)=t->X
     u, v = @variables begin
         μ(t), [connect = Effort]
         ν(t), [connect = Flow]
     end
     eqns = if normalised
-        [D(x) ~ v, u ~ log(K*X)]
+        [u ~ log(K*Xs(t))]
     else
-        [D(x) ~ v, u ~ R*T*log(K*X)]
+        [u ~ R*T*log(K*Xs(t))]
     end
     EffortSource(eqns, [u], [v]; name)
 end
