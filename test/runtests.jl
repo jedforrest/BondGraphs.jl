@@ -13,15 +13,15 @@ using Catalyst
 using DifferentialEquations: Rosenbrock23
 
 function RCI()
-    @named r = resistor()
     @named c = capacitor()
+    @named r = resistor()
     @named i = inductor()
     @named v = voltagesource()
     @named kvl = KVL()
-    b2 = Bond(r, kvl)
-    b1 = Bond(c, kvl)
-    b3 = Bond(kvl, i)
-    b4 = Bond(kvl, v)
+    b1 = Bond(v, kvl)
+    b2 = Bond(kvl, c)
+    b3 = Bond(kvl, r)
+    b4 = Bond(kvl, i)
     BondGraph([c, r, i, v, kvl], [b1, b2, b3, b4], name=:RCI)
 end
 

@@ -60,3 +60,9 @@ function disconnect!(b::Bond)
         p.weight = DISCONNECTED
     end
 end
+
+function connection_equation(b::Bond)
+    srcport = system(b.src)
+    dstport = system(b.dst)
+    ModelingToolkit.connect(srcport, dstport)
+end

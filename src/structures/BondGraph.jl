@@ -108,12 +108,9 @@ end
 function compile_system!(bg::BondGraph; simplify = true)
     comps = components(bg)
     subsyss = system.(comps)
+    conn_eqns = connection_equation.(bonds(bg))
 
-    conn_eqns = [
-        ModelingToolkit.connect(system(b.src), system(b.dst)) for b in bonds(bg)
-    ]
     basesys = System(conn_eqns, t, name = name(bg))
-
     sys = compose(basesys, subsyss...)
     if simplify && length(comps) > 0
         sys = structural_simplify(sys)

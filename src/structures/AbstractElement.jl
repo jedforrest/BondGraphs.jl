@@ -196,12 +196,11 @@ function system(elem::AbstractElement)
     fs = flows(elem)
     for (i, port) in enumerate(ports(elem))
         portsys = system(port, namespaced=false)
-        w = portweight(port)
         # add effort/flow connections to newly added port variables
         # (assuming efforts and flows are in the correct order)
         port_conn_eq = [
-            ParentScope(es[i]) ~ w .* ParentScope(portsys.e),
-            ParentScope(fs[i]) ~ w .* ParentScope(portsys.f)
+            ParentScope(es[i]) ~ ParentScope(portsys.e),
+            ParentScope(fs[i]) ~ ParentScope(portsys.f)
         ]
         append!(port_connection_eqs, port_conn_eq)
     end

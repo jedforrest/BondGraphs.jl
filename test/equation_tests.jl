@@ -1,6 +1,8 @@
 @variables e(t) f(t) q(t)
 @parameters C L R
 
+test_equal_equation(eq1, eq2) = isequal(expand(eq1.rhs - eq2.rhs), 0)
+
 @testset "Component Systems" begin
     eqs = [D(q) ~ f, q ~ C * e]
     @named cap = StaticStorageElement(eqs, [e], [f], [q])
@@ -66,7 +68,7 @@ end
     q, p = sys.c.q, sys.i.λ
 
     cr1 = D(q) ~ p / L
-    cr2 = D(p) ~ -E + (-q) / C + (-R*p) / L
+    cr2 = D(p) ~ E + (-q) / C + (-R*p) / L
 
     # Constitutive relations
     @test isequal(cr_bg[1], cr1)
@@ -74,7 +76,7 @@ end
 
     # With default values
     cr_subbed = constitutive_relations(bg; sub_defaults=true)
-    @test isequal(cr_subbed, [D(q) ~ p, D(p) ~ -1 - p - q])
+    @test isequal(cr_subbed, [D(q) ~ p, D(p) ~ 1 - p - q])
 end
 
 @testset "Equation Rewriter" begin
@@ -106,13 +108,10 @@ end
     connect!(bg, re[2], B)
 
     sys = system(bg)
-    xA, xB = unknowns(sys)
-    KB, KA, k = parameters(sys)
+    cr = constitutive_relations(bg)
 
     xA, xB = sys.A.x, sys.B.x
     KA, KB, k = sys.A.K, sys.B.K, sys.re.κ
-
-    cr = constitutive_relations(bg)
     @test isequal(cr[1], D(xA) ~ k*(-KA*xA + KB*xB))
     @test isequal(cr[2], D(xB) ~ k*(KA*xA - KB*xB))
 end
@@ -141,19 +140,7 @@ end
     @test BondGraphs.portweight.(Re.ports) == [1, -1]
     cr1 = constitutive_relations(bg)
 
-    # C1, C2, C3 <- J -> Re -> C4
-    disconnect!(bg, C1, J)
-    disconnect!(bg, C2, J)
-    disconnect!(bg, C3, J)
-    connect!(bg, J, C1)
-    connect!(bg, J, C2)
-    connect!(bg, J, C3)
-    @test BondGraphs.portweight.(J.ports) == [-1, -1, -1, -1]
-    cr2 = constitutive_relations(bg)
-
-    # check that the CR are the same regardless of internal bond directions
-    @test all(isequal.(cr1, cr2))
-
+    # test correctness
     sys = system(bg)
     (x1, x2, x3, x4) = (sys.C1.x, sys.C2.x, sys.C3.x, sys.C4.x)
     (K1, K2, K3, K4, k) = (sys.C1.K, sys.C2.K, sys.C3.K, sys.C4.K, sys.Re.κ)
@@ -163,7 +150,33 @@ end
         D(x3) ~ k*(K4*x4 - K1*K2*K3*x2*x1*x3)
         D(x4) ~ k*(-K4*x4 + K1*K2*K3*x2*x1*x3)
     ]
-    @test all(isequal.(cr1, true_cr))
+    for i in 1:4
+        @test test_equal_equation(cr1[i], true_cr[i])
+    end
+
+    # test flipping bond direction
+    # C1, C2, C3 <- J <- Re -> C4
+    disconnect!(bg, C1, J)
+    disconnect!(bg, C2, J)
+    disconnect!(bg, C3, J)
+    disconnect!(bg, J, Re)
+    connect!(bg, J, C1)
+    connect!(bg, J, C2)
+    connect!(bg, J, C3)
+    connect!(bg, Re, J)
+    @test BondGraphs.portweight.(J.ports) == [-1, -1, -1, 1]
+    cr2 = constitutive_relations(bg)
+    # check that the CR are the same regardless of internal bond directions
+    @test all(isequal.(cr1, cr2))
+
+    # test inserting extra junction
+    # C1, C2, C3 -> J -> J2 -> Re -> C4
+    @named J2 = EqualFlow()
+    insert_comp!(bg, (Re, J), J2)
+    cr3 = constitutive_relations(bg)
+    # inserting a redundant junction should not change CR
+    @test all(isequal.(cr1, cr3))
+
 end
 
 @testset "Chemical reaction A ⇌ B + C, C ⇌ E" begin
@@ -181,23 +194,24 @@ end
 
     connect!(bg, A, re1[1])
     connect!(bg, re1[2], BC)
-    connect!(bg, B, BC)
-    connect!(bg, common_C, BC)
-    connect!(bg, C, common_C)  # NOTE: only works if this bond is in this direction
+    connect!(bg, BC, B)
+    connect!(bg, BC, common_C)
+    connect!(bg, common_C, C)
     connect!(bg, common_C, re2[1])
     connect!(bg, re2[2], E)
 
     cr = constitutive_relations(bg)
 
+    sys = system(bg)
     (xA, xB, xC, xE) = (sys.A.x, sys.B.x, sys.C.x, sys.E.x)
     (KA, KB, KC, KE, k1, k2) = (sys.A.K, sys.B.K, sys.C.K, sys.E.K, sys.re1.κ, sys.re2.κ)
-    eq1 = D(xA) ~ -k1 * (KA * xA - KB * xB * KC * xC)
-    eq2 = D(xB) ~ k1 * (KA * xA - KB * xB * KC * xC)
-    eq3 = D(xC) ~ k1 * (KA * xA - KB * xB * KC * xC) + k2 * (-KC * xC + KE * xE)
-    eq4 = D(xE) ~ k2 * (KC * xC - KE * xE)
-
-    @test isequal(cr[1], eq1)
-    @test isequal(cr[2], eq2)
-    @test isequal(cr[3], eq3)
-    @test isequal(cr[4], eq4)
+    true_cr = [
+        D(xA) ~ -k1 * (KA * xA - KB * xB * KC * xC)
+        D(xB) ~ k1 * (KA * xA - KB * xB * KC * xC)
+        D(xC) ~ k1 * (KA * xA - KB * xB * KC * xC) + k2 * (-KC * xC + KE * xE)
+        D(xE) ~ k2 * (KC * xC - KE * xE)
+    ]
+    for i in 1:4
+        @test test_equal_equation(cr[i], true_cr[i])
+    end
 end
