@@ -118,7 +118,8 @@ export AbstractNode,
        outneighbor_comps,
        compile_system!,
        sub_defaults,
-       BondGraphElement
+       BondGraphElement,
+       assign_causality
 
 # Component libraries
 include("libraries/biochemical.jl")

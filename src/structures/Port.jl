@@ -26,17 +26,17 @@ end
 ############################################################
 
 # used for adjusting the sign of efforts/flows
-@enum PortWeight INBOUND=1 OUTBOUND=-1 DISCONNECTED=0
+# @enum PortWeight INBOUND=1 OUTBOUND=-1 DISCONNECTED=0
 
 mutable struct Port
     name::Symbol
     parentname::Symbol
     sys::System  # port connector
     connected::Bool
-    weight::PortWeight
+    # weight::PortWeight
     function Port(name, parentname; e=:e, f=:f)
         sys = PortConnector(; name, e, f)
-        new(name, parentname, sys, false, DISCONNECTED)
+        new(name, parentname, sys, false)
     end
 end
 
@@ -48,18 +48,18 @@ end
 
 is_connected(p::Port) = p.connected
 
-is_source(p::Port) = p.weight == OUTBOUND
+is_source(p::Port) = !isnothing(p.inbound) && !p.inbound
 
-portweight(p::Port) = Int(p.weight)
+portweight(p::Port) = isnothing(p.inbound) ? 0 : (p.inbound ? 1 : -1)
 
-function effort(p::Port)
-    e = filter(x -> get_connection_type(x) == Effort, unknowns(p.sys))[]
-    renamespace(p.name, e)
-end
-function flow(p::Port)
-    f = filter(x -> get_connection_type(x) == Flow, unknowns(p.sys))[]
-    renamespace(p.name, f)
-end
+# function effort(p::Port)
+#     e = filter(x -> get_connection_type(x) == Effort, unknowns(p.sys))[]
+#     renamespace(p.name, e)
+# end
+# function flow(p::Port)
+#     f = filter(x -> get_connection_type(x) == Flow, unknowns(p.sys))[]
+#     renamespace(p.name, f)
+# end
 
 function Base.show(io::IO, port::Port)
     connection_state = is_connected(port) ? "⬤" : "◯"

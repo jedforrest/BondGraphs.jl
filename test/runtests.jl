@@ -31,4 +31,5 @@ end
     @testset "Catalyst Tests" include("./catalyst_tests.jl")
     # @testset "Simulation Tests" include("./simulation_tests.jl")
     # @testset "Module Tests" include("./module_tests.jl")
+    @testset "Causality Tests" include("./causality_tests.jl")
 end

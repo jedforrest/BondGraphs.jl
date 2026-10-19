@@ -11,14 +11,15 @@ In most cases it is better to use [`connect!`](@ref) instead.
 struct Bond
     src::Port
     dst::Port
+    causality::Symbol  # src | dst | both (conflict) | none
     function Bond(srcport::Port, dstport::Port)
         is_connected(srcport) && error("$srcport already connected")
         is_connected(dstport) && error("$dstport already connected")
         srcport.connected = true
         dstport.connected = true
-        srcport.weight = OUTBOUND
-        dstport.weight = INBOUND
-        new(srcport, dstport)
+        # srcport.inbound = false
+        # dstport.inbound = true
+        new(srcport, dstport, :none)
     end
 end
 # either port or component are accepted as inputs

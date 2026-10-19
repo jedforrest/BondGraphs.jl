@@ -79,7 +79,7 @@ function (TBE::Type{<:BondElement})(sys::System, efforts, flows, states=[]; name
     portsystems = System[]
     for i in 1:length(efforts)
         # create N port subsystems and extend the user-given MTK System
-        port = Port(Symbol("port_", i), name)
+        port = Port(Symbol("port[$i]"), name)
         portsys = system(port, namespaced=false)
         push!(ports, port)
         push!(portsystems, portsys)
@@ -103,6 +103,19 @@ function (TBE::Type{<:BondElement})(eqs::Vector{Equation}, args...; name=Symbol(
     sys = System(eqs, t; name)
     TBE(sys, args...; kwargs...)
 end
+
+# TODO move this code somewhere
+# make new port subsystems that expose the effort and flow variables
+# ports = Port[]
+# portsystems = System[]
+# for i in 1:length(efforts)
+#     # create N port subsystems and extend the user-given MTK System
+#     port = Port(Symbol("port_", i), name)
+#     portsys = system(port, namespaced=false)
+#     push!(ports, port)
+#     push!(portsystems, portsys)
+# end
+# sys = compose(sys, portsystems)
 
 ############################################################
 abstract type JunctionStructure <: AbstractElement end
@@ -180,8 +193,7 @@ end
 
 function check_num_ports(efforts, flows)
     numports = length(efforts)
-    (numports == length(flows)) ||
-        error("Number of efforts and flows don't match ($numports)")
+    (numports == length(flows)) || error("Number of efforts and flows don't match ($numports)")
     numports >= 1 || error("Must have at least 1 port ($numports)")
     return nothing
 end
