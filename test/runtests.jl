@@ -36,35 +36,16 @@ end
 
 
 #------------------
-@variables q(t) I(t) V(t)
-@parameters C
+# scratchpad
+# TODO continue through tests
 
-@named cap = Component(
-    StaticStorageElement(),
-    [D(q) ~ I, q ~ C * V], [V], [I], [q]
-)
+using BondGraphs: resistor, capacitor, inductor, KVL
+using BondGraphs: voltagesource, currentsource, transformer, KCL
 
-sys = cap.sys
+@named cap = capacitor()
 
+voltagesource(; E=t->1, name=:v)
 
-equations(expand_connections(sys))
-cap.ports[1]
+transformer(2)
 
-system.(cap.ports, namespaced=false)
-
-sys.port_1
-equations(sys)
-equations(expand_connections(sys))
-
-@named j0 = Component(ZeroJunction())
-j0
-ZeroJunction()
-StaticStorageElement()
-
-j0.sys
-j0.ports
-system(j0)
-
-elementtype(cap)
-
-cap
+@named kvl = KVL()

@@ -12,7 +12,7 @@ graph type. Other properties and equations of available components are defined i
 struct Component{T<:AbstractElement}
     element::T
     name::Symbol
-    sys::System
+    model::System
     efforts::Vector{Num}
     flows::Vector{Num}
     states::Vector{Num}
@@ -20,9 +20,9 @@ struct Component{T<:AbstractElement}
 end
 
 """Generic Component constructor from a vector of equations"""
-function Component(element::AbstractElement, eqs::Vector{Equation}, args...; name::Symbol, kwargs...)
-    sys = System(eqs, t; name)
-    Component(element, sys, args...; kwargs...)
+function Component(element::AbstractElement, eqs::Vector{Equation}, args...; name, kwargs...)
+    sys = System(eqs, t; name=Symbol("$name.model"))
+    Component(element, sys, args...; name, kwargs...)
 end
 
 """Bond Element Component constructor from a MTK System"""
@@ -52,7 +52,9 @@ function Component(element::AbstractElement, sys::System, efforts, flows, states
 
     # kwargs are used to set default parameter values
     for (key, val) in kwargs
-        setproperty!(sys, key, val)
+        if hasproperty(sys, key)
+            ModelingToolkitBase.get_initial_conditions(sys)[getproperty(sys, key)] = val
+        end
     end
 
     Component(element, name, sys, efforts, flows, states, ports)
@@ -70,10 +72,10 @@ function check_num_ports(element::BondElement, efforts, flows, states)
     nports = numports(element)
     nports >= 1 || error("Must have at least 1 port ($nports)")
     if element isa StorageElement
-        (nports == length(efforts) == length(flows)) ||
-            error("Number of efforts and flows don't match ($nports)")
-    else
         (nports == length(efforts) == length(flows) == length(states)) ||
+            error("Number of efforts, flows, and states don't match ($nports)")
+    else
+        (nports == length(efforts) == length(flows)) ||
             error("Number of efforts and flows don't match ($nports)")
     end
     return nothing
@@ -96,40 +98,6 @@ function check_num_ports(::NonParametricJunction, efforts, flows, states)
     return nothing
 end
 
-##############################
-# BASE FUNCTIONS
-
-function Base.show(io::IO, comp::Component)
-    print(io, "$(numports(comp))-port $(symbol(comp)) Component")
-end
-
-function Base.show(io::IO, comp::Component{<:NonParametricJunction})
-    print(io, "$(symbol(comp))-Junction")
-end
-
-# Easier referencing systems using a.b notation
-function Base.getproperty(comp::Component, name::Symbol)
-    if isdefined(comp, name)
-        return getfield(comp, name)
-    else
-        # get default value for variable/parameter if it exists
-        sym = getproperty(comp.sys, name; namespace=false)
-        return get(defaults(comp.sys), sym, nothing)
-    end
-end
-
-function Base.setproperty!(comp::Component{<:BondElement}, name::Symbol, val)
-    setproperty!(system(comp), name, val)
-end
-
-# index referencing for ports
-Base.getindex(comp::Component, index::Int) = comp.ports[index]
-function Base.getindex(comp::Component, key::Symbol)
-    ports = comp.ports
-    port_index = findfirst(x -> name(x) == key, ports)
-    !isnothing(port_index) ? ports[port_index] : error("No such port: $key")
-end
-
 ############################################################
 # PROPERTIES
 elementtype(::Component{T}) where {T} = T
@@ -139,11 +107,11 @@ name(comp::Component) = comp.name
 
 symbol(comp::Component) = symbol(comp.element)
 
-system(comp::Component) = comp.sys
+system(comp::Component) = comp.model
 # System construction for junction components
 # Since the number of ports can change, these systems are composed each time they are called
 function system(junc0::Component{ZeroJunction})
-    isempty(junc0.ports) && return junc0.sys
+    isempty(junc0.ports) && return junc0.model
 
     _ports = ports(junc0)
     es = effort.(_ports)
@@ -158,7 +126,7 @@ function system(junc0::Component{ZeroJunction})
     System(eqs, t; systems=system.(_ports), name=name(junc0))
 end
 function system(junc1::Component{OneJunction})
-    isempty(junc1.ports) && return junc1.sys
+    isempty(junc1.ports) && return junc1.model
 
     _ports = ports(junc1)
     W = portweight.(_ports)
@@ -184,6 +152,40 @@ states(comp::Component) = comp.states
 constitutive_relations(comp::Component) = ModelingToolkitBase.equations_toplevel(system(comp))
 
 ports(comp::Component) = comp.ports
+
+##############################
+# BASE FUNCTIONS
+
+function Base.show(io::IO, comp::Component)
+    print(io, "$(numports(comp))-port $(symbol(comp))-Component: $(name(comp))")
+end
+
+function Base.show(io::IO, comp::Component{<:NonParametricJunction})
+    print(io, "$(symbol(comp))-Junction: $(name(comp))")
+end
+
+# Easier referencing systems using a.b notation
+function Base.getproperty(comp::Component, name::Symbol)
+    if isdefined(comp, name)
+        return getfield(comp, name)
+    else
+        # get default value for variable/parameter if it exists
+        sym = getproperty(comp.model, name; namespace=false)
+        return get(defaults(comp.model), sym, nothing)
+    end
+end
+
+function Base.setproperty!(comp::Component{<:BondElement}, name::Symbol, val)
+    setproperty!(system(comp), name, val)
+end
+
+# index referencing for ports
+Base.getindex(comp::Component, index::Int) = comp.ports[index]
+function Base.getindex(comp::Component, key::Symbol)
+    ports = comp.ports
+    port_index = findfirst(x -> name(x) == key, ports)
+    !isnothing(port_index) ? ports[port_index] : error("No such port: $key")
+end
 
 ############################################################
 numports(comp::Component) = length(ports(comp))

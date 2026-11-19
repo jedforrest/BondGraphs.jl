@@ -1,16 +1,3 @@
-# Type definition alias for MetaGraphs stored within Bond Graphs
-# See https://github.com/JuliaGraphs/MetaGraphsNext.jl/issues/95#issuecomment-3572905564
-const BondGraphMeta = MetaGraph{
-    Int64,  # Code
-    SimpleDiGraph{Int64},  # Graph
-    Symbol,  # VertexLabel
-    AbstractElement,  # VertexData
-    Bond,  # EdgeData
-    String  # GraphData
-}
-
-############################################################################################
-
 """
     BondGraph(name="BG") <: Graphs.AbstractGraph{Int64}
     BondGraph(name, nodes::Vector{Component}, bonds::Vector{Bond})
@@ -24,10 +11,10 @@ See also [`BondGraphNode`](@ref).
 mutable struct BondGraph <: AbstractGraph{Int}
     name::Symbol
     graph::MetaGraph
-    sys::Union{System, Nothing}  # compiled later
+    model::Union{System, Nothing}  # compiled later
     autocompile::Bool  # whether to recompile the System object whenever "system" is called
     function BondGraph(
-            components::Vector{<:AbstractElement} = AbstractElement[],
+            components::Vector{Component} = Component[],
             bonds::Vector{Bond} = Bond[];
             name = :BondGraph,
             autocompile = true
@@ -50,11 +37,11 @@ end
 
 ############################################################################################
 
-function metagraph(components::Vector{<:AbstractElement}, bonds::Vector{Bond}, bgname)
+function metagraph(components::Vector{Component}, bonds::Vector{Bond}, bgname)
     graph = MetaGraph(
         DiGraph();
         label_type = Symbol,
-        vertex_data_type = AbstractElement,
+        vertex_data_type = Component,
         edge_data_type = Bond,
         graph_data = string(bgname)
     )
@@ -84,12 +71,13 @@ name(bg::BondGraph) = bg.name
 components(bg::BondGraph) = [getindex(bg.graph, c) for c in labels(bg.graph)]
 bonds(bg::BondGraph) = [getindex(bg.graph, s, d) for (s, d) in edge_labels(bg.graph)]
 
-filterbytype(T::Type{<:AbstractElement}, vec) = filter(x -> x isa T, vec)
-elements(bg::BondGraph) = filterbytype(BondElement, components(bg))
+filterbytype(T::Type{<:AbstractElement}, vec::Vector) = filter(x -> element(x) isa T, vec)
+bondelements(bg::BondGraph) = filterbytype(BondElement, components(bg))
 junctions(bg::BondGraph) = filterbytype(JunctionStructure, components(bg))
 
 ############################################################################################
 # Extra simplification rules
+# TODO use something other than the rewriter
 log_exp_rules = [
     @rule(~a * log(~x) => log((~x) ^ (~a))),
     @acrule(~!a * log(~x) + ~!a * log(~y) => ~a * log(~x * ~y)),
@@ -98,10 +86,10 @@ log_exp_rules = [
 const rewriter = Postwalk(RestartedChain(log_exp_rules))
 
 function system(bg::BondGraph; simplify = true)
-    if isnothing(bg.sys) || bg.autocompile
+    if isnothing(bg.model) || bg.autocompile
         compile_system!(bg; simplify)
     end
-    bg.sys
+    bg.model
 end
 
 # MTK System compiler
@@ -115,7 +103,7 @@ function compile_system!(bg::BondGraph; simplify = true)
     if simplify && length(comps) > 0
         sys = structural_simplify(sys)
     end
-    bg.sys = sys
+    bg.model = sys
 end
 
 function constitutive_relations(bg::BondGraph; sub_defaults = false)
@@ -146,7 +134,7 @@ end
 eltype(::Type{BondGraph}) = Int
 eltype(::BondGraph) = Int
 
-# edgetype TODO check if correct
+# edgetype
 edgetype(::Type{BondGraph}) = SimpleEdge{Int}
 edgetype(::BondGraph) = SimpleEdge{Int}
 
@@ -165,8 +153,8 @@ inneighbors(bg::BondGraph, v) = inneighbors(bg.graph, v)
 outneighbors(bg::BondGraph, v) = outneighbors(bg.graph, v)
 
 # directed
-is_directed(bg::Type{BondGraph}) = true
-is_directed(bg::BondGraph) = true
+is_directed(::Type{BondGraph}) = true
+is_directed(::BondGraph) = true
 
 # MetaGraph indexing
 getindex(bg::BondGraph) = getindex(bg.graph)

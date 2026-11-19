@@ -23,7 +23,7 @@ struct Bond
     end
 end
 # either port or component are accepted as inputs
-function Bond(src::Union{Port,AbstractElement}, dst::Union{Port,AbstractElement})
+function Bond(src::Union{Port,Component}, dst::Union{Port,Component})
     srcport = src isa Port ? src : nextfreeport(src)
     dstport = dst isa Port ? dst : nextfreeport(dst)
     isnothing(srcport) && error("Component $src has no free ports")
@@ -40,7 +40,7 @@ function Base.show(io::IO, b::Bond)
 end
 
 # Base functions
-Base.in(n::AbstractElement, b::Bond) = name(n) in componentnames(b)
+Base.in(n::Component, b::Bond) = name(n) in componentnames(b)
 
 iterate(b::Bond) = (b.src, true)
 iterate(b::Bond, state) = state ? (b.dst, false) : nothing
@@ -58,7 +58,7 @@ end
 function disconnect!(b::Bond)
     for p in ports(b)
         p.connected = false
-        p.weight = DISCONNECTED
+        # p.weight = DISCONNECTED
     end
 end
 

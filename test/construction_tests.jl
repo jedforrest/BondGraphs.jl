@@ -11,9 +11,9 @@ end
     @variables e(t) f(t) p(t) q(t)
     @parameters R C L
 
-    r_element = DissipatorElement([e ~ R * f], [e], [f])
-    c_element = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
-    i_element = DynamicStorageElement([D(p) ~ e, p ~ L * f], [e], [f], [p])
+    r_element = Resistance([e ~ R * f], [e], [f])
+    c_element = Compliance([D(q) ~ f, q ~ C * e], [e], [f], [q])
+    i_element = Inertance([D(p) ~ e, p ~ L * f], [e], [f], [p])
 
     @test isequal(efforts(r_element), [e])
     @test isequal(flows(c_element), [f])
@@ -38,9 +38,9 @@ end
     @parameters C
     eqs = [D(q) ~ f, q ~ C * e]
 
-    @named capacitor = StaticStorageElement(eqs, [e], [f], [q]; q = 2, C = 5)
+    @named capacitor = Compliance(eqs, [e], [f], [q]; q = 2, C = 5)
 
-    @test typeof(capacitor) == StaticStorageElement
+    @test typeof(capacitor) == Compliance
     @test name(capacitor) == :capacitor
     @test repr(capacitor) == "C::capacitor"
 

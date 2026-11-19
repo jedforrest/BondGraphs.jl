@@ -45,7 +45,7 @@ function _apply_causality_rule(elem::BondGraphs.AbstractElement)
         return :dst
     elseif elem isa FlowSource
         return :src
-    elseif elem isa StaticStorageElement
+    elseif elem isa Compliance
         # TODO CONTINUE FROM HERE
         # need easy way to determine causality systematically
     else

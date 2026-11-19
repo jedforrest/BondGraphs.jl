@@ -16,7 +16,7 @@ end
 mutable struct Port
     name::Symbol
     parentname::Symbol
-    sys::System  # port connector
+    model::System  # port connector
     connected::Bool
     # weight::PortWeight
     function Port(name, parentname; e=:e, f=:f)
@@ -28,7 +28,7 @@ end
 name(p::Port) = p.name
 parentname(p::Port) = p.parentname
 function system(p::Port; namespaced = true)
-    namespaced ? ModelingToolkitBase.renamespace(p.parentname, p.sys) : p.sys
+    namespaced ? ModelingToolkitBase.renamespace(p.parentname, p.model) : p.model
 end
 
 is_connected(p::Port) = p.connected

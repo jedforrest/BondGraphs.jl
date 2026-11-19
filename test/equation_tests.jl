@@ -5,7 +5,7 @@ test_equal_equation(eq1, eq2) = isequal(expand(eq1.rhs - eq2.rhs), 0)
 
 @testset "Component Systems" begin
     eqs = [D(q) ~ f, q ~ C * e]
-    @named cap = StaticStorageElement(eqs, [e], [f], [q])
+    @named cap = Compliance(eqs, [e], [f], [q])
 
     sys = system(cap)
     @test nameof(sys) == :cap
@@ -30,8 +30,8 @@ end
     compile_system!(bg)
     @test isempty(equations(bg.sys))
 
-    @named cap = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q])
-    @named res = DissipatorElement([e ~ R * f], [e], [f])
+    @named cap = Compliance([D(q) ~ f, q ~ C * e], [e], [f], [q])
+    @named res = Resistance([e ~ R * f], [e], [f])
     add_comp!(bg, cap)
     add_comp!(bg, res)
     connect!(bg, cap, res)

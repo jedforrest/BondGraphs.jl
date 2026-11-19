@@ -7,9 +7,7 @@
 # 1 -> Re
 # Re -> C
 
-const _R = 8.314
-const _T = 310
-@parameters R=_R T=_T
+@parameters R=8.314 T=310
 R = GlobalScope(R)
 T = GlobalScope(T)
 
@@ -26,7 +24,7 @@ function chemicalspecies(; K=1, normalised=true, name)
     else
         [D(x) ~ v, u ~ R*T*log(K*x)]
     end
-    StaticStorageElement(eqns, [u], [v], [x]; name)
+    Component(Compliance(symbol=:Ce), eqns, [u], [v], [x]; name)
 end
 
 # Reaction
@@ -41,7 +39,7 @@ function reaction(; κ=1, normalised=true, name)
     else
         [v[1] ~ - v[2], v[1] ~ κ * (exp(u[1] / (R*T)) - exp(u[2] / (R*T)))]
     end
-    DissipatorElement(eqns, u, v; name)
+    Component(Resistance(symbol=:Re, numports=2), eqns, [u[1], u[2]], [v[1], v[2]]; name)
 end
 
 # Chemical Source (chemostat)
@@ -56,10 +54,18 @@ function chemostat(; K=1, X=1, normalised=true, name)
     else
         [u ~ R*T*log(K*Xs(t))]
     end
-    EffortSource(eqns, [u], [v]; name)
+    Component(EffortSource(symbol=:Se), eqns, [u], [v]; name)
 end
 
 # Stoichiometry
 function stoichiometry(n; name=Symbol("TF{$n}"))
-    Transformer(n; name)
+    @variables begin
+        μ(t)[1:2], [connect = Effort]
+        ν(t)[1:2], [connect = Flow]
+    end
+    eqs = [
+        ν[1] ~ n * ν[2],
+        μ[2] ~ -n * μ[1]
+    ]
+    Component(Transformer(), eqs, [μ[1], μ[2]], [ν[1], ν[2]]; name)
 end

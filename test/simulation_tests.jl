@@ -3,7 +3,7 @@
 
 @testset "Setting variables" begin
     @parameters C=2
-    @named ccomp = StaticStorageElement([D(q) ~ f, q ~ C * e], [e], [f], [q]; q=1)
+    @named ccomp = Compliance([D(q) ~ f, q ~ C * e], [e], [f], [q]; q=1)
     @named icomp = inductor(L=5)
     @named re = reaction(; normalised=false)
     re.κ = 4
