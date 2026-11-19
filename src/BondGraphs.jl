@@ -22,11 +22,11 @@ import Graphs:
                rem_vertex!,
                add_edge!,
                rem_edge!
-import ModelingToolkit: parameters, equations, controls
+import ModelingToolkitBase: parameters, equations, controls
 
 using Graphs: SimpleGraph, SimpleDiGraph, SimpleEdge
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
+using ModelingToolkitBase
+using ModelingToolkitBase: t_nounits as t, D_nounits as D
 using DifferentialEquations
 using SymbolicUtils, SymbolicUtils.Rewriters
 using OrderedCollections
@@ -39,7 +39,7 @@ using GraphMakie, GraphMakie.NetworkLayout
 using MetaGraphsNext
 using DataStructures
 
-export AbstractNode,
+export Component,
        Component,
     #    Junction,
        EqualEffort,
@@ -100,6 +100,8 @@ export AbstractNode,
        Gyrator,
        EqualEffort,
        EqualFlow,
+       ZeroJunction,
+       OneJunction,
        power_variables,
        elementtype,
        efforts,
@@ -122,14 +124,14 @@ export AbstractNode,
        assign_causality
 
 # Component libraries
-include("libraries/biochemical.jl")
-include("libraries/standard.jl")
-include("libraries/libraryfunctions.jl")
+# include("libraries/biochemical.jl")
+# include("libraries/standard.jl")
+# include("libraries/libraryfunctions.jl")
 
 # Structures
 include("structures/Port.jl")
 include("structures/AbstractElement.jl")
-include("structures/AbstractNode.jl")
+include("structures/Component.jl")
 include("structures/Bond.jl")
 include("structures/BondGraph.jl")
 include("structures/BondGraphElement.jl")

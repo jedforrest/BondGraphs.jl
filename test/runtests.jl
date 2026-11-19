@@ -4,8 +4,8 @@ using BondGraphs: is_connected, components
 using BondGraphs: resistor, capacitor, inductor, voltagesource, currentsource, transformer, KCL, KVL
 using BondGraphs: chemicalspecies, reaction, chemostat
 
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
+using ModelingToolkitBase
+using ModelingToolkitBase: t_nounits as t, D_nounits as D
 using Graphs
 using MetaGraphsNext
 using DataStructures
@@ -33,3 +33,38 @@ end
     # @testset "Module Tests" include("./module_tests.jl")
     @testset "Causality Tests" include("./causality_tests.jl")
 end
+
+
+#------------------
+@variables q(t) I(t) V(t)
+@parameters C
+
+@named cap = Component(
+    StaticStorageElement(),
+    [D(q) ~ I, q ~ C * V], [V], [I], [q]
+)
+
+sys = cap.sys
+
+
+equations(expand_connections(sys))
+cap.ports[1]
+
+system.(cap.ports, namespaced=false)
+
+sys.port_1
+equations(sys)
+equations(expand_connections(sys))
+
+@named j0 = Component(ZeroJunction())
+j0
+ZeroJunction()
+StaticStorageElement()
+
+j0.sys
+j0.ports
+system(j0)
+
+elementtype(cap)
+
+cap

@@ -13,7 +13,7 @@ const BondGraphMeta = MetaGraph{
 
 """
     BondGraph(name="BG") <: Graphs.AbstractGraph{Int64}
-    BondGraph(name, nodes::Vector{AbstractNode}, bonds::Vector{Bond})
+    BondGraph(name, nodes::Vector{Component}, bonds::Vector{Bond})
 
 The bond graph object which contains a vector of `nodes` and `bonds`. All operations on
 components or bonds must happen within the same bond graph. This inherits the methods of the

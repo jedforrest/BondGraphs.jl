@@ -1,5 +1,5 @@
 """
-    Bond(source::AbstractNode, destination::AbstractNode)
+    Bond(source::Component, destination::Component)
     Bond((source_node, port_label), (destination_node, port_label))
 
 Connect two bond graph components (or two ports of two components) with a bond. The bond

@@ -1,6 +1,6 @@
 module BiochemicalLibrary
 
-using ModelingToolkit
+using ModelingToolkitBase
 
 export biochemical_library
 
@@ -11,8 +11,8 @@ const _T = 310.0
 @parameters R T
 R, T = GlobalScope(R), GlobalScope(T)
 
-t = ModelingToolkit.t_nounits
-D = ModelingToolkit.D_nounits
+t = ModelingToolkitBase.t_nounits
+D = ModelingToolkitBase.D_nounits
 
 @variables E(t)[1:2] F(t)[1:2]
 

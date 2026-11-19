@@ -15,13 +15,13 @@ rw_chain = RestartedChain([SymbolicUtils.default_simplifier(), rw_exp])
 rewriter = Postwalk(rw_chain)
 
 """
-    constitutive_relations(n::AbstractNode)
+    constitutive_relations(n::Component)
 
 Return the constitutive relations (equations) for node `n`.
 
 If `n` is a Junction, the flow and effort constraints are generated from its connections.
 """
-constitutive_relations(n::AbstractNode) = equations(n)
+constitutive_relations(n::Component) = equations(n)
 # function constitutive_relations(n::EqualEffort)
 #     if all(==(0), ports(n)) # all ports are empty
 #         return Equation[]
@@ -109,8 +109,8 @@ function get_connection_eq(b::Bond, subsystems)
     connect(src_port, dst_port)
 end
 
-# AbstractNode
-function ModelingToolkit.ODESystem(n::AbstractNode; name = name(n))
+# Component
+function ModelingToolkit.ODESystem(n::Component; name = name(n))
     N = numports(n)
     ps = [MTKPort(name = Symbol("p$i")) for i in 1:N]
 
