@@ -82,7 +82,7 @@ components(bg::BondGraph) = [getindex(bg.graph, c) for c in labels(bg.graph)]
 bonds(bg::BondGraph) = [getindex(bg.graph, s, d) for (s, d) in edge_labels(bg.graph)]
 
 filterbytype(T::Type{<:AbstractElement}, vec::Vector) = filter(x -> element(x) isa T, vec)
-bondelements(bg::BondGraph) = filterbytype(BondElement, components(bg))
+elements(bg::BondGraph) = filterbytype(BondElement, components(bg))
 junctions(bg::BondGraph) = filterbytype(JunctionStructure, components(bg))
 
 ############################################################################################
@@ -184,11 +184,11 @@ setindex!(bg::BondGraph, data, s, d) = setindex!(bg.graph, data, s, d)
 
 ############################################################################################
 
-inneighbor_comps(bg::BondGraph, elem::AbstractElement) = collect(inneighbor_labels(bg.graph, name(elem)))
-outneighbor_comps(bg::BondGraph, elem::AbstractElement) = collect(outneighbor_labels(bg.graph, name(elem)))
+inneighbor_comps(bg::BondGraph, comp::Component) = collect(inneighbor_labels(bg.graph, name(comp)))
+outneighbor_comps(bg::BondGraph, comp::Component) = collect(outneighbor_labels(bg.graph, name(comp)))
 
-function Base.in(elem::AbstractElement, bg::BondGraph)
-    haskey(bg.graph, name(elem))
+function Base.in(comp::Component, bg::BondGraph)
+    haskey(bg.graph, name(comp))
 end
 
 function Base.in(b::Bond, bg::BondGraph)

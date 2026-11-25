@@ -151,7 +151,8 @@ function system(junc1::Component{OneJunction})
 end
 
 variables(comp::Component) = ModelingToolkitBase.unknowns_toplevel(system(comp))
-parameters(comp::Component) = ModelingToolkitBase.parameters(system(comp))
+parameters(comp::Component) = ModelingToolkitBase.parameters_toplevel(system(comp))
+equations(comp::Component) = ModelingToolkitBase.equations_toplevel(system(comp))
 
 efforts(comp::Component) = comp.efforts
 flows(comp::Component) = comp.flows
@@ -190,8 +191,9 @@ function Base.getproperty(comp::Component, name::Symbol)
         return getfield(comp, name)
     else
         # get default value for variable/parameter if it exists
-        sym = getproperty(comp.model, name; namespace=false)
-        return get(defaults(comp.model), sym, nothing)
+        sys = system(comp)
+        sym = getproperty(sys, name)
+        return Symbolics.value(get(initial_conditions(sys), sym, nothing))
     end
 end
 
@@ -209,6 +211,7 @@ end
 
 ############################################################
 numports(comp::Component) = length(ports(comp))
+numports(::Component{<:NonParametricJunction}) = Inf
 
 hasfreeport(comp::Component) = any(!is_connected, comp.ports)
 hasfreeport(::Component{<:NonParametricJunction}) = true

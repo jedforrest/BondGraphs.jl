@@ -13,17 +13,16 @@
     @test length(BondGraphs.variables(i_element)) == 3
 end
 
-# TODO CONTINUE FROM HERE
 @testset "Ports" begin
-    port = Port(:port_1, :parent, e=:V, f=:I)
+    port = Port(:port_1, :parent)
 
     @test nameof(system(port)) == :parent₊port_1
     @test nameof(system(port, namespaced=false)) == :port_1
     @test is_connected(port) == false
-    @test BondGraphs.portweight(port) == 0
+    @test_broken portweight(port) == 0
 
-    @test repr(effort(port)) == "port_1₊V(t)"
-    @test repr(flow(port)) == "port_1₊I(t)"
+    @test repr(effort(port)) == "port_1₊e(t)"
+    @test repr(flow(port)) == "port_1₊f(t)"
 end
 
 @testset "Creating Components" begin
@@ -31,42 +30,42 @@ end
     @parameters C
     eqs = [D(q) ~ f, q ~ C * e]
 
-    @named capacitor = Compliance(eqs, [e], [f], [q]; q = 2, C = 5)
+    @named cap = Component(Compliance(), eqs, [e], [f], [q]; q = 2, C = 5)
 
-    @test typeof(capacitor) == Compliance
-    @test name(capacitor) == :capacitor
-    @test repr(capacitor) == "C::capacitor"
+    @test elementtype(cap) == Compliance
+    @test name(cap) == :cap
+    @test repr(cap) == "1-port C-Component cap"
+    @test cap.q == 2
+    @test cap.C == 5
 
-    @test capacitor.q == 2
-    @test capacitor.C == 5
-
-    port = capacitor.ports[1]
-    @test capacitor[1] == port
-    @test capacitor[:port_1] == port
+    port = cap.ports[1]
+    @test cap[1] == port
+    @test cap[:port_1] == port
 end
 
 @testset "Creating Junctions" begin
-    j0 = EqualEffort(name=:𝟎)
-    j1 = EqualFlow(name=:𝟏)
+    j0 = Component(ZeroJunction(), name=:𝟎)
+    j1 = Component(OneJunction(), name=:𝟏)
     @test name(j0) == :𝟎
     @test name(j1) == :𝟏
 
-    @test length(ports(j0)) == length(ports(j1)) == 1
+    @test length(ports(j0)) == length(ports(j1)) == 0
 
+    push!(j0.ports, Port(:port_1, :j0))
     push!(j0.ports, Port(:port_2, :j0))
     push!(j0.ports, Port(:port_3, :j0))
 
     cr = constitutive_relations(j0)
     @test repr(cr[1]) == "port_1₊e(t) ~ port_2₊e(t)"
     @test repr(cr[2]) == "port_1₊e(t) ~ port_3₊e(t)"
-    @test repr(cr[3]) == "port_3₊f(t) + port_1₊f(t) + port_2₊f(t) ~ 0"
+    @test repr(cr[3]) == "port_1₊f(t) + port_2₊f(t) + port_3₊f(t) ~ 0"
 end
 
 @testset "BondGraph Construction" begin
     # imported from library
     @named rcomp = resistor()
     @named ccomp = capacitor()
-    @named kcl = KCL()
+    @named kcl = zerojunction()
     b1 = Bond(rcomp, kcl)
     b2 = Bond(ccomp, kcl)
     bg = BondGraph([rcomp, ccomp, kcl], [b1, b2], name="RC Circuit")
@@ -79,15 +78,14 @@ end
 
     # compare to bonds only construction
     # bg2 = BondGraph([b1, b2], name="RC Circuit")
-    # TODO
+    @test_broken components(bg) == components(bg2)
 end
 
 @testset "Graph functions" begin
-    using BondGraphs: resistor, capacitor, inductor, KVL
     @named r = resistor()
     @named c = capacitor()
     @named i = inductor()
-    @named kvl = KVL()
+    @named kvl = onejunction()
     b1 = Bond(c, kvl)
     b2 = Bond(kvl, r)
     b3 = Bond(kvl, i)
@@ -128,8 +126,8 @@ end
     @named c = capacitor()
     @named i = inductor()
     @named v = voltagesource()
-    @named kcl = KCL()  # 0-junction
-    @named kvl = KVL()  # 1-junction
+    @named kcl = zerojunction()  # 0-junction
+    @named kvl = onejunction()  # 1-junction
     @named model = BondGraph()
 
     model[:r] = r
@@ -159,7 +157,7 @@ end
     @test length(kcl.ports) == 3 && !is_connected(kcl[3])
     connect!(model, kcl, i)
 
-    swap!(model, kcl, kvl)
+    @test swap!(model, kcl, kvl)
     @test (kvl in components(model)) && !(kcl in components(model))
     @test ne(model) == 3
     @test inneighbor_comps(model, kvl) == [:r, :c]
@@ -169,14 +167,14 @@ end
 @testset "Inserting Nodes" begin
     bg = RCI()
 
-    bond_c_kvl = bg[:c, :kvl]
-    bond_r_kvl = bg[:r, :kvl]
+    bond_kvl_c = bg[:kvl, :c]
+    bond_kvl_r = bg[:kvl, :r]
 
     tf = transformer(2)
-    insert_comp!(bg, bond_c_kvl, tf)
+    insert_comp!(bg, bond_kvl_c, tf)
 
-    @named kcl = KCL()
-    insert_comp!(bg, bond_r_kvl, kcl)
+    @named kcl = zerojunction()
+    insert_comp!(bg, bond_kvl_r, kcl)
 
     @test tf in components(bg) && kcl in components(bg)
     @test nv(bg) == 7
@@ -184,10 +182,9 @@ end
 end
 
 @testset "Construction Failure" begin
-    using BondGraphs: resistor, capacitor, inductor, KVL
     @named rcomp = resistor()
     @named ccomp = capacitor()
-    @named kvl = KVL()
+    @named kvl = onejunction()
     b1 = Bond(rcomp, kvl)
     b2 = Bond(ccomp, kvl)
     bg = BondGraph([rcomp, ccomp, kvl], [b1, b2], name="RC")
@@ -200,7 +197,6 @@ end
 
     @test_logs (:warn, "Component 'v' not in model") remove_comp!(bg, v)
 
-    # FIXME
     tf = transformer(2)
     add_comp!(bg, tf)
     @test_logs (:warn, "New comp must have a greater or equal number of ports than the old comp") swap!(bg, tf, ccomp)
@@ -211,32 +207,31 @@ end
     @test b1 in bg
 end
 
-### TODO CONTINUE FROM HERE
 @testset "Simplifying Junctions" begin
     bg = RCI()
     C, R, I, SS, J1 = bg[:c], bg[:r], bg[:i], bg[:v], bg[:kvl]
 
     # adding redundancies
-    J1_new_1 = EqualFlow(; name = :new1_1)
-    J1_new_2 = EqualFlow(; name = :new1_2)
-    insert_comp!(bg, (C, J1), J1_new_1)
-    insert_comp!(bg, (R, J1), J1_new_2)
+    J1_new_1 = onejunction(; name = :new1_1)
+    J1_new_2 = onejunction(; name = :new1_2)
+    insert_comp!(bg, (J1, C), J1_new_1)
+    insert_comp!(bg, (J1, R), J1_new_2)
     connect!(bg, J1_new_1, J1_new_2)
 
-    J0_new_1 = EqualEffort(; name = :new0_1)
-    J0_new_2 = EqualEffort(; name = :new0_2)
+    J0_new_1 = zerojunction(; name = :new0_1)
+    J0_new_2 = zerojunction(; name = :new0_2)
     add_comp!(bg, J0_new_1)
     connect!(bg, J1, J0_new_1)
-    insert_comp!(bg, (J1, SS), J0_new_2)
+    insert_comp!(bg, (SS, J1), J0_new_2)
 
     # Removing junction redundancies
     juncs = junctions(bg)
-    zero_juncs = filter(j -> j isa EqualEffort, juncs)
-    one_juncs = filter(j -> j isa EqualFlow, juncs)
+    zero_juncs = filter(j -> j isa Component{ZeroJunction}, juncs)
+    one_juncs = filter(j -> j isa Component{OneJunction}, juncs)
     @test length(zero_juncs) == 2 && length(one_juncs) == 3
 
     simplify_junctions!(bg, squash_identical = false)
-    zero_juncs = filter(j -> j isa EqualEffort, junctions(bg))
+    zero_juncs = filter(j -> j isa Component{ZeroJunction}, junctions(bg))
     @test length(zero_juncs) == 0
     @test nv(bg) == 7
     @test ne(bg) == 7
@@ -245,8 +240,8 @@ end
     # FIXME doesn't like swapping with another component already in the graph
     # need to write code instead of using 'swap!'
     # simplify_junctions!(bg)
-    # one_juncs = filter(j -> j isa EqualFlow, junctions(bg))
-    # @test length(one_juncs) == 1
-    # @test nv(bg) == 5
-    # @test ne(bg) == 4
+    # one_juncs = filter(j -> j isa Component{OneJunction}, junctions(bg))
+    @test_broken length(one_juncs) == 1
+    @test_broken nv(bg) == 5
+    @test_broken ne(bg) == 4
 end

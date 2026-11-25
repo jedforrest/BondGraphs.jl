@@ -3,7 +3,7 @@
 
 Add a comp to a bond graph `bg`.
 """
-function add_comp!(bg::BondGraph, comp::AbstractElement)
+function add_comp!(bg::BondGraph, comp::Component)
     compname = name(comp)
     add_vertex!(bg.graph, compname, comp) || @warn "Component '$compname' already in model"
 end
@@ -13,7 +13,7 @@ end
 
 Remove a comp to a bond graph `bg`.
 """
-function remove_comp!(bg::BondGraph, comp::AbstractElement)
+function remove_comp!(bg::BondGraph, comp::Component)
     compname = name(comp)
     if !haskey(bg.graph, compname)
         @warn "Component '$compname' not in model"
@@ -35,7 +35,7 @@ Connect two components together in the same bond graph. The bond direction is al
 `source_comp` to `destination_comp`. The port index of `source_comp` and `destination_comp`
 can be optionally set.
 """
-function connect!(bg::BondGraph, src::Union{Port,AbstractElement}, dst::Union{Port,AbstractElement})
+function connect!(bg::BondGraph, src::Union{Port,Component}, dst::Union{Port,Component})
     srcname = src isa Port ? parentname(src) : name(src)
     dstname = dst isa Port ? parentname(dst) : name(dst)
     haskey(bg.graph, srcname, dstname) && return true
@@ -50,7 +50,7 @@ end
 
 Remove the bond connecting `comp1` and `comp2`
 """
-function disconnect!(bg::BondGraph, src::AbstractElement, dst::AbstractElement)
+function disconnect!(bg::BondGraph, src::Component, dst::Component)
     srcname = name(src)
     dstname = name(dst)
     !haskey(bg.graph, srcname, dstname) && return false
@@ -72,7 +72,7 @@ will have the same connections (bonds) as the original model.
 
 `newcomp` must have a greater or equal number of ports as `oldcomp`.
 """
-function swap!(bg::BondGraph, oldcomp::AbstractElement, newcomp::AbstractElement)
+function swap!(bg::BondGraph, oldcomp::Component, newcomp::Component)
 
     if numports(newcomp) < numports(oldcomp)
         @warn("New comp must have a greater or equal number of ports than the old comp")
@@ -108,7 +108,7 @@ is preserved.
 
 Supply either the two comps as a tuple, or the bond that connects them in `bg`.
 """
-function insert_comp!(bg::BondGraph, bond::Bond, newcomp::AbstractElement)
+function insert_comp!(bg::BondGraph, bond::Bond, newcomp::Component)
     srcname, dstname = componentnames(bond)
     src = bg[srcname]
     dst = bg[dstname]
@@ -127,7 +127,7 @@ function insert_comp!(bg::BondGraph, bond::Bond, newcomp::AbstractElement)
         error(e)
     end
 end
-function insert_comp!(bg::BondGraph, tuple::Tuple{AbstractElement, AbstractElement}, newcomp::AbstractElement)
+function insert_comp!(bg::BondGraph, tuple::Tuple{Component, Component}, newcomp::Component)
     srcname, dstname = name.(tuple)
     if !haskey(bg.graph, srcname, dstname)
         error("'$(srcname)' and '$(dstname)' are not connected")
@@ -136,7 +136,7 @@ function insert_comp!(bg::BondGraph, tuple::Tuple{AbstractElement, AbstractEleme
 end
 
 # TODO extend for ParametricJunction
-function merge_junctions!(bg::BondGraph, comp1::T, comp2::T) where {T <: NonParametricJunction}
+function merge_junctions!(bg::BondGraph, comp1::Component{T}, comp2::Component{T}) where {T <: NonParametricJunction}
     # comp1 taken as the comp to keep
     # remove conflicting connections between junctions if they exist
     disconnect!(bg, comp1, comp2)
@@ -166,7 +166,7 @@ function simplify_junctions!(
         remove_redundant = true,
         squash_identical = true
 )
-    junctions = filter(x -> x isa EqualEffort || x isa EqualFlow, components(bg))
+    junctions = filterbytype(NonParametricJunction, components(bg))
 
     # Removes junctions with 2 or less connected ports
     if remove_redundant

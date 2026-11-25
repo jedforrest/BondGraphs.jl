@@ -1,5 +1,7 @@
 using Test
 using BondGraphs
+using BondGraphs: is_connected, components
+
 using BondGraphs.ComponentLibrary: resistor, capacitor, inductor, voltagesource, currentsource
 using BondGraphs.ComponentLibrary: transformer, gyrator, zerojunction, onejunction
 using BondGraphs.ComponentLibrary: chemicalspecies, reaction, chemostat
@@ -25,8 +27,11 @@ function RCI()
     BondGraph([c, r, i, v, kvl], [b1, b2, b3, b4], name=:RCI)
 end
 
+test_equal_equation(eq1, eq2) = isequal(expand(eq1.rhs - eq2.rhs), 0)
+
 @testset begin
     @testset "Construction Tests" include("./construction_tests.jl")
+    # TODO continue through tests
     @testset "Equation Tests" include("./equation_tests.jl")
     @testset "Catalyst Tests" include("./catalyst_tests.jl")
     # @testset "Simulation Tests" include("./simulation_tests.jl")
@@ -37,9 +42,3 @@ end
 
 #------------------
 # scratchpad
-# TODO continue through tests
-
-@named kvl = onejunction()
-ports(kvl)
-
-bg = RCI()

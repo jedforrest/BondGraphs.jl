@@ -31,6 +31,9 @@ is_connected(p::Port) = p.connected
 
 is_source(p::Port) = !isnothing(p.inbound) && !p.inbound
 
+effort(p::Port) = getproperty(p.model, :e)
+flow(p::Port) = getproperty(p.model, :f)
+
 portweight(p::Port) = isnothing(p.inbound) ? 0 : (p.inbound ? 1 : -1)
 
 function Base.show(io::IO, port::Port)

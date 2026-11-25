@@ -1,20 +1,18 @@
 @variables e(t) f(t) q(t)
 @parameters C L R
 
-test_equal_equation(eq1, eq2) = isequal(expand(eq1.rhs - eq2.rhs), 0)
-
 @testset "Component Systems" begin
     eqs = [D(q) ~ f, q ~ C * e]
-    @named cap = Compliance(eqs, [e], [f], [q])
+    @named cap = Component(Compliance(), eqs, [e], [f], [q])
 
-    sys = system(cap)
-    @test nameof(sys) == :cap
-    @test length(equations(expand_connections(cap.sys))) == 3  # includes port relations
+    @test name(cap) == :cap
+    @test length(equations(expand_connections(cap.model))) == 5  # includes port relations
     @test length(constitutive_relations(cap)) == 2
     @test isequal(constitutive_relations(cap), eqs)
 
-    j = EqualEffort(; name=:𝟎)
-    @test nameof(system(j)) == :𝟎
+    j = Component(ZeroJunction(); name=:𝟎)
+    @test name(j) == :𝟎
+    # TODO CONTINUE FROM HERE
     @test isempty(equations(j))
     @test length(constitutive_relations(j)) == 1
 
