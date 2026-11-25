@@ -1,8 +1,8 @@
 using Test
 using BondGraphs
-using BondGraphs: is_connected, components
-using BondGraphs: resistor, capacitor, inductor, voltagesource, currentsource, transformer, KCL, KVL
-using BondGraphs: chemicalspecies, reaction, chemostat
+using BondGraphs.ComponentLibrary: resistor, capacitor, inductor, voltagesource, currentsource
+using BondGraphs.ComponentLibrary: transformer, gyrator, zerojunction, onejunction
+using BondGraphs.ComponentLibrary: chemicalspecies, reaction, chemostat
 
 using ModelingToolkitBase
 using ModelingToolkitBase: t_nounits as t, D_nounits as D
@@ -17,7 +17,7 @@ function RCI()
     @named r = resistor()
     @named i = inductor()
     @named v = voltagesource()
-    @named kvl = KVL()
+    @named kvl = onejunction()
     b1 = Bond(v, kvl)
     b2 = Bond(kvl, c)
     b3 = Bond(kvl, r)
@@ -39,13 +39,7 @@ end
 # scratchpad
 # TODO continue through tests
 
-using BondGraphs: resistor, capacitor, inductor, KVL
-using BondGraphs: voltagesource, currentsource, transformer, KCL
+@named kvl = onejunction()
+ports(kvl)
 
-@named cap = capacitor()
-
-voltagesource(; E=t->1, name=:v)
-
-transformer(2)
-
-@named kvl = KVL()
+bg = RCI()

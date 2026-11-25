@@ -23,7 +23,10 @@ struct Bond
     end
 end
 # either port or component are accepted as inputs
-function Bond(src::Union{Port,Component}, dst::Union{Port,Component})
+function Bond(
+    src::Union{Port,Component{<:AbstractElement}},
+    dst::Union{Port,Component{<:AbstractElement}}
+)
     srcport = src isa Port ? src : nextfreeport(src)
     dstport = dst isa Port ? dst : nextfreeport(dst)
     isnothing(srcport) && error("Component $src has no free ports")

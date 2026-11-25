@@ -13,9 +13,9 @@ struct Component{T<:AbstractElement}
     element::T
     name::Symbol
     model::System
-    efforts::Vector{Num}
-    flows::Vector{Num}
-    states::Vector{Num}
+    efforts::Vector
+    flows::Vector
+    states::Vector
     ports::Vector{Port}
 end
 
@@ -157,11 +157,11 @@ ports(comp::Component) = comp.ports
 # BASE FUNCTIONS
 
 function Base.show(io::IO, comp::Component)
-    print(io, "$(numports(comp))-port $(symbol(comp))-Component: $(name(comp))")
+    print(io, "$(numports(comp))-port $(symbol(comp))-Component $(name(comp))")
 end
 
 function Base.show(io::IO, comp::Component{<:NonParametricJunction})
-    print(io, "$(symbol(comp))-Junction: $(name(comp))")
+    print(io, "$(symbol(comp))-Junction $(name(comp))")
 end
 
 # Easier referencing systems using a.b notation
@@ -197,7 +197,7 @@ function nextfreeport(comp::Component)
     freeports = filter(!is_connected, comp.ports)
     isempty(freeports) ? nothing : first(freeports)
 end
-function nextfreeport(junc::NonParametricJunction)
+function nextfreeport(junc::Component{<:NonParametricJunction})
     # 0- and 1- junctions have unlimited ports
     # so create a new port if none are free
     freeportindex = findfirst(!is_connected, junc.ports)

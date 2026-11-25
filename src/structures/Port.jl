@@ -1,5 +1,3 @@
-const Effort = ModelingToolkitBase.Equality
-
 @connector function PortConnector(; name, e=:e, f=:f)
     vars = @variables begin
         $(Symbol(e))(t), [connect = Effort]
