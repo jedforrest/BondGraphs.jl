@@ -30,8 +30,18 @@ end
 # end
 
 function Base.show(io::IO, bg::BondGraph)
-    print_str = "$(name(bg))"
-    print_str *= isempty(bonds(bg)) ? "" : "\n  $(join(bonds(bg),"\n  "))"
+    print_str = "BondGraph $(name(bg))"
+    print_str *= " ($(nv(bg)) Components, $(ne(bg)) Bonds)"
+    max_rows = 10
+    if !isempty(bonds(bg))
+        for b in first(bonds(bg), max_rows - 1)
+            print_str *= "\n  $b"
+        end
+        if ne(bg) > max_rows
+            print_str *= "\n  ⋮"
+        end
+        print_str *= "\n  $(last(bonds(bg)))"
+    end
     print(io, print_str)
 end
 

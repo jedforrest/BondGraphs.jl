@@ -37,18 +37,26 @@ function Component(element::AbstractElement, sys::System, efforts, flows, states
         # create N port subsystems and extend the user-given MTK System
         port = Port(Symbol("port_$i"), name)
         portsys = system(port, namespaced=false)
+
         # add effort/flow connections to newly added port variables
         # (assuming efforts and flows are in the correct order)
         port_conn_eq = [
-            ParentScope(efforts[i]) ~ ParentScope(portsys.e),
-            ParentScope(flows[i]) ~ ParentScope(portsys.f)
+            LocalScope(efforts[i]) ~ ParentScope(portsys.e),
+            LocalScope(flows[i]) ~ ParentScope(portsys.f)
         ]
+        # append!(port_connection_eqs, port_conn_eq)
+
+        # extend the port subsystem instead
+        # portsys = extend(portsys, System(port_conn_eq, t; name))
+
+        sys = compose(sys, portsys)
+        sys = extend(sys, System(port_conn_eq, t; name))
+
         push!(ports, port)
         push!(portsystems, portsys)
-        append!(port_connection_eqs, port_conn_eq)
     end
-    sys = compose(sys, portsystems)
-    sys = extend(sys, System(port_connection_eqs, t; name))
+    # sys = extend(sys, System(port_connection_eqs, t; name))
+    # sys = compose(sys, portsystems)
 
     # kwargs are used to set default parameter values
     for (key, val) in kwargs
@@ -142,14 +150,26 @@ function system(junc1::Component{OneJunction})
     System(eqs, t; systems=system.(_ports), name=name(junc1))
 end
 
-variables(comp::Component) = ModelingToolkitBase.get_unknowns(system(comp))
+variables(comp::Component) = ModelingToolkitBase.unknowns_toplevel(system(comp))
 parameters(comp::Component) = ModelingToolkitBase.parameters(system(comp))
 
 efforts(comp::Component) = comp.efforts
 flows(comp::Component) = comp.flows
 states(comp::Component) = comp.states
 
-constitutive_relations(comp::Component) = ModelingToolkitBase.equations_toplevel(system(comp))
+function constitutive_relations(comp::Component)
+    sys = system(comp)
+    top_level = [
+        ModelingToolkitBase.unknowns_toplevel(sys);
+        ModelingToolkitBase.parameters_toplevel(sys)
+    ]
+    eqs = ModelingToolkitBase.equations_toplevel(sys)
+    return filter(eqs) do eq
+        # check non-derivative variables only
+        eq_vars = filter(!Symbolics.is_derivative, ModelingToolkitBase.get_variables(eq))
+        all(any(isequal(v), top_level) for v in eq_vars)
+    end
+end
 
 ports(comp::Component) = comp.ports
 

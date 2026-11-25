@@ -1,26 +1,19 @@
-@testset "power variables" begin
-    e, f, _ = power_variables()
-    @test ModelingToolkit.get_connection_type(e) == Effort
-    @test ModelingToolkit.get_connection_type(f) == Flow
-
-    vars = power_variables(e="F", f="v", p="p", q="x")
-    @test tosymbol.(vars, escape=false) == [:F, :v, :p, :x]
-end
-
 @testset "AbstractElements" begin
     @variables e(t) f(t) p(t) q(t)
     @parameters R C L
 
-    r_element = Resistance([e ~ R * f], [e], [f])
-    c_element = Compliance([D(q) ~ f, q ~ C * e], [e], [f], [q])
-    i_element = Inertance([D(p) ~ e, p ~ L * f], [e], [f], [p])
+    r_element = Component(Resistance(), [e ~ R * f], [e], [f], name=:r)
+    c_element = Component(Compliance(), [D(q) ~ f, q ~ C * e], [e], [f], [q], name=:c)
+    i_element = Component(Inertance(), [D(p) ~ e, p ~ L * f], [e], [f], [p], name=:i)
 
     @test isequal(efforts(r_element), [e])
     @test isequal(flows(c_element), [f])
     @test isequal(states(c_element), [q])
     @test isequal(constitutive_relations(i_element), [D(p) ~ e, p ~ L * f])
+    @test length(BondGraphs.variables(i_element)) == 3
 end
 
+# TODO CONTINUE FROM HERE
 @testset "Ports" begin
     port = Port(:port_1, :parent, e=:V, f=:I)
 

@@ -1,12 +1,10 @@
-@connector function PortConnector(; name, e=:e, f=:f)
+@connector function PortConnector(; name::Symbol)
     vars = @variables begin
-        $(Symbol(e))(t), [connect = Effort]
-        $(Symbol(f))(t), [connect = Flow]
+        e(t), [connect = Effort]
+        f(t), [connect = Flow]
     end
     return System(Equation[], t, vars, []; name)
 end
-
-############################################################
 
 # used for adjusting the sign of efforts/flows
 # @enum PortWeight INBOUND=1 OUTBOUND=-1 DISCONNECTED=0
@@ -17,8 +15,8 @@ mutable struct Port
     model::System  # port connector
     connected::Bool
     # weight::PortWeight
-    function Port(name, parentname; e=:e, f=:f)
-        sys = PortConnector(; name, e, f)
+    function Port(name, parentname)
+        sys = PortConnector(; name)
         new(name, parentname, sys, false)
     end
 end
