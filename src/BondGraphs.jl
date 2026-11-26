@@ -22,7 +22,7 @@ import Graphs:
     rem_vertex!,
     add_edge!,
     rem_edge!
-# import ModelingToolkitBase: parameters, equations, controls
+import ModelingToolkitBase: parameters, equations, controls
 
 using Graphs: SimpleGraph, SimpleDiGraph, SimpleEdge
 using ModelingToolkitBase

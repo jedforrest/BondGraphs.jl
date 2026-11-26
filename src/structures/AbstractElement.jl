@@ -10,7 +10,6 @@ abstract type BondElement <: AbstractElement end
 """`R` component"""
 @kwdef struct Resistance <: BondElement
     symbol::Symbol = :R
-    numports::Int = 1
 end
 
 #########################
@@ -19,13 +18,11 @@ abstract type StorageElement <: BondElement end
 """`C` component"""
 @kwdef struct Compliance <: StorageElement
     symbol::Symbol = :C
-    numports::Int = 1
 end
 
 """`I` component"""
 @kwdef struct Inertance <: StorageElement
     symbol::Symbol = :I
-    numports::Int = 1
 end
 
 ############################################################
@@ -34,19 +31,16 @@ abstract type SourceElement <: BondElement end
 """`Se` component"""
 @kwdef struct EffortSource <: SourceElement
     symbol::Symbol = :Se
-    numports::Int = 1
 end
 
 """`Sf` component"""
 @kwdef struct FlowSource <: SourceElement
     symbol::Symbol = :Sf
-    numports::Int = 1
 end
 
 """`SS` component"""
 @kwdef struct SourceSensor <: SourceElement
     symbol::Symbol = :SS
-    numports::Int = 1
 end
 
 ############################################################
@@ -60,13 +54,11 @@ abstract type ParametricJunction <: JunctionStructure end
 """`TF` component"""
 @kwdef struct Transformer <: ParametricJunction
     symbol::Symbol = :TF
-    numports::Int = 2
 end
 
 """`GY` component"""
 @kwdef struct Gyrator <: ParametricJunction
     symbol::Symbol = :GY
-    numports::Int = 2
 end
 
 ############################################################
@@ -92,17 +84,6 @@ const EqualFlow = OneJunction
 
 symbol(elem::AbstractElement) = elem.symbol
 
-numports(elem::BondElement) = elem.numports
-numports(junc::ParametricJunction) = junc.numports
-numports(::NonParametricJunction) = Inf
-
-############################################################
-# Overloading Base
-
 function Base.show(io::IO, elem::AbstractElement)
-    print(io, "$(typeof(elem))($(symbol(elem)), $(numports(elem)))")
-end
-
-function Base.show(io::IO, elem::NonParametricJunction)
-    print(io, "$(typeof(elem))($(symbol(elem)))")
+    print(io, "$(symbol(elem))::$(typeof(elem))")
 end

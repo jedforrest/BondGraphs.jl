@@ -16,7 +16,7 @@ mutable struct BondGraph <: AbstractGraph{Int}
     function BondGraph(
             components::Vector{Component} = Component[],
             bonds::Vector{Bond} = Bond[];
-            name = :BondGraph,
+            name = :BG,
             autocompile = true
         )
         graph = metagraph(components, bonds, name)

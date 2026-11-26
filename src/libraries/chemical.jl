@@ -39,7 +39,7 @@ function reaction(; κ=1, normalised=true, name)
     else
         [v[1] ~ - v[2], v[1] ~ κ * (exp(u[1] / (R*T)) - exp(u[2] / (R*T)))]
     end
-    Component(Resistance(symbol=:Re, numports=2), eqns, [u[1], u[2]], [v[1], v[2]]; name)
+    Component(Resistance(symbol=:Re), eqns, [u[1], u[2]], [v[1], v[2]]; name)
 end
 
 # Chemical Source (chemostat)

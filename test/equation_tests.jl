@@ -12,28 +12,31 @@
 
     j = Component(ZeroJunction(); name=:𝟎)
     @test name(j) == :𝟎
-    # TODO CONTINUE FROM HERE
-    @test isempty(equations(j))
-    @test length(constitutive_relations(j)) == 1
+    @test isempty(constitutive_relations(j))
 
     tf = transformer(2)
-    @test nameof(system(tf)) == Symbol("TF{2}")
-    @test length(equations(tf)) == 2
+    @test name(tf) == Symbol("TF{2}")
+    @test length(equations(tf)) == 6
+    @test length(constitutive_relations(tf)) == 2
 end
 
 @testset "Bond Graph System" begin
     bg = BondGraph()
 
-    @test isnothing(bg.sys)
+    @test isnothing(bg.model)
     compile_system!(bg)
-    @test isempty(equations(bg.sys))
+    @test isempty(equations(bg.model))
 
-    @named cap = Compliance([D(q) ~ f, q ~ C * e], [e], [f], [q])
-    @named res = Resistance([e ~ R * f], [e], [f])
+    @named cap = Component(Compliance(), [D(q) ~ f, q ~ C * e], [e], [f], [q])
+    @named res = Component(Resistance(), [e ~ R * f], [e], [f])
     add_comp!(bg, cap)
     add_comp!(bg, res)
     connect!(bg, cap, res)
-    @test full_equations(system(bg)) == [D(cap.sys.q) ~ -cap.sys.q / (cap.sys.C*res.sys.R)]
+
+    # TODO CONTINUE FROM HERE
+    system(bg; simplify=false)
+    full_equations(system(bg))
+    @test full_equations(system(bg)) == [D(cap.q) ~ -cap.q / (cap.C*res.R)]
 end
 
 @testset "Bond Graph RC System" begin

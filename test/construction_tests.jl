@@ -35,8 +35,8 @@ end
     @test elementtype(cap) == Compliance
     @test name(cap) == :cap
     @test repr(cap) == "1-port C-Component cap"
-    @test cap.q == 2
-    @test cap.C == 5
+    @test get_ic(cap, :q) == 2
+    @test get_ic(cap, :C) == 5
 
     port = cap.ports[1]
     @test cap[1] == port

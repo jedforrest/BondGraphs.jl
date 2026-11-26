@@ -1,3 +1,4 @@
+using Pkg; Pkg.activate(".")
 using Test
 using BondGraphs
 using BondGraphs: is_connected, components
@@ -28,6 +29,12 @@ function RCI()
 end
 
 test_equal_equation(eq1, eq2) = isequal(expand(eq1.rhs - eq2.rhs), 0)
+
+function get_ic(comp, var)
+    sys = system(comp)
+    val = ModelingToolkitBase.get_initial_conditions(sys)[getproperty(sys, var)]
+    Symbolics.value(val)
+end
 
 @testset begin
     @testset "Construction Tests" include("./construction_tests.jl")

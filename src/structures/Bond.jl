@@ -65,8 +65,8 @@ function disconnect!(b::Bond)
     end
 end
 
-function connection_equation(b::Bond)
+function connection_equation(b::Bond)::Equation
     srcport = system(b.src)
     dstport = system(b.dst)
-    ModelingToolkit.connect(srcport, dstport)
+    ModelingToolkitBase.connect(srcport, dstport)
 end

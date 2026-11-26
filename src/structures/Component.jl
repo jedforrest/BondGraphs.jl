@@ -21,7 +21,7 @@ end
 
 """Generic Component constructor from a vector of equations"""
 function Component(element::AbstractElement, eqs::Vector{Equation}, args...; name, kwargs...)
-    sys = System(eqs, t; name=Symbol("$name.model"))
+    sys = System(eqs, t; name)
     Component(element, sys, args...; name, kwargs...)
 end
 
@@ -31,9 +31,7 @@ function Component(element::AbstractElement, sys::System, efforts, flows, states
 
     # make new port subsystems that expose the effort and flow variables
     ports = Port[]
-    portsystems = System[]
-    port_connection_eqs = Equation[]
-    for i in 1:numports(element)
+    for i in 1:length(efforts)
         # create N port subsystems and extend the user-given MTK System
         port = Port(Symbol("port_$i"), name)
         portsys = system(port, namespaced=false)
@@ -44,19 +42,12 @@ function Component(element::AbstractElement, sys::System, efforts, flows, states
             LocalScope(efforts[i]) ~ ParentScope(portsys.e),
             LocalScope(flows[i]) ~ ParentScope(portsys.f)
         ]
-        # append!(port_connection_eqs, port_conn_eq)
-
-        # extend the port subsystem instead
-        # portsys = extend(portsys, System(port_conn_eq, t; name))
 
         sys = compose(sys, portsys)
         sys = extend(sys, System(port_conn_eq, t; name))
 
         push!(ports, port)
-        push!(portsystems, portsys)
     end
-    # sys = extend(sys, System(port_connection_eqs, t; name))
-    # sys = compose(sys, portsystems)
 
     # kwargs are used to set default parameter values
     for (key, val) in kwargs
@@ -76,26 +67,28 @@ end
 
 
 ############################################################
-function check_num_ports(element::BondElement, efforts, flows, states)
-    nports = numports(element)
+function check_num_ports(::BondElement, efforts, flows, states)
+    nports = length(efforts)
     nports >= 1 || error("Must have at least 1 port ($nports)")
-    if element isa StorageElement
-        (nports == length(efforts) == length(flows) == length(states)) ||
-            error("Number of efforts, flows, and states don't match ($nports)")
-    else
-        (nports == length(efforts) == length(flows)) ||
-            error("Number of efforts and flows don't match ($nports)")
-    end
+    (nports == length(efforts) == length(flows)) ||
+        error("Number of efforts and flows don't match ($nports)")
     return nothing
 end
-function check_num_ports(element::SourceElement, efforts, flows, states)
-    nports = numports(element)
-    (nports == length(efforts) == length(flows) == 1) ||
+function check_num_ports(::StorageElement, efforts, flows, states)
+    nports = length(efforts)
+    nports >= 1 || error("Must have at least 1 port ($nports)")
+    (nports == length(efforts) == length(flows) == length(states)) ||
+        error("Number of efforts, flows, and states don't match ($nports)")
+    return nothing
+end
+function check_num_ports(::SourceElement, efforts, flows, states)
+    nports = length(efforts)
+    (nports == 1) ||
         error("Must have exactly 1 port ($nports)")
     return nothing
 end
-function check_num_ports(element::ParametricJunction, efforts, flows, states)
-    nports = numports(element)
+function check_num_ports(::ParametricJunction, efforts, flows, states)
+    nports = length(efforts)
     nports >= 2 || error("Must have at least 2 ports ($nports)")
     (nports == length(efforts) == length(flows)) ||
         error("Number of efforts and flows don't match ($nports)")
@@ -190,10 +183,8 @@ function Base.getproperty(comp::Component, name::Symbol)
     if isdefined(comp, name)
         return getfield(comp, name)
     else
-        # get default value for variable/parameter if it exists
-        sys = system(comp)
-        sym = getproperty(sys, name)
-        return Symbolics.value(get(initial_conditions(sys), sym, nothing))
+        # get variable/parameter if it exists
+        return ModelingToolkitBase.getvar(comp.model, name; namespace = false)
     end
 end
 
